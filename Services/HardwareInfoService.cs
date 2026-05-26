@@ -102,9 +102,24 @@ public static class HardwareInfoService
 
     private static string FormatDisplays()
     {
-        var displayNames = Query("Win32_DesktopMonitor")
-            .Select(item => FirstUseful(Get(item, "Name"), Get(item, "MonitorType"), Get(item, "PNPDeviceID")))
-            .Where(value => !string.IsNullOrWhiteSpace(value))
+        var monitors = QueryWmiNamespace("root\\WMI", "WmiMonitorID")
+            .Select(item =>
+            {
+                var mfr = GetManufacturerName(Get(item, "ManufacturerName"));
+                var product = DecodeWmiString(Get(item, "ProductName"));
+                var serial = DecodeWmiString(Get(item, "SerialNumberID"));
+                var pnpId = Get(item, "InstanceName")?.Split('\\').FirstOrDefault() ?? "";
+
+                var parts = new List<string>();
+                if (!string.IsNullOrWhiteSpace(mfr)) parts.Add(mfr);
+                if (!string.IsNullOrWhiteSpace(product)) parts.Add(product);
+                if (parts.Count == 0 && !string.IsNullOrWhiteSpace(pnpId)) parts.Add(DecodePnpManufacturer(pnpId));
+
+                var label = string.Join(" ", parts.Distinct());
+                if (!string.IsNullOrWhiteSpace(serial) && serial != "0") label += $" (SN:{serial})";
+                return string.IsNullOrWhiteSpace(label) ? null : label;
+            })
+            .Where(v => !string.IsNullOrWhiteSpace(v))
             .Distinct()
             .ToList();
 
@@ -121,26 +136,85 @@ public static class HardwareInfoService
             .Distinct()
             .ToList();
 
-        if (displayNames.Count == 0 && resolutions.Count == 0)
-        {
-            return "未知";
-        }
+        if (monitors.Count == 0 && resolutions.Count == 0) return "未知";
+        if (monitors.Count == 0) return string.Join(" / ", resolutions);
+        if (resolutions.Count == 0) return string.Join(" / ", monitors);
 
-        if (displayNames.Count == 0)
+        return string.Join(" / ", monitors.Select((name, i) =>
         {
-            return string.Join(" / ", resolutions);
-        }
-
-        if (resolutions.Count == 0)
-        {
-            return string.Join(" / ", displayNames);
-        }
-
-        return string.Join(" / ", displayNames.Select((name, index) =>
-        {
-            var resolution = resolutions[Math.Min(index, resolutions.Count - 1)];
-            return $"{name} ({resolution})";
+            var res = resolutions[Math.Min(i, resolutions.Count - 1)];
+            return $"{name} [{res}]";
         }));
+    }
+
+    private static IEnumerable<ManagementBaseObject> QueryWmiNamespace(string ns, string className)
+    {
+        ManagementObjectCollection? collection = null;
+        try
+        {
+            using var searcher = new ManagementObjectSearcher($"{ns}", $"SELECT * FROM {className}");
+            collection = searcher.Get();
+        }
+        catch { yield break; }
+
+        foreach (ManagementBaseObject item in collection) yield return item;
+    }
+
+    private static string? DecodeWmiString(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        var trimmed = raw.Trim('{', '}', ' ');
+        var chars = trimmed.Split(',')
+            .Select(s => int.TryParse(s.Trim(), out var c) ? c : 0)
+            .TakeWhile(c => c > 0)
+            .Select(c => (char)c)
+            .ToArray();
+        return chars.Length > 0 ? new string(chars).Trim() : null;
+    }
+
+    private static string? GetManufacturerName(string? raw)
+    {
+        var decoded = DecodeWmiString(raw);
+        if (string.IsNullOrWhiteSpace(decoded)) return null;
+        return decoded switch
+        {
+            "ACI" or "ACR" => "Acer",
+            "AUO" or "AUO_" => "AU Optronics",
+            "BOE" or "BOE_" => "京东方",
+            "CMN" => "奇美",
+            "CSO" => "华星光电",
+            "IVO" => "天马",
+            "INL" => "Innolux",
+            "LGD" or "LPL" => "LG Display",
+            "LEN" or "LEN_" => "联想",
+            "SEC" or "SDC" => "三星",
+            "SHV" => "Sharp",
+            _ => decoded
+        };
+    }
+
+    private static string DecodePnpManufacturer(string pnpId)
+    {
+        if (pnpId.Length < 3) return pnpId;
+        var code = pnpId.Substring(0, 3).ToUpperInvariant();
+        return code switch
+        {
+            "ACI" or "ACR" => "Acer",
+            "AUO" => "AU Optronics",
+            "BOE" => "京东方",
+            "CMN" => "奇美",
+            "CSO" => "华星光电",
+            "DEL" => "Dell",
+            "HSD" => "瀚宇彩晶",
+            "HKC" => "HKC",
+            "IVO" => "天马",
+            "INL" => "Innolux",
+            "LGD" or "LPL" => "LG Display",
+            "LEN" => "联想",
+            "SAM" or "SDC" or "SEC" => "三星",
+            "SHV" => "Sharp",
+            _ => code
+        };
     }
 
     private static string FormatUptime()

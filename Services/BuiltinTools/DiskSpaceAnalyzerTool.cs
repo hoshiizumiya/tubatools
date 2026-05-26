@@ -1,6 +1,7 @@
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.Foundation;
@@ -74,16 +75,21 @@ file sealed class AnalyzerPage : Page
     private TNode? _root;
     private TNode? _cur;
     private readonly Stack<TNode> _nav = [];
+    private long _diskTotal;
+    private long _diskFree;
     private Canvas _cv = null!;
-    private TextBlock _bc = null!;
+    private StackPanel _bcPanel = null!;
+    private TextBox _bcEdit = null!;
     private TextBlock _st = null!;
     private TextBlock _tip = null!;
     private ProgressBar _pb = null!;
     private Border _tipBox = null!;
+    private MenuFlyout _ctxMenu = null!;
     private CancellationTokenSource? _cts;
     private long _pBytes;
     private int _pItems;
     private TNode? _hoveredNode;
+    private bool _isEditingBc;
 
     private static readonly SolidColorBrush NormalBorder = new(Color.FromArgb(40, 0, 0, 0));
     private static readonly SolidColorBrush HoverBorder = new(Color.FromArgb(230, 255, 255, 255));
@@ -93,6 +99,8 @@ file sealed class AnalyzerPage : Page
     private static readonly SolidColorBrush CanvasBg = new(Color.FromArgb(255, 20, 20, 20));
     private static readonly SolidColorBrush LabelMain = new(Color.FromArgb(235, 255, 255, 255));
     private static readonly SolidColorBrush LabelSub = new(Color.FromArgb(175, 255, 255, 255));
+    private static readonly SolidColorBrush FreeSpaceBg = new(Color.FromArgb(255, 45, 45, 48));
+    private static readonly SolidColorBrush FreeSpaceLabel = new(Color.FromArgb(160, 255, 255, 255));
 
     private static readonly Color[] Palette =
     [
@@ -106,15 +114,50 @@ file sealed class AnalyzerPage : Page
     public AnalyzerPage(string path, Window win)
     {
         _win = win;
+        GetDiskInfo(path);
         InitUi();
         _ = ScanAsync(path);
+    }
+
+    private void GetDiskInfo(string path)
+    {
+        try
+        {
+            var root = System.IO.Path.GetPathRoot(path);
+            if (root != null)
+            {
+                var di = new DriveInfo(root);
+                _diskTotal = di.TotalSize;
+                _diskFree = di.AvailableFreeSpace;
+            }
+        }
+        catch { }
     }
 
     private void InitUi()
     {
         var bk = new Button { Content = new FontIcon { Glyph = "\uE72B", FontSize = 14 }, Padding = new Thickness(8, 4, 8, 4), VerticalAlignment = VerticalAlignment.Center };
         bk.Click += (_, _) => GoBack();
-        _bc = new TextBlock { FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Opacity = 0.85, TextTrimming = TextTrimming.CharacterEllipsis };
+
+        _bcPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        _bcEdit = new TextBox
+        {
+            FontSize = 13,
+            Visibility = Visibility.Collapsed,
+            VerticalAlignment = VerticalAlignment.Center,
+            Padding = new Thickness(6, 2, 6, 2),
+        };
+        _bcEdit.KeyDown += BcEdit_KeyDown;
+        _bcEdit.LostFocus += BcEdit_LostFocus;
+
+        var bcWrap = new Grid { VerticalAlignment = VerticalAlignment.Center };
+        bcWrap.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bcWrap.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        bcWrap.Children.Add(_bcPanel);
+        Grid.SetColumn(_bcEdit, 1); bcWrap.Children.Add(_bcEdit);
+
+        _bcPanel.PointerPressed += BcPanel_PointerPressed;
+
         var rf = new Button { Content = new FontIcon { Glyph = "\uE72C", FontSize = 14 }, Padding = new Thickness(8, 4, 8, 4), VerticalAlignment = VerticalAlignment.Center };
         rf.Click += (_, _) => { if (_cur != null) _ = ScanAsync(_cur.Path, true); };
 
@@ -123,19 +166,26 @@ file sealed class AnalyzerPage : Page
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         top.Children.Add(bk);
-        Grid.SetColumn(_bc, 1); top.Children.Add(_bc);
+        Grid.SetColumn(bcWrap, 1); top.Children.Add(bcWrap);
         Grid.SetColumn(rf, 2); top.Children.Add(rf);
 
         _cv = new Canvas { Background = CanvasBg };
         _cv.SizeChanged += (_, _) => Render();
-        _cv.PointerPressed += OnClick;
-        _cv.PointerMoved += OnMove;
+        _cv.PointerPressed += OnPointerPressed;
 
         _pb = new ProgressBar { IsIndeterminate = true, Visibility = Visibility.Collapsed, Margin = new Thickness(0, 2, 0, 2) };
         _st = new TextBlock { FontSize = 12, Opacity = 0.7, Padding = new Thickness(12, 2, 12, 4) };
 
         _tip = new TextBlock { FontSize = 12, Foreground = TipFg };
         _tipBox = new Border { Background = TipBg, BorderBrush = TipBorder, BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(4), Padding = new Thickness(8, 5, 8, 5), Child = _tip, Visibility = Visibility.Collapsed };
+
+        _ctxMenu = new MenuFlyout();
+        var openItem = new MenuFlyoutItem { Text = "打开文件夹", Icon = new FontIcon { Glyph = "\uE8E5" } };
+        openItem.Click += CtxOpen_Click;
+        _ctxMenu.Items.Add(openItem);
+        var delItem = new MenuFlyoutItem { Text = "删除文件夹", Icon = new FontIcon { Glyph = "\uE74D" } };
+        delItem.Click += CtxDelete_Click;
+        _ctxMenu.Items.Add(delItem);
 
         var wrap = new Grid();
         wrap.Children.Add(_cv);
@@ -155,6 +205,130 @@ file sealed class AnalyzerPage : Page
         Content = g;
     }
 
+    private void BcPanel_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (!e.GetCurrentPoint(_bcPanel).Properties.IsMiddleButtonPressed) return;
+        StartBcEdit();
+        e.Handled = true;
+    }
+
+    private void StartBcEdit()
+    {
+        if (_cur == null || _isEditingBc) return;
+        _isEditingBc = true;
+        _bcEdit.Text = _cur.Path;
+        _bcPanel.Visibility = Visibility.Collapsed;
+        _bcEdit.Visibility = Visibility.Visible;
+        _bcEdit.SelectAll();
+        _bcEdit.Focus(FocusState.Programmatic);
+    }
+
+    private void BcEdit_KeyDown(object sender, KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter)
+        {
+            CommitBcEdit();
+            e.Handled = true;
+        }
+        else if (e.Key == Windows.System.VirtualKey.Escape)
+        {
+            CancelBcEdit();
+            e.Handled = true;
+        }
+    }
+
+    private void BcEdit_LostFocus(object sender, RoutedEventArgs e)
+    {
+        CommitBcEdit();
+    }
+
+    private void CommitBcEdit()
+    {
+        if (!_isEditingBc) return;
+        _isEditingBc = false;
+        _bcPanel.Visibility = Visibility.Visible;
+        _bcEdit.Visibility = Visibility.Collapsed;
+
+        var path = _bcEdit.Text.Trim().Trim('"');
+        if (!string.IsNullOrWhiteSpace(path) && System.IO.Directory.Exists(path))
+        {
+            _ = ScanAsync(path);
+        }
+    }
+
+    private void CancelBcEdit()
+    {
+        _isEditingBc = false;
+        _bcPanel.Visibility = Visibility.Visible;
+        _bcEdit.Visibility = Visibility.Collapsed;
+    }
+
+    private void BcPart_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is HyperlinkButton btn && btn.Tag is TNode node)
+        {
+            while (_nav.Count > 0 && _nav.Peek() != node) _nav.Pop();
+            if (_nav.Count > 0) _nav.Pop();
+            if (_cur != null) _nav.Push(_cur);
+            _cur = node;
+            _hoveredNode = null;
+            SyncUi();
+            _win.AppWindow.Title = $"磁盘分析 - {node.Path}";
+            RenderWithAnimation(null);
+        }
+    }
+
+    private TNode? _ctxNode;
+
+    private void CtxOpen_Click(object sender, RoutedEventArgs e)
+    {
+        if (_ctxNode == null) return;
+        try
+        {
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(_ctxNode.Path) { UseShellExecute = true, Verb = "open" });
+        }
+        catch { }
+    }
+
+    private async void CtxDelete_Click(object sender, RoutedEventArgs e)
+    {
+        if (_ctxNode == null || _cur == null) return;
+
+        var dlg = new ContentDialog
+        {
+            Title = "确认删除",
+            Content = $"确定要删除文件夹「{_ctxNode.Name}」吗？\n\n{_ctxNode.Path}\n\n此操作不可撤销。",
+            PrimaryButtonText = "删除",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = Content.XamlRoot,
+        };
+        dlg.Resources["ContentDialogMaxWidth"] = 480;
+
+        var result = await dlg.ShowAsync();
+        if (result != ContentDialogResult.Primary) return;
+
+        try
+        {
+            System.IO.Directory.Delete(_ctxNode.Path, true);
+            _cur.Children.Remove(_ctxNode);
+            if (_ctxNode == _hoveredNode) _hoveredNode = null;
+            SyncUi();
+            Render();
+        }
+        catch (Exception ex)
+        {
+            var errDlg = new ContentDialog
+            {
+                Title = "删除失败",
+                Content = ex.Message,
+                CloseButtonText = "关闭",
+                XamlRoot = Content.XamlRoot,
+            };
+            await errDlg.ShowAsync();
+        }
+    }
+
     private async Task ScanAsync(string path, bool keepNav = false)
     {
         _cts?.Cancel();
@@ -166,6 +340,8 @@ file sealed class AnalyzerPage : Page
         _cv.Children.Clear();
         _hoveredNode = null;
         _pBytes = 0; _pItems = 0;
+
+        GetDiskInfo(path);
 
         var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(250) };
         timer.Tick += (_, _) => { _st.Text = $"正在扫描…  {_pItems:N0} 项  ·  {DiskSpaceAnalyzerTool.Fmt(_pBytes)}"; };
@@ -245,16 +421,35 @@ file sealed class AnalyzerPage : Page
         return null;
     }
 
-    private void OnClick(object sender, PointerRoutedEventArgs e)
+    private void OnPointerPressed(object sender, PointerRoutedEventArgs e)
     {
-        if (!e.GetCurrentPoint(_cv).Properties.IsLeftButtonPressed) return;
-        var node = FindNodeAt(e.GetCurrentPoint(_cv).Position);
-        if (node != null) DrillIn(node);
+        var props = e.GetCurrentPoint(_cv).Properties;
+        var pos = e.GetCurrentPoint(_cv).Position;
+
+        if (props.IsRightButtonPressed)
+        {
+            var node = FindNodeAt(pos);
+            if (node != null)
+            {
+                _ctxNode = node;
+                _ctxMenu.ShowAt(_cv, new FlyoutShowOptions { Position = pos });
+            }
+            e.Handled = true;
+            return;
+        }
+
+        if (props.IsLeftButtonPressed)
+        {
+            var node = FindNodeAt(pos);
+            if (node != null) DrillIn(node);
+        }
     }
 
-    private void OnMove(object sender, PointerRoutedEventArgs e)
+    protected override void OnPointerMoved(PointerRoutedEventArgs e)
     {
-        var node = FindNodeAt(e.GetCurrentPoint(_cv).Position);
+        base.OnPointerMoved(e);
+        var pos = e.GetCurrentPoint(_cv).Position;
+        var node = FindNodeAt(pos);
 
         if (node != _hoveredNode)
         {
@@ -290,12 +485,23 @@ file sealed class AnalyzerPage : Page
     private void DrillIn(TNode node)
     {
         if (node.DirCount == 0 && node.FileCount == 0 && node.Children.Count == 0) return;
+
+        Rect? source = null;
+        foreach (var c in _cv.Children)
+        {
+            if (c is Border b && b.Tag is TNode n && n == node)
+            {
+                source = new Rect(Canvas.GetLeft(b), Canvas.GetTop(b), b.Width, b.Height);
+                break;
+            }
+        }
+
         if (_cur != null) _nav.Push(_cur);
         _cur = node;
         _hoveredNode = null;
         SyncUi();
         _win.AppWindow.Title = $"磁盘分析 - {node.Path}";
-        Render();
+        RenderWithAnimation(source);
     }
 
     private void GoBack()
@@ -305,44 +511,110 @@ file sealed class AnalyzerPage : Page
         _hoveredNode = null;
         SyncUi();
         _win.AppWindow.Title = $"磁盘分析 - {_cur.Path}";
-        Render();
+        RenderWithAnimation(null);
     }
 
     private void SyncUi()
     {
         if (_cur == null) return;
+
+        _bcPanel.Children.Clear();
+        var navList = _nav.ToList();
+        for (int i = 0; i < navList.Count; i++)
+        {
+            if (i > 0)
+            {
+                _bcPanel.Children.Add(new TextBlock { Text = " › ", FontSize = 13, Opacity = 0.5, VerticalAlignment = VerticalAlignment.Center });
+            }
+            var btn = new HyperlinkButton
+            {
+                Content = new TextBlock { Text = navList[i].Name, FontSize = 13, TextTrimming = TextTrimming.CharacterEllipsis, MaxWidth = 160 },
+                Padding = new Thickness(4, 0, 4, 0),
+                VerticalAlignment = VerticalAlignment.Center,
+                Tag = navList[i],
+            };
+            btn.Click += BcPart_Click;
+            _bcPanel.Children.Add(btn);
+        }
+
+        if (navList.Count > 0)
+        {
+            _bcPanel.Children.Add(new TextBlock { Text = " › ", FontSize = 13, Opacity = 0.5, VerticalAlignment = VerticalAlignment.Center });
+        }
+
+        var curTb = new TextBlock
+        {
+            Text = _cur.Name,
+            FontSize = 13,
+            Opacity = 0.85,
+            VerticalAlignment = VerticalAlignment.Center,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        };
+        ToolTipService.SetToolTip(curTb, _cur.Path);
+        curTb.PointerPressed += (s, e) =>
+        {
+            if (e.GetCurrentPoint(curTb).Properties.IsMiddleButtonPressed) { StartBcEdit(); e.Handled = true; }
+        };
+        _bcPanel.Children.Add(curTb);
+
         var parts = new List<string>();
-        foreach (var n in _nav) parts.Add(n.Name);
-        parts.Add(_cur.Name);
-        _bc.Text = string.Join(" › ", parts);
-        _st.Text = $"{DiskSpaceAnalyzerTool.Fmt(_cur.Size)}  ·  {_cur.FileCount:N0} 文件  ·  {_cur.DirCount:N0} 文件夹";
+        if (_diskTotal > 0)
+        {
+            var used = _diskTotal - _diskFree;
+            var usedPct = (double)used / _diskTotal * 100;
+            parts.Add($"磁盘 {DiskSpaceAnalyzerTool.Fmt(used)} / {DiskSpaceAnalyzerTool.Fmt(_diskTotal)} ({usedPct:0.#}%)");
+        }
+        parts.Add($"{_cur.FileCount:N0} 文件  ·  {_cur.DirCount:N0} 文件夹");
+        _st.Text = string.Join("  ·  ", parts);
     }
 
     private void Render()
     {
+        RenderWithAnimation(null);
+    }
+
+    private void RenderWithAnimation(Rect? originRect)
+    {
         _cv.Children.Clear();
         _hoveredNode = null;
-        if (_cur == null || _cur.Size == 0) return;
+        if (_cur == null) return;
 
         var W = _cv.ActualWidth;
         var H = _cv.ActualHeight;
         if (W <= 0 || H <= 0) return;
 
         const double gap = 2;
-        var items = new List<(TNode Node, double Ratio)>();
-        foreach (var c in _cur.Children) items.Add((c, (double)c.Size / _cur.Size));
+
+        var totalSize = _cur.Size;
+        var freeSize = _diskTotal > 0 ? Math.Max(0, _diskFree) : 0;
+        if (_cur == _root && _diskTotal > 0)
+        {
+            totalSize = _diskTotal;
+            freeSize = Math.Max(0, _diskTotal - _cur.Size);
+        }
+
+        if (totalSize == 0) return;
+
+        var items = new List<(TNode? Node, double Ratio)>();
+        foreach (var c in _cur.Children) items.Add((c, (double)c.Size / totalSize));
+        if (freeSize > 0) items.Add((null, (double)freeSize / totalSize));
         if (items.Count == 0) return;
 
-        var rects = DoSquarify(items, new Rect(gap, gap, W - gap * 2, H - gap * 2));
+        var rects = DoSquarifyEx(items, new Rect(gap, gap, W - gap * 2, H - gap * 2));
+
+        var animate = originRect.HasValue;
+        var ox = originRect?.X ?? W / 2;
+        var oy = originRect?.Y ?? H / 2;
 
         foreach (var (node, rect) in rects)
         {
             if (rect.Width < 1.5 || rect.Height < 1.5) continue;
 
-            var color = NodeColor(node);
+            var isFree = node == null;
+            var color = isFree ? Color.FromArgb(255, 45, 45, 48) : NodeColor(node!);
             var brd = new Border
             {
-                Tag = node,
+                Tag = isFree ? null : node!,
                 Background = new SolidColorBrush(color),
                 BorderBrush = NormalBorder,
                 BorderThickness = new Thickness(0.5)
@@ -354,30 +626,85 @@ file sealed class AnalyzerPage : Page
             if (med)
             {
                 var sp = new StackPanel { Margin = new Thickness(3, 2, 3, 2) };
-                sp.Children.Add(new TextBlock { Text = node.Name, FontSize = big ? 12 : 10, Foreground = LabelMain, TextTrimming = TextTrimming.CharacterEllipsis, TextWrapping = TextWrapping.NoWrap });
-                sp.Children.Add(new TextBlock { Text = DiskSpaceAnalyzerTool.Fmt(node.Size), FontSize = big ? 10 : 9, Foreground = LabelSub });
+                if (isFree)
+                {
+                    sp.Children.Add(new TextBlock { Text = "空闲空间", FontSize = big ? 12 : 10, Foreground = FreeSpaceLabel, TextTrimming = TextTrimming.CharacterEllipsis, TextWrapping = TextWrapping.NoWrap });
+                    if (big) sp.Children.Add(new TextBlock { Text = DiskSpaceAnalyzerTool.Fmt(freeSize), FontSize = 10, Foreground = FreeSpaceLabel });
+                }
+                else
+                {
+                    sp.Children.Add(new TextBlock { Text = node!.Name, FontSize = big ? 12 : 10, Foreground = LabelMain, TextTrimming = TextTrimming.CharacterEllipsis, TextWrapping = TextWrapping.NoWrap });
+                    sp.Children.Add(new TextBlock { Text = DiskSpaceAnalyzerTool.Fmt(node.Size), FontSize = big ? 10 : 9, Foreground = LabelSub });
+                }
                 brd.Child = sp;
             }
 
-            Canvas.SetLeft(brd, rect.X);
-            Canvas.SetTop(brd, rect.Y);
-            brd.Width = rect.Width;
-            brd.Height = rect.Height;
+            if (animate)
+            {
+                Canvas.SetLeft(brd, ox);
+                Canvas.SetTop(brd, oy);
+                brd.Width = 0;
+                brd.Height = 0;
+                brd.Tag = isFree ? new AnimState { Node = null, StartX = ox, StartY = oy, TargetX = rect.X, TargetY = rect.Y, StartW = 0, StartH = 0, TargetW = rect.Width, TargetH = rect.Height }
+                                 : new AnimState { Node = node!, StartX = ox, StartY = oy, TargetX = rect.X, TargetY = rect.Y, StartW = 0, StartH = 0, TargetW = rect.Width, TargetH = rect.Height };
+            }
+            else
+            {
+                Canvas.SetLeft(brd, rect.X);
+                Canvas.SetTop(brd, rect.Y);
+                brd.Width = rect.Width;
+                brd.Height = rect.Height;
+            }
+
             _cv.Children.Add(brd);
         }
+
+        if (animate) RunZoomAnimation();
     }
 
-    private static List<(TNode Node, Rect Rect)> DoSquarify(List<(TNode Node, double Ratio)> items, Rect bounds)
+    private void RunZoomAnimation()
     {
-        var result = new List<(TNode Node, Rect Rect)>();
+        const int steps = 18;
+        const int intervalMs = 16;
+        var step = 0;
+        var borders = _cv.Children.OfType<Border>().Where(b => b.Tag is AnimState).ToList();
+
+        var timer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(intervalMs) };
+        timer.Tick += (_, _) =>
+        {
+            step++;
+            var t = (double)step / steps;
+            var eased = t < 0.5 ? 2 * t * t : 1 - Math.Pow(-2 * t + 2, 2) / 2;
+
+            foreach (var b in borders)
+            {
+                var s = (AnimState)b.Tag;
+                Canvas.SetLeft(b, s.StartX + (s.TargetX - s.StartX) * eased);
+                Canvas.SetTop(b, s.StartY + (s.TargetY - s.StartY) * eased);
+                b.Width = s.StartW + (s.TargetW - s.StartW) * eased;
+                b.Height = s.StartH + (s.TargetH - s.StartH) * eased;
+            }
+
+            if (step >= steps)
+            {
+                timer.Stop();
+                foreach (var b in borders) b.Tag = ((AnimState)b.Tag!).Node;
+            }
+        };
+        timer.Start();
+    }
+
+    private static List<(TNode? Node, Rect Rect)> DoSquarifyEx(List<(TNode? Node, double Ratio)> items, Rect bounds)
+    {
+        var result = new List<(TNode? Node, Rect Rect)>();
         if (items.Count == 0) return result;
         var totalArea = bounds.Width * bounds.Height;
         var remaining = items.Select(it => (it.Node, Area: it.Ratio * totalArea)).ToList();
-        LayRow(remaining, bounds, result);
+        LayRowEx(remaining, bounds, result);
         return result;
     }
 
-    private static void LayRow(List<(TNode Node, double Area)> items, Rect bounds, List<(TNode Node, Rect Rect)> result)
+    private static void LayRowEx(List<(TNode? Node, double Area)> items, Rect bounds, List<(TNode? Node, Rect Rect)> result)
     {
         if (items.Count == 0) return;
         if (items.Count == 1) { result.Add((items[0].Node, bounds)); return; }
@@ -385,17 +712,17 @@ file sealed class AnalyzerPage : Page
         var shortSide = Math.Min(bounds.Width, bounds.Height);
         if (shortSide <= 0) return;
 
-        var row = new List<(TNode Node, double Area)> { items[0] };
+        var row = new List<(TNode? Node, double Area)> { items[0] };
         var bestW = WorstAspect(row, shortSide);
 
         for (int i = 1; i < items.Count; i++)
         {
-            var test = new List<(TNode Node, double Area)>(row) { items[i] };
+            var test = new List<(TNode? Node, double Area)>(row) { items[i] };
             var tw = WorstAspect(test, shortSide);
             if (tw <= bestW) { row.Add(items[i]); bestW = tw; }
             else
             {
-                EmitRow(row, bounds, result);
+                EmitRowEx(row, bounds, result);
                 var rowArea = row.Sum(r => r.Area);
                 var totalArea = bounds.Width * bounds.Height;
                 var frac = rowArea / totalArea;
@@ -403,14 +730,14 @@ file sealed class AnalyzerPage : Page
                 var nb = wide
                     ? new Rect(bounds.X + bounds.Width * frac, bounds.Y, bounds.Width * (1 - frac), bounds.Height)
                     : new Rect(bounds.X, bounds.Y + bounds.Height * frac, bounds.Width, bounds.Height * (1 - frac));
-                LayRow(items.Skip(i).ToList(), nb, result);
+                LayRowEx(items.Skip(i).ToList(), nb, result);
                 return;
             }
         }
-        EmitRow(row, bounds, result);
+        EmitRowEx(row, bounds, result);
     }
 
-    private static void EmitRow(List<(TNode Node, double Area)> row, Rect bounds, List<(TNode Node, Rect Rect)> result)
+    private static void EmitRowEx(List<(TNode? Node, double Area)> row, Rect bounds, List<(TNode? Node, Rect Rect)> result)
     {
         var rowArea = row.Sum(r => r.Area);
         if (rowArea <= 0) return;
@@ -429,7 +756,7 @@ file sealed class AnalyzerPage : Page
         }
     }
 
-    private static double WorstAspect(List<(TNode Node, double Area)> row, double side)
+    private static double WorstAspect(List<(TNode? Node, double Area)> row, double side)
     {
         if (row.Count == 0 || side <= 0) return double.MaxValue;
         var total = row.Sum(r => r.Area);
@@ -466,4 +793,11 @@ file sealed class TNode
     public int DirCount { get; set; }
     public List<TNode> Children { get; } = [];
     public TNode(string name, string path) { Name = name; Path = path; }
+}
+
+file sealed class AnimState
+{
+    public TNode? Node;
+    public double StartX, StartY, TargetX, TargetY;
+    public double StartW, StartH, TargetW, TargetH;
 }

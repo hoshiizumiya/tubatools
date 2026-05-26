@@ -35,12 +35,17 @@ public static class ThemeService
         if (window?.Content is not FrameworkElement root)
             return;
 
-        root.RequestedTheme = theme switch
+        var elementTheme = theme switch
         {
             AppTheme.Light => ElementTheme.Light,
             AppTheme.Dark => ElementTheme.Dark,
             _ => ElementTheme.Default
         };
+
+        root.RequestedTheme = elementTheme;
+
+        if (window is MainWindow mw)
+            mw.ApplyTitleBarTheme(elementTheme);
     }
 
     private static Windows.Storage.ApplicationDataContainer? GetSettings()

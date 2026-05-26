@@ -178,6 +178,7 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border
                                             HorizontalAlignment="Left"
@@ -192,6 +193,14 @@
                                         <Button
                                             Grid.Column="1"
                                             HorizontalAlignment="Right"
+                                            Padding="6,4"
+                                            Click="SendToDesktopButton_Click"
+                                            ToolTipService.ToolTip="发送到桌面快捷方式">
+                                            <FontIcon FontSize="12" Glyph="&#xE8BD;" />
+                                        </Button>
+                                        <Button
+                                            Grid.Column="2"
+                                            HorizontalAlignment="Right"
                                             Padding="10,4"
                                             Click="RunAsAdminButton_Click"
                                             ToolTipService.ToolTip="以管理员身份运行">
@@ -201,7 +210,7 @@
                                             </StackPanel>
                                         </Button>
                                         <Button
-                                            Grid.Column="2"
+                                            Grid.Column="3"
                                             HorizontalAlignment="Right"
                                             Padding="10,4"
                                             Click="LaunchButton_Click"

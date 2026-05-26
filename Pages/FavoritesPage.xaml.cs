@@ -82,6 +82,56 @@ public sealed partial class FavoritesPage : Page
         }
     }
 
+    private void SendToDesktopButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { DataContext: ToolItem tool })
+        {
+            try
+            {
+                CreateDesktopShortcut(tool);
+                ShowStatus("已创建", $"已将「{tool.Name}」快捷方式发送到桌面", InfoBarSeverity.Success);
+            }
+            catch (Exception ex)
+            {
+                ShowStatus("创建失败", ex.Message, InfoBarSeverity.Error);
+            }
+        }
+    }
+
+    private static void CreateDesktopShortcut(ToolItem tool)
+    {
+        var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
+        var shortcutPath = Path.Combine(desktop, $"{tool.Name}.lnk");
+
+        var psScript = $"""
+            $ws = New-Object -ComObject WScript.Shell
+            $s = $ws.CreateShortcut('{shortcutPath}')
+            $s.TargetPath = '{tool.Path}'
+            $s.WorkingDirectory = '{Path.GetDirectoryName(tool.Path) ?? ToolCatalog.ToolsRoot}'
+            $s.Description = '{tool.Name}'
+            $s.Save()
+            """;
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-NoProfile -NonInteractive -Command \"{psScript.Replace("\"", "\\\"")}\"",
+            CreateNoWindow = true,
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+
+        using var process = Process.Start(psi);
+        process?.WaitForExit(5000);
+
+        if (process is not null && process.ExitCode != 0)
+        {
+            var err = process.StandardError.ReadToEnd();
+            throw new InvalidOperationException(err);
+        }
+    }
+
     private void ClearAllButton_Click(object sender, RoutedEventArgs e)
     {
         var dialog = new ContentDialog

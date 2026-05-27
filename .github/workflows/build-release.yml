@@ -33,6 +33,25 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Update version in .csproj and .iss files
+        shell: pwsh
+        run: |
+          $ver = "${{ inputs.version }}"
+
+          $csproj = Get-Content -LiteralPath 'TubaWinUi3.csproj' -Raw
+          $csproj = $csproj -replace '<Version>[^<]*</Version>', "<Version>$ver</Version>"
+          Set-Content -LiteralPath 'TubaWinUi3.csproj' -Value $csproj -NoNewline
+
+          foreach ($iss in @('installer.iss', 'installer-x64.iss', 'installer-arm64.iss')) {
+            if (Test-Path -LiteralPath $iss) {
+              $content = Get-Content -LiteralPath $iss -Raw
+              $content = $content -replace '#define MyAppVersion "[^"]*"', "#define MyAppVersion ""$ver"""
+              Set-Content -LiteralPath $iss -Value $content -NoNewline
+            }
+          }
+
+          Write-Host "Version updated to $ver"
+
       - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:

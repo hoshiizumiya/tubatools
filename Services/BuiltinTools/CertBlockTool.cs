@@ -2,7 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using TubaWinUi3.Models;
-using TubaWinUi3.Services;
+using Windows.UI;
 
 namespace TubaWinUi3.Services;
 
@@ -45,7 +45,7 @@ public sealed class CertBlockTool : IBuiltinTool
     {
         var vendorCountText = new TextBlock { FontSize = 22, FontWeight = Microsoft.UI.Text.FontWeights.Bold };
         var totalCertsText = new TextBlock { FontSize = 22, FontWeight = Microsoft.UI.Text.FontWeights.Bold };
-        var blockedCertsText = new TextBlock { FontSize = 22, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(Microsoft.UI.Colors.Green) };
+        var blockedCertsText = new TextBlock { FontSize = 22, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(ThemeColors.AccentGreen) };
         var adminText = new TextBlock { FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.Bold };
 
         var vendorCard = MakeStatCard("厂商", vendorCountText, "\uE7F4");
@@ -241,7 +241,7 @@ public sealed class CertBlockTool : IBuiltinTool
         var border = new Border
         {
             Padding = new Thickness(10, 10, 10, 10),
-            BorderBrush = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 60, 60, 60)),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = grid
         };
@@ -278,11 +278,11 @@ public sealed class CertBlockTool : IBuiltinTool
     private static void UpdateIndicator(Border indicator, CertBlockVendor vendor)
     {
         if (vendor.IsBlocked)
-            indicator.Background = new SolidColorBrush(Microsoft.UI.Colors.Green);
+            indicator.Background = new SolidColorBrush(ThemeColors.AccentGreen);
         else if (vendor.IsPartiallyBlocked)
-            indicator.Background = new SolidColorBrush(Microsoft.UI.Colors.Orange);
+            indicator.Background = new SolidColorBrush(ThemeColors.AccentOrange);
         else
-            indicator.Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 80, 80, 80));
+            indicator.Background = new SolidColorBrush(ThemeColors.BorderColor);
     }
 
     private static void UpdateCountText(TextBlock textBlock, CertBlockVendor vendor)
@@ -296,7 +296,7 @@ public sealed class CertBlockTool : IBuiltinTool
         {
             Width = 36,
             Height = 36,
-            Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(26, 255, 255, 255)),
+            Background = new SolidColorBrush(Color.FromArgb(26, ThemeColors.PrimaryText.R, ThemeColors.PrimaryText.G, ThemeColors.PrimaryText.B)),
             CornerRadius = new CornerRadius(6),
             Child = new FontIcon { FontSize = 16, Glyph = glyph }
         };
@@ -314,8 +314,8 @@ public sealed class CertBlockTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12),
-            Background = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 45, 45, 45)),
-            BorderBrush = new SolidColorBrush(Microsoft.UI.ColorHelper.FromArgb(255, 60, 60, 60)),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid

@@ -14,9 +14,6 @@ public sealed class BsodAnalysisTool : IBuiltinTool
     public string Category => "系统工具";
     public BuiltinToolKind Kind => BuiltinToolKind.Dialog;
 
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
-    private static readonly Color BorderColor = Color.FromArgb(255, 60, 60, 60);
-    private static readonly Color CardBg = Color.FromArgb(255, 45, 45, 45);
     private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
     private static readonly Color AccentRed = Color.FromArgb(255, 248, 113, 113);
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
@@ -48,7 +45,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
     private ScrollViewer BuildDialogContent()
     {
         var countText = new TextBlock { FontSize = 28, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(AccentRed) };
-        var recentText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(DimText) };
+        var recentText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var typeCountText = new TextBlock { FontSize = 28, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(AccentOrange) };
 
         var countCard = MakeStatCard("蓝屏次数", countText, "\uE946", AccentRed);
@@ -105,7 +102,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
 
         var eventBorder = new Border
         {
-            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = eventScroll
@@ -121,14 +118,14 @@ public sealed class BsodAnalysisTool : IBuiltinTool
 
         var insightBorder = new Border
         {
-            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = insightScroll
         };
 
         var loadingRing = new ProgressRing { Width = 40, Height = 40, IsActive = true };
-        var loadingText = new TextBlock { Text = "正在读取蓝屏记录...", FontSize = 13, Foreground = new SolidColorBrush(DimText) };
+        var loadingText = new TextBlock { Text = "正在读取蓝屏记录...", FontSize = 13, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var loadingPanel = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -152,7 +149,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
         {
             Text = "通过 Windows 事件日志分析系统蓝屏（BSOD）历史记录，提供常见错误类型的诊断建议",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
         root.Children.Add(statsGrid);
         root.Children.Add(actionBar);
@@ -270,7 +267,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
             {
                 Text = "无匹配记录",
                 FontSize = 13,
-                Foreground = new SolidColorBrush(DimText),
+                Foreground = new SolidColorBrush(ThemeColors.DimText),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Padding = new Thickness(0, 12, 0, 12)
             });
@@ -286,7 +283,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
     private Border CreateEventRow(BsodEntry entry)
     {
         var insight = BsodAnalysisService.GetInsight(entry.BugCheckCode);
-        var severityColor = insight is not null ? ParseHex(insight.SeverityColor) : DimText;
+        var severityColor = insight is not null ? ParseHex(insight.SeverityColor) : ThemeColors.DimText;
 
         var codeBadge = new Border
         {
@@ -307,14 +304,14 @@ public sealed class BsodAnalysisTool : IBuiltinTool
             Text = insight?.Title ?? "未知蓝屏",
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210))
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
         };
 
         var timeText = new TextBlock
         {
             Text = entry.Time.ToString("yyyy-MM-dd HH:mm:ss"),
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var driverText = new TextBlock
@@ -329,7 +326,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
         {
             Text = string.IsNullOrEmpty(entry.BugCheckParameter) ? "" : entry.BugCheckParameter,
             FontSize = 11,
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             Visibility = string.IsNullOrEmpty(entry.BugCheckParameter) ? Visibility.Collapsed : Visibility.Visible
         };
 
@@ -369,8 +366,8 @@ public sealed class BsodAnalysisTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12, 8, 12, 8),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             Child = grid
@@ -391,7 +388,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
             {
                 Text = "暂无诊断建议",
                 FontSize = 13,
-                Foreground = new SolidColorBrush(DimText),
+                Foreground = new SolidColorBrush(ThemeColors.DimText),
                 HorizontalAlignment = HorizontalAlignment.Center,
                 Padding = new Thickness(0, 12, 0, 12)
             });
@@ -430,7 +427,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
             Text = insight.Title,
             FontSize = 15,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 230, 230, 230))
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
         };
 
         var severityBadge = new Border
@@ -456,7 +453,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
         {
             Text = insight.Description,
             FontSize = 12,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 180, 180, 180)),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             TextWrapping = TextWrapping.Wrap,
             Opacity = 0.85
         };
@@ -495,8 +492,8 @@ public sealed class BsodAnalysisTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(14, 10, 14, 10),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid
@@ -534,7 +531,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
             CornerRadius = new CornerRadius(6),
             Child = new FontIcon { FontSize = 16, Foreground = new SolidColorBrush(accent), Glyph = glyph }
         };
-        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(DimText) };
+        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var stack = new StackPanel { Spacing = 2 };
         stack.Children.Add(labelBlock);
         stack.Children.Add(value);
@@ -548,8 +545,8 @@ public sealed class BsodAnalysisTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid

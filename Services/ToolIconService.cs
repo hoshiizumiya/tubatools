@@ -59,6 +59,21 @@ public static class ToolIconService
         }
     }
 
+    private static readonly Dictionary<string, string> ExtensionGlyphs = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [".bat"] = "\uE756",
+        [".cmd"] = "\uE756",
+        [".ps1"] = "\uE943",
+        [".vbs"] = "\uE943",
+        [".msc"] = "\uEC7A",
+    };
+
+    public static string? GetIconGlyph(string toolPath)
+    {
+        var extension = Path.GetExtension(toolPath);
+        return ExtensionGlyphs.TryGetValue(extension, out var glyph) ? glyph : "\uE8B7";
+    }
+
     public static void CleanExpiredCache()
     {
         if (!Directory.Exists(CacheRoot))

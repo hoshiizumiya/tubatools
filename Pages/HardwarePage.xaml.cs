@@ -1,5 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Media.Animation;
 using TubaWinUi3.Models;
 using TubaWinUi3.Services;
 
@@ -8,6 +10,8 @@ namespace TubaWinUi3.Pages;
 public sealed partial class HardwarePage : Page
 {
     private DispatcherTimer? _uptimeTimer;
+    private bool _dataLoaded;
+    private bool _animatingDetails;
 
     public HardwarePage()
     {
@@ -37,13 +41,49 @@ public sealed partial class HardwarePage : Page
         UptimeText.Text = $"{uptime.Days}天{uptime.Hours}小时{uptime.Minutes}分钟{uptime.Seconds}秒";
     }
 
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
+    private void RefreshButton_Click(object sender, RoutedEventArgs e)
     {
-        await LoadHardwareInfoAsync();
+        _ = LoadHardwareInfoAsync();
+    }
+
+    private void Card_PointerEntered(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Border border) return;
+        var sb = new Storyboard();
+        var scaleX = new DoubleAnimation { To = 1.02, Duration = TimeSpan.FromMilliseconds(120), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+        var scaleY = new DoubleAnimation { To = 1.02, Duration = TimeSpan.FromMilliseconds(120), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+        Storyboard.SetTarget(scaleX, border);
+        Storyboard.SetTarget(scaleY, border);
+        Storyboard.SetTargetProperty(scaleX, "(UIElement.RenderTransform).(ScaleTransform.ScaleX)");
+        Storyboard.SetTargetProperty(scaleY, "(UIElement.RenderTransform).(ScaleTransform.ScaleY)");
+        sb.Children.Add(scaleX);
+        sb.Children.Add(scaleY);
+        sb.Begin();
+    }
+
+    private void Card_PointerExited(object sender, PointerRoutedEventArgs e)
+    {
+        if (sender is not Border border) return;
+        var sb = new Storyboard();
+        var scaleX = new DoubleAnimation { To = 1.0, Duration = TimeSpan.FromMilliseconds(180), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+        var scaleY = new DoubleAnimation { To = 1.0, Duration = TimeSpan.FromMilliseconds(180), EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut } };
+        Storyboard.SetTarget(scaleX, border);
+        Storyboard.SetTarget(scaleY, border);
+        Storyboard.SetTargetProperty(scaleX, "(UIElement.RenderTransform).(ScaleTransform.ScaleX)");
+        Storyboard.SetTargetProperty(scaleY, "(UIElement.RenderTransform).(ScaleTransform.ScaleY)");
+        sb.Children.Add(scaleX);
+        sb.Children.Add(scaleY);
+        sb.Begin();
     }
 
     private async Task LoadHardwareInfoAsync()
     {
+        if (_dataLoaded)
+        {
+            ExitStoryboard.Begin();
+            await Task.Delay(200);
+        }
+
         SetLoading(true);
 
         try
@@ -78,12 +118,50 @@ public sealed partial class HardwarePage : Page
         ModelText.Text = summary.FirstOrDefault(item => item.Label == "设备型号")?.Value ?? "未知";
         SystemText.Text = system.FirstOrDefault(item => item.Label == "系统")?.Value ?? "未知";
         UpdateUptime();
+        _animatingDetails = true;
         DetailsRepeater.ItemsSource = details;
+
+        EntranceStoryboard.Begin();
+        _dataLoaded = true;
     }
 
     private void SetLoading(bool isLoading)
     {
         LoadingRing.IsActive = isLoading;
         LoadingRing.Visibility = isLoading ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void DetailsRepeater_ElementPrepared(ItemsRepeater sender, ItemsRepeaterElementPreparedEventArgs args)
+    {
+        if (!_animatingDetails || args.Index < 0 || args.Element is not Border el) return;
+
+        var idx = (int)args.Index;
+        el.Opacity = 0;
+
+        var delay = TimeSpan.FromMilliseconds(350 + idx * 60);
+        var lastIdx = ((IReadOnlyList<HardwareInfoItem>)DetailsRepeater.ItemsSource!).Count - 1;
+
+        var timer = new DispatcherTimer { Interval = delay };
+        timer.Tick += (_, _) =>
+        {
+            timer.Stop();
+
+            var sb = new Storyboard();
+            var fade = new DoubleAnimation
+            {
+                From = 0,
+                To = 1,
+                Duration = TimeSpan.FromMilliseconds(300),
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+            };
+            Storyboard.SetTarget(fade, el);
+            Storyboard.SetTargetProperty(fade, "Opacity");
+            sb.Children.Add(fade);
+
+            sb.Begin();
+
+            if (idx == lastIdx) _animatingDetails = false;
+        };
+        timer.Start();
     }
 }

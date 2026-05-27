@@ -112,6 +112,7 @@ public static class ToolCatalog
             RelativePath = relativePath,
             Extension = isPlaceholder ? "待下载" : extension.TrimStart('.').ToUpperInvariant(),
             IconPath = isPlaceholder ? null : ToolIconService.GetIconPath(path),
+            IconGlyph = isPlaceholder ? null : ToolIconService.GetIconGlyph(path),
             Description = metadata.Description,
             Publisher = metadata.Publisher,
             Version = metadata.Version,

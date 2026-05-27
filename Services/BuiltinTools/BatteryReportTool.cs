@@ -19,9 +19,6 @@ public sealed class BatteryReportTool : IBuiltinTool
     private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
     private static readonly Color AccentOrange = Color.FromArgb(255, 251, 191, 36);
     private static readonly Color AccentRed = Color.FromArgb(255, 248, 113, 113);
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
-    private static readonly Color BorderColor = Color.FromArgb(255, 60, 60, 60);
-    private static readonly Color CardBg = Color.FromArgb(255, 45, 45, 45);
 
     public async Task ExecuteAsync(BuiltinToolContext context)
     {
@@ -111,13 +108,13 @@ public sealed class BatteryReportTool : IBuiltinTool
         var healthStatusText = new TextBlock { FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
 
         var chargePercentText = new TextBlock { FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(AccentBlue) };
-        var batteryStatusText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(DimText) };
+        var batteryStatusText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(ThemeColors.DimText) };
 
-        var designCapacityText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210)) };
-        var fullChargeCapacityText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210)) };
-        var cycleCountText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210)) };
-        var manufacturerText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210)) };
-        var manufactureDateText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210)) };
+        var designCapacityText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(ThemeColors.PrimaryText) };
+        var fullChargeCapacityText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(ThemeColors.PrimaryText) };
+        var cycleCountText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(ThemeColors.PrimaryText) };
+        var manufacturerText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(ThemeColors.PrimaryText) };
+        var manufactureDateText = new TextBlock { FontSize = 14, Foreground = new SolidColorBrush(ThemeColors.PrimaryText) };
 
         var exportBtn = new Button
         {
@@ -165,7 +162,7 @@ public sealed class BatteryReportTool : IBuiltinTool
         infoPanel.Visibility = Visibility.Collapsed;
 
         var loadingRing = new ProgressRing { Width = 40, Height = 40, IsActive = true };
-        var loadingText = new TextBlock { Text = "正在获取电池信息...", FontSize = 13, Foreground = new SolidColorBrush(DimText) };
+        var loadingText = new TextBlock { Text = "正在获取电池信息...", FontSize = 13, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var loadingPanel = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -195,9 +192,9 @@ public sealed class BatteryReportTool : IBuiltinTool
             Padding = new Thickness(0, 40, 0, 40),
             Children =
             {
-                new FontIcon { Glyph = "\uE85A", FontSize = 48, Foreground = new SolidColorBrush(DimText) },
-                new TextBlock { Text = "未检测到电池", FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210)) },
-                new TextBlock { Text = "此设备可能为台式机或未安装电池", FontSize = 12, Foreground = new SolidColorBrush(DimText) },
+                new FontIcon { Glyph = "\uE85A", FontSize = 48, Foreground = new SolidColorBrush(ThemeColors.DimText) },
+                new TextBlock { Text = "未检测到电池", FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(ThemeColors.PrimaryText) },
+                new TextBlock { Text = "此设备可能为台式机或未安装电池", FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText) },
                 noBatteryExportBtn
             }
         };
@@ -208,7 +205,7 @@ public sealed class BatteryReportTool : IBuiltinTool
         {
             Text = "查看笔记本电池健康度、设计容量与充满容量对比、充放电周期计数",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
         rootStack.Children.Add(infoPanel);
         rootStack.Children.Add(loadingPanel);
@@ -240,8 +237,8 @@ public sealed class BatteryReportTool : IBuiltinTool
 
     private static Border MakeDetailRow(string label, TextBlock value, string glyph)
     {
-        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(DimText), VerticalAlignment = VerticalAlignment.Center };
-        var icon = new FontIcon { FontSize = 14, Glyph = glyph, Foreground = new SolidColorBrush(DimText), VerticalAlignment = VerticalAlignment.Center };
+        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText), VerticalAlignment = VerticalAlignment.Center };
+        var icon = new FontIcon { FontSize = 14, Glyph = glyph, Foreground = new SolidColorBrush(ThemeColors.DimText), VerticalAlignment = VerticalAlignment.Center };
 
         var grid = new Grid { ColumnSpacing = 10 };
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
@@ -254,8 +251,8 @@ public sealed class BatteryReportTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(10, 8, 10, 8),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid
@@ -269,7 +266,7 @@ public sealed class BatteryReportTool : IBuiltinTool
             Text = text,
             FontSize = 14,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 180, 180, 180))
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
     }
 
@@ -283,7 +280,7 @@ public sealed class BatteryReportTool : IBuiltinTool
             CornerRadius = new CornerRadius(6),
             Child = new FontIcon { FontSize = 16, Foreground = new SolidColorBrush(accent), Glyph = glyph }
         };
-        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(DimText) };
+        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var stack = new StackPanel { Spacing = 2 };
         stack.Children.Add(labelBlock);
         stack.Children.Add(value);
@@ -297,8 +294,8 @@ public sealed class BatteryReportTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid

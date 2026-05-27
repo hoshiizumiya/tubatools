@@ -17,9 +17,6 @@ public sealed class SpeedTestTool : IBuiltinTool
 
     private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
-    private static readonly Color BorderColor = Color.FromArgb(255, 60, 60, 60);
-    private static readonly Color CardBg = Color.FromArgb(255, 45, 45, 45);
 
     private CancellationTokenSource? _cts;
     private bool _isRunning;
@@ -49,8 +46,8 @@ public sealed class SpeedTestTool : IBuiltinTool
     {
         var downloadSpeedText = new TextBlock { FontSize = 30, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(AccentBlue) };
         var uploadSpeedText = new TextBlock { FontSize = 30, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(AccentGreen) };
-        var downloadUnit = new TextBlock { FontSize = 12, Foreground = new SolidColorBrush(DimText), Text = "Mbps" };
-        var uploadUnit = new TextBlock { FontSize = 12, Foreground = new SolidColorBrush(DimText), Text = "Mbps" };
+        var downloadUnit = new TextBlock { FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText), Text = "Mbps" };
+        var uploadUnit = new TextBlock { FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText), Text = "Mbps" };
 
         var downloadCard = MakeSpeedCard("下载速度", downloadSpeedText, downloadUnit, "\uE896", AccentBlue);
         var uploadCard = MakeSpeedCard("上传速度", uploadSpeedText, uploadUnit, "\uE898", AccentGreen);
@@ -66,8 +63,8 @@ public sealed class SpeedTestTool : IBuiltinTool
         downloadProgress.Visibility = Visibility.Collapsed;
         uploadProgress.Visibility = Visibility.Collapsed;
 
-        var downloadStatusLabel = new TextBlock { FontSize = 12, Foreground = new SolidColorBrush(DimText), Text = "" };
-        var uploadStatusLabel = new TextBlock { FontSize = 12, Foreground = new SolidColorBrush(DimText), Text = "" };
+        var downloadStatusLabel = new TextBlock { FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText), Text = "" };
+        var uploadStatusLabel = new TextBlock { FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText), Text = "" };
 
         var downloadProgressPanel = new StackPanel { Spacing = 4 };
         downloadProgressPanel.Children.Add(downloadProgress);
@@ -107,8 +104,8 @@ public sealed class SpeedTestTool : IBuiltinTool
         var serverInfo = new Border
         {
             Padding = new Thickness(12),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = new StackPanel { Spacing = 4 }
@@ -118,13 +115,13 @@ public sealed class SpeedTestTool : IBuiltinTool
         {
             Text = "测速节点：Cloudflare Speed Test (speed.cloudflare.com)",
             FontSize = 13,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210))
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
         });
         serverStack.Children.Add(new TextBlock
         {
             Text = "测试时长约 60 秒（下载 30 秒 + 上传 30 秒）",
             FontSize = 11,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
 
         var resultText = new TextBlock
@@ -140,7 +137,7 @@ public sealed class SpeedTestTool : IBuiltinTool
         {
             Text = "测试网络下载和上传带宽，使用 Cloudflare 全球 CDN 节点",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
         rootStack.Children.Add(serverInfo);
         rootStack.Children.Add(cardsGrid);
@@ -280,7 +277,7 @@ public sealed class SpeedTestTool : IBuiltinTool
             Child = new FontIcon { FontSize = 20, Foreground = new SolidColorBrush(accent), Glyph = glyph }
         };
 
-        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(DimText) };
+        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var valuePanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
         valuePanel.Children.Add(value);
         valuePanel.Children.Add(unit);
@@ -298,8 +295,8 @@ public sealed class SpeedTestTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(16),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(8),
             Child = grid

@@ -16,9 +16,6 @@ public sealed class WingetInstallerTool : IBuiltinTool
     public string Category => "系统工具";
     public BuiltinToolKind Kind => BuiltinToolKind.ProgressTask;
 
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
-    private static readonly Color BorderColor = Color.FromArgb(255, 60, 60, 60);
-    private static readonly Color CardBg = Color.FromArgb(255, 45, 45, 45);
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
     private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
     private static readonly Color AccentOrange = Color.FromArgb(255, 251, 191, 36);
@@ -51,7 +48,7 @@ public sealed class WingetInstallerTool : IBuiltinTool
             XamlRoot = context.XamlRoot
         };
         dialog.Resources["ContentDialogMaxWidth"] = 960;
-        dialog.Resources["ContentDialogMaxHeight"] = 720;
+        dialog.Resources["ContentDialogMaxHeight"] = 900;
         dialog.Closing += (_, args) =>
         {
             if (_isInstalling)
@@ -132,7 +129,7 @@ public sealed class WingetInstallerTool : IBuiltinTool
         };
 
         var loadingRing = new ProgressRing { Width = 36, Height = 36, IsActive = false };
-        var loadingText = new TextBlock { Text = "", FontSize = 12, Foreground = new SolidColorBrush(DimText) };
+        var loadingText = new TextBlock { Text = "", FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var loadingPanel = new StackPanel
         {
             Orientation = Orientation.Horizontal,
@@ -156,7 +153,7 @@ public sealed class WingetInstallerTool : IBuiltinTool
         {
             Text = "通过 Windows 包管理器 (winget) 快速安装常用软件，勾选需要的软件后点击安装",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
         root.Children.Add(statsGrid);
         root.Children.Add(actionBar);
@@ -362,7 +359,7 @@ public sealed class WingetInstallerTool : IBuiltinTool
                     Text = currentCategory,
                     FontSize = 14,
                     FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                    Foreground = new SolidColorBrush(Color.FromArgb(255, 180, 180, 180)),
+                    Foreground = new SolidColorBrush(ThemeColors.DimText),
                     Margin = new Thickness(0, 8, 0, 2)
                 };
                 state.PackageList.Children.Add(header);
@@ -382,7 +379,7 @@ public sealed class WingetInstallerTool : IBuiltinTool
             WingetInstallState.Succeeded => AccentGreen,
             WingetInstallState.Failed => AccentRed,
             WingetInstallState.Installing => AccentBlue,
-            _ => DimText
+            _ => ThemeColors.DimText
         };
 
         var iconBorder = new Border
@@ -399,14 +396,14 @@ public sealed class WingetInstallerTool : IBuiltinTool
             Text = pkg.Name,
             FontSize = 14,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210))
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
         };
 
         var descText = new TextBlock
         {
             Text = pkg.Description ?? "",
             FontSize = 11,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var infoPanel = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
@@ -477,8 +474,8 @@ public sealed class WingetInstallerTool : IBuiltinTool
         var rowBorder = new Border
         {
             Padding = new Thickness(12, 8, 12, 8),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid,
@@ -557,7 +554,7 @@ public sealed class WingetInstallerTool : IBuiltinTool
             CornerRadius = new CornerRadius(6),
             Child = new FontIcon { FontSize = 16, Foreground = new SolidColorBrush(accent), Glyph = glyph }
         };
-        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(DimText) };
+        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var stack = new StackPanel { Spacing = 2 };
         stack.Children.Add(labelBlock);
         stack.Children.Add(value);
@@ -571,8 +568,8 @@ public sealed class WingetInstallerTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid

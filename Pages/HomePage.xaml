@@ -11,6 +11,7 @@
     <Page.Resources>
         <local:FavGlyphConverter x:Key="FavGlyphConverter" />
         <local:InvertBoolToVisibilityConverter x:Key="InvertBoolToVis" />
+        <local:NullToVisibilityConverter x:Key="NullToCollapse" />
         <Style x:Key="ToolCardStyle" TargetType="GridViewItem">
             <Setter Property="MinWidth" Value="236" />
             <Setter Property="MaxWidth" Value="300" />
@@ -134,11 +135,18 @@
                                             Height="42"
                                             Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                                             CornerRadius="8">
-                                            <Image
-                                                Width="28"
-                                                Height="28"
-                                                Source="{Binding IconPath}"
-                                                Stretch="Uniform" />
+                                            <Grid>
+                                                <Image
+                                                    Width="28"
+                                                    Height="28"
+                                                    Source="{Binding IconPath}"
+                                                    Stretch="Uniform"
+                                                    Visibility="{Binding IconPath, Converter={StaticResource NullToCollapse}}" />
+                                                <FontIcon
+                                                    FontSize="20"
+                                                    Glyph="{Binding IconGlyph}"
+                                                    Visibility="{Binding IconGlyph, Converter={StaticResource NullToCollapse}}" />
+                                            </Grid>
                                         </Border>
                                         <StackPanel Grid.Column="1" Spacing="3">
                                             <TextBlock

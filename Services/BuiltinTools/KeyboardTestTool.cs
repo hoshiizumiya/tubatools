@@ -16,13 +16,8 @@ public sealed class KeyboardTestTool : IBuiltinTool
     public string Category => "外设工具";
     public BuiltinToolKind Kind => BuiltinToolKind.Dialog;
 
-    private static readonly Color KeyDefault = Color.FromArgb(255, 55, 55, 55);
     private static readonly Color KeyPressed = Color.FromArgb(255, 66, 133, 244);
-    private static readonly Color KeyBorder = Color.FromArgb(255, 75, 75, 75);
-    private static readonly Color KeyText = Color.FromArgb(255, 210, 210, 210);
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
-    private static readonly Color WhiteColor = Color.FromArgb(255, 255, 255, 255);
 
     private readonly Dictionary<VirtualKey, Border> _keyMap = [];
     private int _totalPressed;
@@ -62,7 +57,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
         var lastKeyText = new TextBlock
         {
             FontSize = 14,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var statsBar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 20 };
@@ -73,7 +68,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
             Children =
             {
                 new FontIcon { Glyph = "\uE92E", FontSize = 14, Foreground = new SolidColorBrush(AccentGreen) },
-                new TextBlock { Text = "已检测按键:", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(DimText) },
+                new TextBlock { Text = "已检测按键:", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(ThemeColors.DimText) },
                 countText
             }
         });
@@ -83,7 +78,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
             Spacing = 6,
             Children =
             {
-                new TextBlock { Text = "最后按键:", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(DimText) },
+                new TextBlock { Text = "最后按键:", FontSize = 13, VerticalAlignment = VerticalAlignment.Center, Foreground = new SolidColorBrush(ThemeColors.DimText) },
                 lastKeyText
             }
         });
@@ -91,7 +86,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
         var keyGrid = new Grid
         {
             Name = "KeyGrid",
-            Background = new SolidColorBrush(Color.FromArgb(255, 35, 35, 35)),
+            Background = new SolidColorBrush(ThemeColors.KeyboardBg),
             CornerRadius = new CornerRadius(8),
             Padding = new Thickness(12, 10, 12, 10),
             IsTabStop = true
@@ -105,7 +100,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
             {
                 keyBorder.Background = new SolidColorBrush(KeyPressed);
                 var tb = FindTextBlock(keyBorder);
-                if (tb is not null) tb.Foreground = new SolidColorBrush(WhiteColor);
+                if (tb is not null) tb.Foreground = new SolidColorBrush(ThemeColors.PrimaryText);
             }
             _totalPressed++;
             countText.Text = _totalPressed.ToString();
@@ -117,9 +112,9 @@ public sealed class KeyboardTestTool : IBuiltinTool
         {
             if (_keyMap.TryGetValue(e.Key, out var keyBorder))
             {
-                keyBorder.Background = new SolidColorBrush(KeyDefault);
+                keyBorder.Background = new SolidColorBrush(ThemeColors.KeyDefault);
                 var tb = FindTextBlock(keyBorder);
-                if (tb is not null) tb.Foreground = new SolidColorBrush(KeyText);
+                if (tb is not null) tb.Foreground = new SolidColorBrush(ThemeColors.KeyText);
             }
             e.Handled = true;
         };
@@ -144,9 +139,9 @@ public sealed class KeyboardTestTool : IBuiltinTool
             lastKeyText.Text = "";
             foreach (var border in _keyMap.Values)
             {
-                border.Background = new SolidColorBrush(KeyDefault);
+                border.Background = new SolidColorBrush(ThemeColors.KeyDefault);
                 var tb = FindTextBlock(border);
-                if (tb is not null) tb.Foreground = new SolidColorBrush(KeyText);
+                if (tb is not null) tb.Foreground = new SolidColorBrush(ThemeColors.KeyText);
             }
         };
 
@@ -154,7 +149,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
         {
             Text = "点击下方键盘区域后开始按键测试，按键会高亮显示",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var root = new StackPanel { Spacing = 14, MaxWidth = 920 };
@@ -202,7 +197,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
             Text = label,
             FontSize = label.Length > 3 ? 10 : 12,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(KeyText),
+            Foreground = new SolidColorBrush(ThemeColors.KeyText),
             HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center,
             TextAlignment = TextAlignment.Center
@@ -212,8 +207,8 @@ public sealed class KeyboardTestTool : IBuiltinTool
         {
             Width = width,
             Height = 42,
-            Background = new SolidColorBrush(KeyDefault),
-            BorderBrush = new SolidColorBrush(KeyBorder),
+            Background = new SolidColorBrush(ThemeColors.KeyDefault),
+            BorderBrush = new SolidColorBrush(ThemeColors.KeyBorder),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(4),
             Child = text

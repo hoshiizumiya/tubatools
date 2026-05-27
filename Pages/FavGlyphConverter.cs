@@ -31,3 +31,17 @@ public sealed class InvertBoolToVisibilityConverter : IValueConverter
         throw new NotImplementedException();
     }
 }
+
+public sealed class NullToVisibilityConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        return value is null || (value is string s && string.IsNullOrEmpty(s))
+            ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}

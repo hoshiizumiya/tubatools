@@ -4,10 +4,12 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:TubaWinUi3.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
     <Page.Resources>
+        <local:NullToVisibilityConverter x:Key="NullToCollapse" />
         <Style x:Key="FavCardStyle" TargetType="GridViewItem">
             <Setter Property="MinWidth" Value="236" />
             <Setter Property="MaxWidth" Value="300" />
@@ -117,11 +119,18 @@
                                         Height="42"
                                         Background="{ThemeResource SubtleFillColorSecondaryBrush}"
                                         CornerRadius="8">
-                                        <Image
-                                            Width="28"
-                                            Height="28"
-                                            Source="{Binding IconPath}"
-                                            Stretch="Uniform" />
+                                        <Grid>
+                                            <Image
+                                                Width="28"
+                                                Height="28"
+                                                Source="{Binding IconPath}"
+                                                Stretch="Uniform"
+                                                Visibility="{Binding IconPath, Converter={StaticResource NullToCollapse}}" />
+                                            <FontIcon
+                                                FontSize="20"
+                                                Glyph="{Binding IconGlyph}"
+                                                Visibility="{Binding IconGlyph, Converter={StaticResource NullToCollapse}}" />
+                                        </Grid>
                                     </Border>
                                     <StackPanel Grid.Column="1" Spacing="3">
                                         <TextBlock

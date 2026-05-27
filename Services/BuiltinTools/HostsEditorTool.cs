@@ -19,12 +19,6 @@ public sealed class HostsEditorTool : IBuiltinTool
     private static readonly Color AccentRed = Color.FromArgb(255, 248, 113, 113);
     private static readonly Color AccentOrange = Color.FromArgb(255, 251, 146, 60);
     private static readonly Color AccentPurple = Color.FromArgb(255, 167, 139, 250);
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
-    private static readonly Color WhiteColor = Color.FromArgb(255, 255, 255, 255);
-    private static readonly Color BorderColor = Color.FromArgb(255, 60, 60, 60);
-    private static readonly Color CardBg = Color.FromArgb(255, 45, 45, 45);
-    private static readonly Color HeaderBg = Color.FromArgb(255, 38, 38, 38);
-    private static readonly Color DisabledBg = Color.FromArgb(255, 55, 55, 55);
 
     private List<HostsEntry>? _entries;
     private bool _dirty;
@@ -125,21 +119,21 @@ public sealed class HostsEditorTool : IBuiltinTool
                 return new Border
                 {
                     Height = 6,
-                    Background = new SolidColorBrush(Color.FromArgb(255, 50, 50, 50))
+                    Background = new SolidColorBrush(ThemeColors.Separator)
                 };
             }
 
             return new Border
             {
                 Padding = new Thickness(10, 6, 10, 6),
-                BorderBrush = new SolidColorBrush(BorderColor),
+                BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
                 BorderThickness = new Thickness(0, 0, 0, 1),
                 Child = new TextBlock
                 {
                     Text = entry.Comment,
                     FontSize = 12,
                     FontStyle = Windows.UI.Text.FontStyle.Italic,
-                    Foreground = new SolidColorBrush(DimText),
+                    Foreground = new SolidColorBrush(ThemeColors.DimText),
                     TextTrimming = TextTrimming.CharacterEllipsis
                 }
             };
@@ -158,7 +152,7 @@ public sealed class HostsEditorTool : IBuiltinTool
             Text = entry.Address,
             FontSize = 13,
             FontFamily = new FontFamily("Consolas"),
-            Foreground = new SolidColorBrush(entry.Enabled ? AccentBlue : DimText),
+            Foreground = new SolidColorBrush(entry.Enabled ? AccentBlue : ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
@@ -169,7 +163,7 @@ public sealed class HostsEditorTool : IBuiltinTool
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             FontFamily = new FontFamily("Consolas"),
-            Foreground = new SolidColorBrush(entry.Enabled ? WhiteColor : DimText),
+            Foreground = new SolidColorBrush(entry.Enabled ? ThemeColors.PrimaryText : ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis
         };
@@ -178,7 +172,7 @@ public sealed class HostsEditorTool : IBuiltinTool
         {
             Text = string.IsNullOrEmpty(entry.Comment) ? "" : $"# {entry.Comment}",
             FontSize = 11,
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center,
             TextTrimming = TextTrimming.CharacterEllipsis,
             Opacity = string.IsNullOrEmpty(entry.Comment) ? 0 : 0.8
@@ -189,7 +183,7 @@ public sealed class HostsEditorTool : IBuiltinTool
             Content = new FontIcon { Glyph = "\uE74D", FontSize = 12 },
             Padding = new Thickness(6, 2, 6, 2),
             Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             Tag = entry
         };
         deleteBtn.Click += (_, _) =>
@@ -204,7 +198,7 @@ public sealed class HostsEditorTool : IBuiltinTool
             Content = new FontIcon { Glyph = "\uE70F", FontSize = 12 },
             Padding = new Thickness(6, 2, 6, 2),
             Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             Tag = entry
         };
         editBtn.Click += async (_, _) =>
@@ -230,7 +224,7 @@ public sealed class HostsEditorTool : IBuiltinTool
         var border = new Border
         {
             Padding = new Thickness(10, 6, 10, 6),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = grid,
             Tag = entry
@@ -256,9 +250,9 @@ public sealed class HostsEditorTool : IBuiltinTool
             if (child is TextBlock { FontFamily: not null } tb)
             {
                 if (tb.FontSize == 13 && tb.Text == entry.Address)
-                    tb.Foreground = new SolidColorBrush(entry.Enabled ? AccentBlue : DimText);
+                    tb.Foreground = new SolidColorBrush(entry.Enabled ? AccentBlue : ThemeColors.DimText);
                 else if (tb.FontSize == 13 && tb.Text == entry.Hostname)
-                    tb.Foreground = new SolidColorBrush(entry.Enabled ? WhiteColor : DimText);
+                    tb.Foreground = new SolidColorBrush(entry.Enabled ? ThemeColors.PrimaryText : ThemeColors.DimText);
             }
         }
 
@@ -427,7 +421,7 @@ public sealed class HostsEditorTool : IBuiltinTool
 
         var headerBorder = new Border
         {
-            Background = new SolidColorBrush(HeaderBg),
+            Background = new SolidColorBrush(ThemeColors.HeaderBg),
             CornerRadius = new CornerRadius(6, 6, 0, 0),
             Child = headerGrid
         };
@@ -442,7 +436,7 @@ public sealed class HostsEditorTool : IBuiltinTool
 
         var listBorder = new Border
         {
-            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(0, 0, 6, 6),
             Child = listScroll
@@ -453,12 +447,12 @@ public sealed class HostsEditorTool : IBuiltinTool
             Text = HostsEditorService.HostsPath,
             FontSize = 11,
             FontFamily = new FontFamily("Consolas"),
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             IsTextSelectionEnabled = true
         };
 
         var loadingRing = new ProgressRing { Width = 36, Height = 36, IsActive = true };
-        var loadingText = new TextBlock { Text = "正在加载 Hosts 文件...", FontSize = 13, Foreground = new SolidColorBrush(DimText) };
+        var loadingText = new TextBlock { Text = "正在加载 Hosts 文件...", FontSize = 13, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var loadingPanel = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -485,7 +479,7 @@ public sealed class HostsEditorTool : IBuiltinTool
         {
             Text = "可视化编辑系统 Hosts 文件，支持启用/禁用规则、添加/删除/编辑条目",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
         root.Children.Add(pathText);
         root.Children.Add(contentGrid);
@@ -611,7 +605,7 @@ public sealed class HostsEditorTool : IBuiltinTool
             CornerRadius = new CornerRadius(6),
             Child = new FontIcon { FontSize = 16, Foreground = new SolidColorBrush(accent), Glyph = glyph }
         };
-        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(DimText) };
+        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var stack = new StackPanel { Spacing = 2 };
         stack.Children.Add(labelBlock);
         stack.Children.Add(value);
@@ -625,8 +619,8 @@ public sealed class HostsEditorTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid
@@ -640,7 +634,7 @@ public sealed class HostsEditorTool : IBuiltinTool
             Text = text,
             FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
         grid.Children.Add(tb);
         Grid.SetColumn(tb, column);

@@ -14,11 +14,184 @@
             <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
             <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
             <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                </Setter.Value>
+            </Setter>
         </Style>
+
+        <Storyboard x:Name="EntranceStoryboard">
+            <DoubleAnimation
+                Storyboard.TargetName="HeaderPanel"
+                Storyboard.TargetProperty="Opacity"
+                From="0" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="HeaderPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                From="20" To="0" Duration="0:0:0.5"
+                BeginTime="0:0:0">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="MetricsPanel"
+                Storyboard.TargetProperty="Opacity"
+                From="0" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.1">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="MetricsPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                From="24" To="0" Duration="0:0:0.5"
+                BeginTime="0:0:0.1">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="Card1"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.15">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="Card1"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.15">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="Card2"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.23">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="Card2"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.23">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="Card3"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.31">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="Card3"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.31">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="DetailsPanel"
+                Storyboard.TargetProperty="Opacity"
+                From="0" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="DetailsPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                From="20" To="0" Duration="0:0:0.5"
+                BeginTime="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Storyboard x:Name="ExitStoryboard">
+            <DoubleAnimation
+                Storyboard.TargetName="HeaderPanel"
+                Storyboard.TargetProperty="Opacity"
+                To="0" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="HeaderPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                To="-12" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="MetricsPanel"
+                Storyboard.TargetProperty="Opacity"
+                To="0" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="MetricsPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                To="-12" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="DetailsPanel"
+                Storyboard.TargetProperty="Opacity"
+                To="0" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="DetailsPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                To="-12" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
     </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <ScrollViewer>
+        <ScrollViewer x:Name="ContentScroll">
             <Grid MaxWidth="1180" Padding="28,18,28,28" RowSpacing="18">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
@@ -26,7 +199,14 @@
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Grid ColumnSpacing="16">
+                <Grid
+                    x:Name="HeaderPanel"
+                    ColumnSpacing="16"
+                    Opacity="0"
+                    RenderTransformOrigin="0.5,0.5">
+                    <Grid.RenderTransform>
+                        <TranslateTransform Y="20" />
+                    </Grid.RenderTransform>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -47,20 +227,28 @@
                         Padding="14,7"
                         Click="RefreshButton_Click">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <FontIcon FontSize="14" Glyph="&#xE72C;" />
+                            <FontIcon x:Name="RefreshIcon" FontSize="14" Glyph="&#xE72C;" />
                             <TextBlock Text="刷新" />
                         </StackPanel>
                     </Button>
                 </Grid>
 
-                <Grid Grid.Row="1" ColumnSpacing="14">
+                <Grid
+                    x:Name="MetricsPanel"
+                    Grid.Row="1"
+                    ColumnSpacing="14"
+                    Opacity="0"
+                    RenderTransformOrigin="0.5,0.5">
+                    <Grid.RenderTransform>
+                        <TranslateTransform Y="24" />
+                    </Grid.RenderTransform>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
                     </Grid.ColumnDefinitions>
 
-                    <Border Style="{StaticResource MetricCardStyle}">
+                    <Border x:Name="Card1" Style="{StaticResource MetricCardStyle}" PointerEntered="Card_PointerEntered" PointerExited="Card_PointerExited">
                         <Grid ColumnSpacing="14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44" />
@@ -84,7 +272,7 @@
                         </Grid>
                     </Border>
 
-                    <Border Grid.Column="1" Style="{StaticResource MetricCardStyle}">
+                    <Border x:Name="Card2" Grid.Column="1" Style="{StaticResource MetricCardStyle}" PointerEntered="Card_PointerEntered" PointerExited="Card_PointerExited">
                         <Grid ColumnSpacing="14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44" />
@@ -108,7 +296,7 @@
                         </Grid>
                     </Border>
 
-                    <Border Grid.Column="2" Style="{StaticResource MetricCardStyle}">
+                    <Border x:Name="Card3" Grid.Column="2" Style="{StaticResource MetricCardStyle}" PointerEntered="Card_PointerEntered" PointerExited="Card_PointerExited">
                         <Grid ColumnSpacing="14">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="44" />
@@ -133,48 +321,63 @@
                     </Border>
                 </Grid>
 
-                <Border Grid.Row="2" Style="{StaticResource MetricCardStyle}">
-                    <Grid RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
+                <StackPanel
+                    x:Name="DetailsPanel"
+                    Grid.Row="2"
+                    Spacing="10"
+                    Opacity="0"
+                    RenderTransformOrigin="0.5,0.5">
+                    <StackPanel.RenderTransform>
+                        <TranslateTransform Y="20" />
+                    </StackPanel.RenderTransform>
+                    <TextBlock
+                        FontSize="20"
+                        FontWeight="SemiBold"
+                        Text="详细信息" />
 
-                        <TextBlock
-                            FontSize="20"
-                            FontWeight="SemiBold"
-                            Text="详细信息" />
-
-                        <ItemsRepeater x:Name="DetailsRepeater" Grid.Row="1">
-                            <ItemsRepeater.ItemTemplate>
-                                <DataTemplate>
-                                    <Grid MinHeight="42" Padding="0,7" ColumnSpacing="20">
+                    <ItemsRepeater x:Name="DetailsRepeater" ElementPrepared="DetailsRepeater_ElementPrepared">
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate>
+                                <Border
+                                    Padding="14,10"
+                                    CornerRadius="6"
+                                    Margin="0,0,0,4"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                                    <Grid MinHeight="38" Padding="4,2" ColumnSpacing="16">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="120" />
+                                            <ColumnDefinition Width="100" />
+                                            <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <TextBlock
                                             Opacity="0.68"
                                             Text="{Binding Label}"
-                                            VerticalAlignment="Top" />
-                                        <TextBlock
+                                            VerticalAlignment="Center" />
+                                        <Border
                                             Grid.Column="1"
+                                            Width="1"
+                                            Height="16"
+                                            Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                            VerticalAlignment="Center" />
+                                        <TextBlock
+                                            Grid.Column="2"
                                             FontWeight="SemiBold"
                                             Text="{Binding Value}"
-                                            TextWrapping="Wrap" />
+                                            TextWrapping="Wrap"
+                                            VerticalAlignment="Center" />
                                     </Grid>
-                                </DataTemplate>
-                            </ItemsRepeater.ItemTemplate>
-                        </ItemsRepeater>
-                    </Grid>
-                </Border>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
             </Grid>
         </ScrollViewer>
 
         <ProgressRing
             x:Name="LoadingRing"
-            Width="42"
-            Height="42"
+            Width="48"
+            Height="48"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             IsActive="False"

@@ -14,6 +14,8 @@ public sealed class ToolItem
 
     public string? IconPath { get; init; }
 
+    public string? IconGlyph { get; init; }
+
     public string? Description { get; init; }
 
     public string? Publisher { get; init; }

@@ -12,10 +12,8 @@ namespace TubaWinUi3.Services;
 
 internal static class AppColors
 {
-    public static readonly Color White = Color.FromArgb(255, 255, 255, 255);
     public static readonly Color Transparent = Color.FromArgb(0, 0, 0, 0);
     public static readonly Color DodgerBlue = Color.FromArgb(255, 30, 144, 255);
-    public static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
     public static readonly Color CpuAccent = Color.FromArgb(255, 66, 133, 244);
     public static readonly Color GpuAccent = Color.FromArgb(255, 234, 67, 53);
     public static readonly Color BatAccent = Color.FromArgb(255, 52, 168, 83);
@@ -103,8 +101,13 @@ public sealed class PowerMonitorTool : IBuiltinTool
             finally { ticking = false; }
         }
 
-        refreshCombo.SelectionChanged += (s, e) => { if (liveTimer is not null) StartTimer(); };
-        popupBtn.Click += (s, e) => OpenPopupWindow(refreshIntervals, refreshCombo.SelectedIndex);
+        double?[] sharedInterval = { null };
+        refreshCombo.SelectionChanged += (s, e) =>
+        {
+            if (liveTimer is not null) StartTimer();
+            sharedInterval[0] = refreshIntervals[refreshCombo.SelectedIndex];
+        };
+        popupBtn.Click += (s, e) => OpenPopupWindow(refreshIntervals, refreshCombo.SelectedIndex, sharedInterval);
 
         var cardsGrid = new Grid { ColumnSpacing = 10 };
         cardsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -135,7 +138,7 @@ public sealed class PowerMonitorTool : IBuiltinTool
         return new ScrollViewer { Content = root, MaxWidth = 680 };
     }
 
-    private static void OpenPopupWindow(double[] refreshIntervals, int selectedIndex)
+    private static void OpenPopupWindow(double[] refreshIntervals, int selectedIndex, double?[] sharedInterval)
     {
         const int maxHistory = 60;
         var cpuHistory = new List<float>(maxHistory);
@@ -143,38 +146,47 @@ public sealed class PowerMonitorTool : IBuiltinTool
         var batHistory = new List<float>(maxHistory);
 
         var monitor = new PowerMonitorService();
-        var cpuLoadText = new TextBlock { FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(AppColors.White) };
-        var gpuLoadText = new TextBlock { FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(AppColors.White) };
-        var batLoadText = new TextBlock { FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(AppColors.White) };
-        var cpuLabel = new TextBlock { FontSize = 10, Foreground = new SolidColorBrush(AppColors.DimText), Text = "CPU" };
-        var gpuLabel = new TextBlock { FontSize = 10, Foreground = new SolidColorBrush(AppColors.DimText), Text = "GPU" };
-        var batLabel = new TextBlock { FontSize = 10, Foreground = new SolidColorBrush(AppColors.DimText), Text = "BAT" };
+        var isDark = Application.Current.RequestedTheme == ApplicationTheme.Dark;
+        var fgColor = isDark ? ThemeColors.PrimaryText : Color.FromArgb(255, 30, 30, 30);
+        var dimColor = isDark ? ThemeColors.DimText : Color.FromArgb(255, 120, 120, 120);
+        var chartBg = isDark ? Color.FromArgb(20, 255, 255, 255) : Color.FromArgb(20, 0, 0, 0);
+        var bgColor = isDark ? Color.FromArgb(230, 30, 30, 30) : Color.FromArgb(240, 243, 243, 243);
+        var borderColor = isDark ? Color.FromArgb(255, 60, 60, 60) : Color.FromArgb(255, 220, 220, 220);
 
-        var cpuChart = new Canvas { Width = 200, Height = 40, Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255)) };
-        var gpuChart = new Canvas { Width = 200, Height = 40, Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255)) };
-        var batChart = new Canvas { Width = 200, Height = 40, Background = new SolidColorBrush(Color.FromArgb(20, 255, 255, 255)) };
+        var cpuLoadText = new TextBlock { FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(fgColor) };
+        var gpuLoadText = new TextBlock { FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(fgColor) };
+        var batLoadText = new TextBlock { FontSize = 20, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(fgColor) };
+        var cpuLabel = new TextBlock { FontSize = 10, Foreground = new SolidColorBrush(dimColor), Text = "CPU" };
+        var gpuLabel = new TextBlock { FontSize = 10, Foreground = new SolidColorBrush(dimColor), Text = "GPU" };
+        var batLabel = new TextBlock { FontSize = 10, Foreground = new SolidColorBrush(dimColor), Text = "BAT" };
+
+        var cpuChart = new Canvas { Width = 200, Height = 40, Background = new SolidColorBrush(chartBg) };
+        var gpuChart = new Canvas { Width = 200, Height = 40, Background = new SolidColorBrush(chartBg) };
+        var batChart = new Canvas { Width = 200, Height = 40, Background = new SolidColorBrush(chartBg) };
 
         var topmostBtn = new Button
         {
             Content = new FontIcon { FontSize = 14, Glyph = "\uE840" },
             Padding = new Thickness(4),
             Background = new SolidColorBrush(AppColors.Transparent),
-            Foreground = new SolidColorBrush(AppColors.DimText)
-        };
-        var closeBtn = new Button
-        {
-            Content = new FontIcon { FontSize = 14, Glyph = "\uE711" },
-            Padding = new Thickness(4),
-            Background = new SolidColorBrush(AppColors.Transparent),
-            Foreground = new SolidColorBrush(AppColors.DimText)
+            Foreground = new SolidColorBrush(dimColor)
         };
 
         var topRow = new Grid();
         topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         topRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var titleText = new TextBlock
+        {
+            Text = "硬件监测",
+            FontSize = 12,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(fgColor),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        topRow.Children.Add(titleText); Grid.SetColumn(titleText, 0);
         topRow.Children.Add(topmostBtn); Grid.SetColumn(topmostBtn, 1);
-        topRow.Children.Add(closeBtn); Grid.SetColumn(closeBtn, 2);
+        topRow.Padding = new Thickness(0, 0, 46, 0);
 
         var row1 = MakePopupRow("\uE950", AppColors.CpuAccent, cpuLabel, cpuLoadText, cpuChart);
         var row2 = MakePopupRow("\uE7F4", AppColors.GpuAccent, gpuLabel, gpuLoadText, gpuChart);
@@ -188,24 +200,39 @@ public sealed class PowerMonitorTool : IBuiltinTool
 
         var bg = new Border
         {
-            Background = new SolidColorBrush(Color.FromArgb(230, 30, 30, 30)),
+            Background = new SolidColorBrush(bgColor),
             CornerRadius = new CornerRadius(8),
-            BorderBrush = new SolidColorBrush(Color.FromArgb(255, 60, 60, 60)),
+            BorderBrush = new SolidColorBrush(borderColor),
             BorderThickness = new Thickness(1),
             Child = stack
         };
 
-        var window = new Window { Content = bg };
+        var page = new Page { Content = bg };
+        page.RequestedTheme = isDark ? ElementTheme.Dark : ElementTheme.Light;
+
+        var window = new Window { Content = page };
         window.AppWindow.Title = "硬件监测";
         window.AppWindow.Resize(new SizeInt32(340, 420));
         window.AppWindow.Move(new PointInt32(100, 100));
         window.AppWindow.TitleBar.ExtendsContentIntoTitleBar = true;
         window.AppWindow.TitleBar.ButtonBackgroundColor = AppColors.Transparent;
         window.AppWindow.TitleBar.ButtonInactiveBackgroundColor = AppColors.Transparent;
-        window.AppWindow.TitleBar.ButtonHoverBackgroundColor = Color.FromArgb(255, 60, 60, 60);
-        window.AppWindow.TitleBar.ButtonPressedBackgroundColor = Color.FromArgb(255, 80, 80, 80);
-        window.AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(0, 0, 0, 0);
-        window.AppWindow.TitleBar.ButtonHoverForegroundColor = Color.FromArgb(0, 0, 0, 0);
+        if (isDark)
+        {
+            window.AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(255, 255, 255, 255);
+            window.AppWindow.TitleBar.ButtonHoverForegroundColor = Color.FromArgb(255, 255, 255, 255);
+            window.AppWindow.TitleBar.ButtonHoverBackgroundColor = Color.FromArgb(255, 50, 50, 50);
+            window.AppWindow.TitleBar.ButtonPressedForegroundColor = Color.FromArgb(255, 180, 180, 180);
+            window.AppWindow.TitleBar.ButtonPressedBackgroundColor = Color.FromArgb(255, 30, 30, 30);
+        }
+        else
+        {
+            window.AppWindow.TitleBar.ButtonForegroundColor = Color.FromArgb(255, 30, 30, 30);
+            window.AppWindow.TitleBar.ButtonHoverForegroundColor = Color.FromArgb(255, 30, 30, 30);
+            window.AppWindow.TitleBar.ButtonHoverBackgroundColor = Color.FromArgb(255, 230, 230, 230);
+            window.AppWindow.TitleBar.ButtonPressedForegroundColor = Color.FromArgb(255, 100, 100, 100);
+            window.AppWindow.TitleBar.ButtonPressedBackgroundColor = Color.FromArgb(255, 210, 210, 210);
+        }
 
         var isTopmost = false;
         DispatcherTimer? timer = null;
@@ -251,17 +278,37 @@ public sealed class PowerMonitorTool : IBuiltinTool
             var hwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
             var after = isTopmost ? HWND_TOPMOST : HWND_NOTOPMOST;
             SetWindowPos(hwnd, after, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
-            topmostBtn.Foreground = isTopmost ? new SolidColorBrush(AppColors.DodgerBlue) : new SolidColorBrush(AppColors.DimText);
+            topmostBtn.Foreground = isTopmost ? new SolidColorBrush(AppColors.DodgerBlue) : new SolidColorBrush(dimColor);
         };
-
-        closeBtn.Click += (s, e) => { if (timer is not null) { timer.Tick -= PopupTick; timer.Stop(); } window.Close(); };
-        window.Closed += (s, e) => { if (timer is not null) { timer.Tick -= PopupTick; timer.Stop(); } };
 
         var interval = refreshIntervals[selectedIndex];
         timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(interval) };
         timer.Tick += PopupTick;
         timer.Start();
         PopupTick(null, null);
+
+        var syncTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
+        double lastApplied = interval;
+        syncTimer.Tick += (s, e) =>
+        {
+            var ext = sharedInterval[0];
+            if (ext.HasValue && Math.Abs(ext.Value - lastApplied) > 0.001)
+            {
+                lastApplied = ext.Value;
+                if (timer is not null) { timer.Tick -= PopupTick; timer.Stop(); }
+                timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(lastApplied) };
+                timer.Tick += PopupTick;
+                timer.Start();
+            }
+        };
+        syncTimer.Start();
+
+        window.Closed += (s, e) =>
+        {
+            syncTimer.Stop();
+            sharedInterval[0] = null;
+            if (timer is not null) { timer.Tick -= PopupTick; timer.Stop(); }
+        };
         window.Activate();
 
         HideSystemButtons(window);
@@ -358,7 +405,7 @@ public sealed class PowerMonitorTool : IBuiltinTool
         var iconBorder = new Border { Width = 36, Height = 36, Background = new SolidColorBrush(bg), CornerRadius = new CornerRadius(6), Child = new FontIcon { FontSize = 18, Foreground = new SolidColorBrush(accent), Glyph = glyph } };
         var stack = new StackPanel { Spacing = 2 }; stack.Children.Add(label); stack.Children.Add(value);
         var grid = new Grid { ColumnSpacing = 10 }; grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(36) }); grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) }); grid.Children.Add(iconBorder); Grid.SetColumn(stack, 1); grid.Children.Add(stack);
-        return new Border { Padding = new Thickness(12), BorderBrush = new SolidColorBrush(Color.FromArgb(255, 60, 60, 60)), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Child = grid };
+        return new Border { Padding = new Thickness(12), BorderBrush = new SolidColorBrush(ThemeColors.BorderColor), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(6), Child = grid };
     }
 
     private static readonly IntPtr HWND_TOPMOST = new IntPtr(-1);

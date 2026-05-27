@@ -55,7 +55,7 @@ public static class HardwareInfoService
         section.Items.Add(Item("内存", FormatMemory()));
         section.Items.Add(Item("显卡", JoinNames("Win32_VideoController")));
         section.Items.Add(Item("显示器", FormatDisplays()));
-        section.Items.Add(Item("磁盘", FormatDisks()));
+        section.Items.Add(Item("硬盘", FormatDisks()));
         section.Items.Add(Item("声卡", JoinNames("Win32_SoundDevice")));
         section.Items.Add(Item("网卡", JoinNames("Win32_NetworkAdapter", item =>
             IsTrue(item, "PhysicalAdapter") &&

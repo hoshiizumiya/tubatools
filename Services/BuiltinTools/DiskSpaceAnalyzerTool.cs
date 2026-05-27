@@ -92,17 +92,17 @@ file sealed class AnalyzerPage : Page
     private bool _isEditingBc;
 
     private static readonly SolidColorBrush NormalBorder = new(Color.FromArgb(30, 0, 0, 0));
-    private static readonly SolidColorBrush HoverBorder = new(Color.FromArgb(220, 255, 255, 255));
-    private static readonly SolidColorBrush TipBg = new(Color.FromArgb(240, 32, 32, 36));
-    private static readonly SolidColorBrush TipBorder = new(Color.FromArgb(255, 70, 70, 76));
-    private static readonly SolidColorBrush TipFg = new(Color.FromArgb(255, 240, 240, 245));
-    private static readonly SolidColorBrush CanvasBg = new(Color.FromArgb(255, 28, 28, 32));
-    private static readonly SolidColorBrush LabelMain = new(Color.FromArgb(240, 255, 255, 255));
-    private static readonly SolidColorBrush LabelSub = new(Color.FromArgb(170, 255, 255, 255));
-    private static readonly SolidColorBrush FreeSpaceBg = new(Color.FromArgb(255, 40, 40, 44));
-    private static readonly SolidColorBrush FreeSpaceLabel = new(Color.FromArgb(150, 255, 255, 255));
-    private static readonly SolidColorBrush ToolbarBg = new(Color.FromArgb(255, 38, 38, 42));
-    private static readonly SolidColorBrush StatusBg = new(Color.FromArgb(255, 38, 38, 42));
+    private static readonly SolidColorBrush HoverBorder = new(Color.FromArgb(220, ThemeColors.PrimaryText.R, ThemeColors.PrimaryText.G, ThemeColors.PrimaryText.B));
+    private static readonly SolidColorBrush TipBg = new(Color.FromArgb(240, ThemeColors.CardBg.R, ThemeColors.CardBg.G, ThemeColors.CardBg.B));
+    private static readonly SolidColorBrush TipBorder = new(ThemeColors.BorderColor);
+    private static readonly SolidColorBrush TipFg = new(ThemeColors.PrimaryText);
+    private static readonly SolidColorBrush CanvasBg = new(ThemeColors.KeyboardBg);
+    private static readonly SolidColorBrush LabelMain = new(Color.FromArgb(240, ThemeColors.PrimaryText.R, ThemeColors.PrimaryText.G, ThemeColors.PrimaryText.B));
+    private static readonly SolidColorBrush LabelSub = new(Color.FromArgb(170, ThemeColors.PrimaryText.R, ThemeColors.PrimaryText.G, ThemeColors.PrimaryText.B));
+    private static readonly SolidColorBrush FreeSpaceBg = new(ThemeColors.CardBg);
+    private static readonly SolidColorBrush FreeSpaceLabel = new(Color.FromArgb(150, ThemeColors.PrimaryText.R, ThemeColors.PrimaryText.G, ThemeColors.PrimaryText.B));
+    private static readonly SolidColorBrush ToolbarBg = new(ThemeColors.HeaderBg);
+    private static readonly SolidColorBrush StatusBg = new(ThemeColors.HeaderBg);
 
     private static readonly Color[] Palette =
     [
@@ -211,10 +211,10 @@ file sealed class AnalyzerPage : Page
         };
 
         _ctxMenu = new MenuFlyout();
-        var openItem = new MenuFlyoutItem { Text = "打开文件夹", Icon = new FontIcon { Glyph = "\uE8E5" } };
+        var openItem = new MenuFlyoutItem { Text = "打开", Icon = new FontIcon { Glyph = "\uE8E5" } };
         openItem.Click += CtxOpen_Click;
         _ctxMenu.Items.Add(openItem);
-        var delItem = new MenuFlyoutItem { Text = "删除文件夹", Icon = new FontIcon { Glyph = "\uE74D" } };
+        var delItem = new MenuFlyoutItem { Text = "删除", Icon = new FontIcon { Glyph = "\uE74D" } };
         delItem.Click += CtxDelete_Click;
         _ctxMenu.Items.Add(delItem);
 
@@ -319,7 +319,16 @@ file sealed class AnalyzerPage : Page
         if (_ctxNode == null) return;
         try
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(_ctxNode.Path) { UseShellExecute = true, Verb = "open" });
+            if (_ctxNode.IsFile)
+            {
+                var dir = System.IO.Path.GetDirectoryName(_ctxNode.Path);
+                if (dir != null)
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(dir) { UseShellExecute = true, Verb = "open" });
+            }
+            else
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(_ctxNode.Path) { UseShellExecute = true, Verb = "open" });
+            }
         }
         catch { }
     }
@@ -328,10 +337,11 @@ file sealed class AnalyzerPage : Page
     {
         if (_ctxNode == null || _cur == null) return;
 
+        var typeText = _ctxNode.IsFile ? "文件" : "文件夹";
         var dlg = new ContentDialog
         {
             Title = "确认删除",
-            Content = $"确定要删除文件夹「{_ctxNode.Name}」吗？\n\n{_ctxNode.Path}\n\n此操作不可撤销。",
+            Content = $"确定要删除{typeText}「{_ctxNode.Name}」吗？\n\n{_ctxNode.Path}\n\n此操作不可撤销。",
             PrimaryButtonText = "删除",
             CloseButtonText = "取消",
             DefaultButton = ContentDialogButton.Close,
@@ -344,7 +354,10 @@ file sealed class AnalyzerPage : Page
 
         try
         {
-            System.IO.Directory.Delete(_ctxNode.Path, true);
+            if (_ctxNode.IsFile)
+                System.IO.File.Delete(_ctxNode.Path);
+            else
+                System.IO.Directory.Delete(_ctxNode.Path, true);
             _cur.Children.Remove(_ctxNode);
             if (_ctxNode == _hoveredNode) _hoveredNode = null;
             SyncUi();
@@ -409,12 +422,22 @@ file sealed class AnalyzerPage : Page
         var node = new TNode(name, path);
         long size = 0;
 
+        var fileNodes = new List<TNode>();
+
         try
         {
             foreach (var f in new DirectoryInfo(path).EnumerateFiles("*", opts))
             {
                 tk.ThrowIfCancellationRequested();
-                try { size += f.Length; node.FileCount++; Interlocked.Increment(ref _pItems); Interlocked.Add(ref _pBytes, f.Length); }
+                try
+                {
+                    size += f.Length;
+                    node.FileCount++;
+                    Interlocked.Increment(ref _pItems);
+                    Interlocked.Add(ref _pBytes, f.Length);
+                    var fn = new TNode(f.Name, f.FullName) { Size = f.Length, FileCount = 1, IsFile = true };
+                    fileNodes.Add(fn);
+                }
                 catch { }
             }
         }
@@ -439,6 +462,7 @@ file sealed class AnalyzerPage : Page
         }
         catch { }
 
+        node.Children.AddRange(fileNodes);
         node.Size = size;
         node.Children.Sort((a, b) => b.Size.CompareTo(a.Size));
         return node;
@@ -522,7 +546,8 @@ file sealed class AnalyzerPage : Page
             if (node != null)
             {
                 var pct = _cur != null ? (double)node.Size / _cur.Size * 100 : 0;
-                _tip.Text = $"{node.Name}  ·  {DiskSpaceAnalyzerTool.Fmt(node.Size)}  ·  {pct:0.#}%  ·  {node.FileCount} 文件";
+                var typeTag = node.IsFile ? "文件" : "文件夹";
+                _tip.Text = $"{node.Name}  ·  {typeTag}  ·  {DiskSpaceAnalyzerTool.Fmt(node.Size)}  ·  {pct:0.#}%";
                 _tipBox.Visibility = Visibility.Visible;
             }
             else
@@ -541,6 +566,7 @@ file sealed class AnalyzerPage : Page
 
     private void DrillIn(TNode node)
     {
+        if (node.IsFile) return;
         if (node.DirCount == 0 && node.FileCount == 0 && node.Children.Count == 0) return;
 
         Rect? source = null;
@@ -669,7 +695,7 @@ file sealed class AnalyzerPage : Page
             if (rect.Width < 1.5 || rect.Height < 1.5) continue;
 
             var isFree = node == null;
-            var color = isFree ? Color.FromArgb(255, 40, 40, 44) : NodeColor(node!);
+            var color = isFree ? ThemeColors.CardBg : NodeColor(node!);
             var brd = new Border
             {
                 Tag = isFree ? null : node!,
@@ -883,6 +909,7 @@ file sealed class TNode
     public long Size { get; set; }
     public int FileCount { get; set; }
     public int DirCount { get; set; }
+    public bool IsFile { get; set; }
     public List<TNode> Children { get; } = [];
     public TNode(string name, string path) { Name = name; Path = path; }
 }

@@ -14,9 +14,6 @@ public sealed class JunkCleanerTool : IBuiltinTool
     public string Category => "系统工具";
     public BuiltinToolKind Kind => BuiltinToolKind.ProgressTask;
 
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
-    private static readonly Color BorderColor = Color.FromArgb(255, 60, 60, 60);
-    private static readonly Color CardBg = Color.FromArgb(255, 45, 45, 45);
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
     private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
     private static readonly Color AccentRed = Color.FromArgb(255, 248, 113, 113);
@@ -107,12 +104,13 @@ public sealed class JunkCleanerTool : IBuiltinTool
         };
 
         var loadingRing = new ProgressRing { Width = 40, Height = 40, IsActive = true };
-        var loadingText = new TextBlock { Text = "正在扫描垃圾文件...", FontSize = 13, Foreground = new SolidColorBrush(DimText) };
+        var loadingText = new TextBlock { Text = "正在扫描垃圾文件...", FontSize = 13, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var loadingPanel = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
             Spacing = 8,
             Padding = new Thickness(0, 30, 0, 30),
+            Visibility = Visibility.Collapsed,
             Children = { loadingRing, loadingText }
         };
 
@@ -140,7 +138,7 @@ public sealed class JunkCleanerTool : IBuiltinTool
         {
             Text = "扫描并清理系统临时文件、浏览器缓存、回收站等垃圾文件，释放磁盘空间",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
         root.Children.Add(contentGrid);
         root.Children.Add(resultText);
@@ -275,14 +273,14 @@ public sealed class JunkCleanerTool : IBuiltinTool
             Text = cat.Name,
             FontSize = 14,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210))
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
         };
 
         var descText = new TextBlock
         {
             Text = cat.Description,
             FontSize = 11,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var sizeText = new TextBlock
@@ -290,14 +288,14 @@ public sealed class JunkCleanerTool : IBuiltinTool
             Text = cat.FileCount > 0 ? JunkCleanerService.FormatSize(cat.SizeBytes) : "无文件",
             FontSize = 14,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(cat.FileCount > 0 ? accent : DimText)
+            Foreground = new SolidColorBrush(cat.FileCount > 0 ? accent : ThemeColors.DimText)
         };
 
         var countText = new TextBlock
         {
             Text = cat.FileCount > 0 ? $"{cat.FileCount} 个文件" : "",
             FontSize = 11,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var toggle = new ToggleSwitch
@@ -334,8 +332,8 @@ public sealed class JunkCleanerTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(14, 10, 14, 10),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid
@@ -362,7 +360,7 @@ public sealed class JunkCleanerTool : IBuiltinTool
             CornerRadius = new CornerRadius(6),
             Child = new FontIcon { FontSize = 16, Foreground = new SolidColorBrush(accent), Glyph = glyph }
         };
-        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(DimText) };
+        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var stack = new StackPanel { Spacing = 2 };
         stack.Children.Add(labelBlock);
         stack.Children.Add(value);
@@ -376,8 +374,8 @@ public sealed class JunkCleanerTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid

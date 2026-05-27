@@ -14,15 +14,11 @@ public sealed class PortViewerTool : IBuiltinTool
     public string Category => "网络工具";
     public BuiltinToolKind Kind => BuiltinToolKind.Dialog;
 
-    private static readonly Color HeaderBg = Color.FromArgb(255, 38, 38, 38);
-    private static readonly Color RowHover = Color.FromArgb(255, 50, 50, 50);
     private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
     private static readonly Color AccentOrange = Color.FromArgb(255, 251, 146, 60);
     private static readonly Color AccentPurple = Color.FromArgb(255, 167, 139, 250);
     private static readonly Color AccentRed = Color.FromArgb(255, 248, 113, 113);
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
-    private static readonly Color BorderColor = Color.FromArgb(255, 60, 60, 60);
 
     private List<PortEntry>? _allEntries;
     private string _filter = "";
@@ -124,7 +120,7 @@ public sealed class PortViewerTool : IBuiltinTool
             Text = entry.LocalPort.ToString(),
             FontSize = 13,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText),
             VerticalAlignment = VerticalAlignment.Center
         };
 
@@ -132,7 +128,7 @@ public sealed class PortViewerTool : IBuiltinTool
         {
             Text = entry.LocalAddress.ToString(),
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center
         };
 
@@ -150,7 +146,7 @@ public sealed class PortViewerTool : IBuiltinTool
         {
             Text = $"PID {entry.ProcessId}",
             FontSize = 11,
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center
         };
 
@@ -204,7 +200,7 @@ public sealed class PortViewerTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12, 8, 12, 8),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = grid
         };
@@ -220,7 +216,7 @@ public sealed class PortViewerTool : IBuiltinTool
             PortTcpState.CloseWait => ("CLOSE_WAIT", AccentOrange),
             PortTcpState.SynSent => ("SYN_SENT", AccentPurple),
             PortTcpState.SynReceived => ("SYN_RCVD", AccentPurple),
-            _ => (state.ToString(), DimText)
+            _ => (state.ToString(), ThemeColors.DimText)
         };
 
         return new Border
@@ -285,7 +281,7 @@ public sealed class PortViewerTool : IBuiltinTool
         var countText = new TextBlock
         {
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center
         };
 
@@ -317,7 +313,7 @@ public sealed class PortViewerTool : IBuiltinTool
 
         var headerBorder = new Border
         {
-            Background = new SolidColorBrush(HeaderBg),
+            Background = new SolidColorBrush(ThemeColors.HeaderBg),
             CornerRadius = new CornerRadius(6, 6, 0, 0),
             Child = headerGrid
         };
@@ -333,14 +329,14 @@ public sealed class PortViewerTool : IBuiltinTool
 
         var listBorder = new Border
         {
-            BorderBrush = new SolidColorBrush(BorderColor),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(0, 0, 6, 6),
             Child = listScroll
         };
 
         var loadingRing = new ProgressRing { Width = 36, Height = 36, IsActive = true };
-        var loadingText = new TextBlock { Text = "正在扫描端口...", FontSize = 13, Foreground = new SolidColorBrush(DimText) };
+        var loadingText = new TextBlock { Text = "正在扫描端口...", FontSize = 13, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var loadingPanel = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -365,7 +361,7 @@ public sealed class PortViewerTool : IBuiltinTool
         {
             Text = "通过 iphlpapi 扫描系统 TCP/UDP 连接，定位端口占用进程",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
         root.Children.Add(contentGrid);
 
@@ -398,7 +394,7 @@ public sealed class PortViewerTool : IBuiltinTool
             Text = text,
             FontSize = 11,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
         grid.Children.Add(tb);
         Grid.SetColumn(tb, column);

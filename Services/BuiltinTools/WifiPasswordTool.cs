@@ -17,9 +17,6 @@ public sealed class WifiPasswordTool : IBuiltinTool
 
     private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
-    private static readonly Color DimText = Color.FromArgb(255, 140, 140, 140);
-    private static readonly Color BorderColor = Color.FromArgb(255, 60, 60, 60);
-    private static readonly Color CardBg = Color.FromArgb(255, 45, 45, 45);
 
     public async Task ExecuteAsync(BuiltinToolContext context)
     {
@@ -92,7 +89,7 @@ public sealed class WifiPasswordTool : IBuiltinTool
             Text = network.Ssid,
             FontSize = 14,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-            Foreground = new SolidColorBrush(Color.FromArgb(255, 210, 210, 210))
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
         };
 
         var connectedBadge = new Border
@@ -112,7 +109,7 @@ public sealed class WifiPasswordTool : IBuiltinTool
         {
             Text = string.IsNullOrEmpty(network.Authentication) ? "" : network.Authentication,
             FontSize = 11,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var infoPanel = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
@@ -124,7 +121,7 @@ public sealed class WifiPasswordTool : IBuiltinTool
             Text = network.HasPassword ? network.Password : "开放网络",
             FontSize = 13,
             FontFamily = new FontFamily("Consolas"),
-            Foreground = new SolidColorBrush(network.HasPassword ? Color.FromArgb(255, 210, 210, 210) : DimText),
+            Foreground = new SolidColorBrush(network.HasPassword ? ThemeColors.PrimaryText : ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center,
             IsTextSelectionEnabled = true
         };
@@ -134,7 +131,7 @@ public sealed class WifiPasswordTool : IBuiltinTool
             Content = new FontIcon { Glyph = "\uE7B3", FontSize = 12 },
             Padding = new Thickness(6, 2, 6, 2),
             Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center,
             Tag = false
         };
@@ -160,7 +157,7 @@ public sealed class WifiPasswordTool : IBuiltinTool
             Content = new FontIcon { Glyph = "\uE8C8", FontSize = 12 },
             Padding = new Thickness(6, 2, 6, 2),
             Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
-            Foreground = new SolidColorBrush(DimText),
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center,
             Visibility = network.HasPassword ? Visibility.Visible : Visibility.Collapsed
         };
@@ -191,8 +188,8 @@ public sealed class WifiPasswordTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12, 8, 12, 8),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid
@@ -247,7 +244,7 @@ public sealed class WifiPasswordTool : IBuiltinTool
         };
 
         var loadingRing = new ProgressRing { Width = 36, Height = 36, IsActive = true };
-        var loadingText = new TextBlock { Text = "正在获取 WiFi 信息...", FontSize = 13, Foreground = new SolidColorBrush(DimText) };
+        var loadingText = new TextBlock { Text = "正在获取 WiFi 信息...", FontSize = 13, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var loadingPanel = new StackPanel
         {
             HorizontalAlignment = HorizontalAlignment.Center,
@@ -264,8 +261,8 @@ public sealed class WifiPasswordTool : IBuiltinTool
             Visibility = Visibility.Collapsed,
             Children =
             {
-                new FontIcon { Glyph = "\uE701", FontSize = 36, Foreground = new SolidColorBrush(DimText) },
-                new TextBlock { Text = "未找到已保存的 WiFi 网络", FontSize = 14, Foreground = new SolidColorBrush(DimText) }
+                new FontIcon { Glyph = "\uE701", FontSize = 36, Foreground = new SolidColorBrush(ThemeColors.DimText) },
+                new TextBlock { Text = "未找到已保存的 WiFi 网络", FontSize = 14, Foreground = new SolidColorBrush(ThemeColors.DimText) }
             }
         };
 
@@ -274,7 +271,7 @@ public sealed class WifiPasswordTool : IBuiltinTool
         {
             Text = "查看本机已连接过的 WiFi 网络名称和密码，密码默认隐藏，点击眼睛图标显示",
             FontSize = 12,
-            Foreground = new SolidColorBrush(DimText)
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
         });
         rootStack.Children.Add(statsGrid);
         rootStack.Children.Add(actionBar);
@@ -310,7 +307,7 @@ public sealed class WifiPasswordTool : IBuiltinTool
             CornerRadius = new CornerRadius(6),
             Child = new FontIcon { FontSize = 16, Foreground = new SolidColorBrush(accent), Glyph = glyph }
         };
-        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(DimText) };
+        var labelBlock = new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText) };
         var stack = new StackPanel { Spacing = 2 };
         stack.Children.Add(labelBlock);
         stack.Children.Add(value);
@@ -324,8 +321,8 @@ public sealed class WifiPasswordTool : IBuiltinTool
         return new Border
         {
             Padding = new Thickness(12),
-            Background = new SolidColorBrush(CardBg),
-            BorderBrush = new SolidColorBrush(BorderColor),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             BorderThickness = new Thickness(1),
             CornerRadius = new CornerRadius(6),
             Child = grid

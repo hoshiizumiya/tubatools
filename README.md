@@ -1,4 +1,4 @@
-# 图吧工具箱 TubaWinUi3
+7# 图吧工具箱 TubaWinUi3
 
 官网：[https://tubawinui3.cn](https://tubawinui3.cn)
 
@@ -416,4 +416,7 @@ git push origin feature/xxx              # 推送，然后创建 PR
 
 ## 开源协议
 
-请查看项目中的 LICENSE 文件。
+MIT
+
+
+[![Stargazers over time](https://starchart.cc/luolangaga/tubatool.svg?variant=adaptive)](https://starchart.cc/luolangaga/tubatool)

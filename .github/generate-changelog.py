@@ -1,4 +1,4 @@
-import json, subprocess, os
+import json, subprocess, os, urllib.request, urllib.error
 
 script_dir = os.path.dirname(os.path.abspath(__file__))
 template_path = os.path.join(script_dir, "changelog-prompt.txt")
@@ -20,18 +20,20 @@ payload = json.dumps({
     ],
     "temperature": 0.3,
     "max_tokens": 4000
-})
+}).encode("utf-8")
 
-result = subprocess.run(
-    ["curl", "-s", "https://api.deepseek.com/chat/completions",
-     "-H", "Content-Type: application/json",
-     "-H", f"Authorization: Bearer {api_key}",
-     "-d", payload],
-    capture_output=True, text=True
+req = urllib.request.Request(
+    "https://api.deepseek.com/chat/completions",
+    data=payload,
+    headers={
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {api_key}"
+    }
 )
 
 try:
-    data = json.loads(result.stdout)
+    with urllib.request.urlopen(req, timeout=300) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
     content = data["choices"][0]["message"]["content"]
 except Exception as e:
     content = f"AI 生成更新日志失败: {e}\n请查看 git 历史获取详细变更信息。"

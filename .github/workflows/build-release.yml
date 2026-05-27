@@ -176,7 +176,8 @@ jobs:
             COMMIT_LOG="- 首次发布"
           fi
 
-          PROMPT="你是一位资深的技术文档工程师，擅长阅读代码变更并撰写面向用户的更新日志。请根据以下 git 提交记录、文件变更统计和代码具体修改内容，生成一份详细的中文更新日志。
+          cat > /tmp/prompt.txt << 'PROMPT_EOF'
+你是一位资深的技术文档工程师，擅长阅读代码变更并撰写面向用户的更新日志。请根据以下 git 提交记录、文件变更统计和代码具体修改内容，生成一份详细的中文更新日志。
 
 ## 输出格式要求
 
@@ -213,45 +214,61 @@ jobs:
 ## 输入数据
 
 Git 提交记录：
-${COMMIT_LOG}
+PROMPT_EOF
+
+          echo "$COMMIT_LOG" >> /tmp/prompt.txt
+
+          cat >> /tmp/prompt.txt << 'PROMPT_EOF'
 
 文件变更统计：
-${CODE_DIFF}
+PROMPT_EOF
+
+          echo "$CODE_DIFF" >> /tmp/prompt.txt
+
+          cat >> /tmp/prompt.txt << 'PROMPT_EOF'
 
 代码具体修改内容：
-${CODE_DIFF_DETAIL}"
+PROMPT_EOF
 
-          ESCAPED_PROMPT=$(python3 -c "import json,sys; print(json.dumps(sys.argv[1]))" "$PROMPT")
+          echo "$CODE_DIFF_DETAIL" >> /tmp/prompt.txt
 
-          RESPONSE=$(curl -s https://api.deepseek.com/chat/completions \
-            -H "Content-Type: application/json" \
-            -H "Authorization: Bearer $DEEPSEEK_API_KEY" \
-            -d "{
-              \"model\": \"deepseek-v4-pro\",
-              \"messages\": [
-                {\"role\": \"system\", \"content\": \"你是一位资深的技术文档工程师，精通 .NET/WinUI 开发，擅长阅读代码 diff 并将其转化为用户友好的更新说明。你输出的更新日志将直接用于 GitHub Release 页面，面向普通用户。输出纯 Markdown 格式，不要用代码块包裹整体内容。\"},
-                {\"role\": \"user\", \"content\": ${ESCAPED_PROMPT}}
-              ],
-              \"temperature\": 0.3,
-              \"max_tokens\": 4000
-            }")
+          python3 << 'PY_EOF'
+import json, subprocess, os
 
-          CHANGELOG=$(echo "$RESPONSE" | python3 -c "
-          import sys, json
-          try:
-              data = json.load(sys.stdin)
-              content = data['choices'][0]['message']['content']
-              print(content)
-          except Exception as e:
-              print(f'AI 生成更新日志失败: {e}')
-              print('请查看 git 历史获取详细变更信息。')
-          ")
+with open("/tmp/prompt.txt", "r", encoding="utf-8") as f:
+    prompt = f.read()
 
-          {
-            echo "result<<EOF"
-            echo "$CHANGELOG"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
+api_key = os.environ["DEEPSEEK_API_KEY"]
+
+payload = json.dumps({
+    "model": "deepseek-v4-pro",
+    "messages": [
+        {"role": "system", "content": "你是一位资深的技术文档工程师，精通 .NET/WinUI 开发，擅长阅读代码 diff 并将其转化为用户友好的更新说明。你输出的更新日志将直接用于 GitHub Release 页面，面向普通用户。输出纯 Markdown 格式，不要用代码块包裹整体内容。"},
+        {"role": "user", "content": prompt}
+    ],
+    "temperature": 0.3,
+    "max_tokens": 4000
+})
+
+result = subprocess.run(
+    ["curl", "-s", "https://api.deepseek.com/chat/completions",
+     "-H", "Content-Type: application/json",
+     "-H", f"Authorization: Bearer {api_key}",
+     "-d", payload],
+    capture_output=True, text=True
+)
+
+try:
+    data = json.loads(result.stdout)
+    content = data["choices"][0]["message"]["content"]
+except Exception as e:
+    content = f"AI 生成更新日志失败: {e}\n请查看 git 历史获取详细变更信息。"
+
+with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as f:
+    f.write("result<<EOF\n")
+    f.write(content + "\n")
+    f.write("EOF\n")
+PY_EOF
 
   release:
     needs: [build, generate-changelog]

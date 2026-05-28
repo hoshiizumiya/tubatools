@@ -657,6 +657,17 @@
       "description": "开机启动项和自注册管理工具，可管理所有自启动位置包括驱动、服务和计划任务。",
       "publisher": "Sysinternals",
       "tags": [ "系统", "启动项", "系统优化" ]
+    },
+    {
+      "match": "Procmon",
+      "description": "实时进程活动监控工具，监控文件、注册表、网络和进程/线程活动，排查系统问题利器。",
+      "publisher": "Sysinternals",
+      "tags": [ "系统", "进程监控", "系统诊断" ],
+      "archVariants": [
+        { "file": "Procmon.exe", "arch": "x86" },
+        { "file": "Procmon64.exe", "arch": "x64" },
+        { "file": "Procmon64a.exe", "arch": "ARM64" }
+      ]
     }
   ]
 }

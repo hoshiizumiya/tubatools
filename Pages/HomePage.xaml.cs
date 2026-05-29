@@ -75,60 +75,6 @@ public sealed partial class HomePage : Page
         }
     }
 
-    private void LaunchSplitButton_Click(SplitButton sender, SplitButtonClickEventArgs e)
-    {
-        if (sender.DataContext is ToolItem tool)
-        {
-            LaunchTool(tool, runAsAdmin: false);
-        }
-    }
-
-    private void LaunchSplitButton_Loaded(object sender, RoutedEventArgs e)
-    {
-        if (sender is SplitButton splitBtn && splitBtn.DataContext is ToolItem tool)
-        {
-            if (splitBtn.Flyout is MenuFlyout flyout)
-            {
-                flyout.Opening += (s, _) =>
-                {
-                    flyout.Items.Clear();
-                    foreach (var variant in tool.AlternateVersions)
-                    {
-                        var item = new MenuFlyoutItem
-                        {
-                            Text = $"打开（{variant.Arch}）",
-                            DataContext = variant
-                        };
-                        item.Click += AlternateVersion_Click;
-                        flyout.Items.Add(item);
-                    }
-                };
-            }
-        }
-    }
-
-    private void AlternateVersion_Click(object sender, RoutedEventArgs e)
-    {
-        if (sender is MenuFlyoutItem { DataContext: ArchVariant variant })
-        {
-            try
-            {
-                Process.Start(new ProcessStartInfo
-                {
-                    FileName = variant.Path,
-                    WorkingDirectory = Path.GetDirectoryName(variant.Path) ?? ToolCatalog.ToolsRoot,
-                    UseShellExecute = true
-                });
-
-                ShowStatus("已启动", variant.Name, InfoBarSeverity.Success);
-            }
-            catch (Exception ex)
-            {
-                ShowStatus("启动失败", ex.Message, InfoBarSeverity.Error);
-            }
-        }
-    }
-
     private void RunAsAdminButton_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button { DataContext: ToolItem tool })
@@ -171,14 +117,16 @@ public sealed partial class HomePage : Page
     private static void CreateDesktopShortcut(ToolItem tool)
     {
         var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-        var shortcutPath = Path.Combine(desktop, $"{tool.Name}.lnk");
+        var archSuffix = tool.SelectedArch is not null && !string.IsNullOrEmpty(tool.SelectedArch.Arch)
+            ? $" ({tool.SelectedArch.Arch})" : "";
+        var shortcutPath = Path.Combine(desktop, $"{tool.Name}{archSuffix}.lnk");
 
         var psScript = $"""
             $ws = New-Object -ComObject WScript.Shell
             $s = $ws.CreateShortcut('{shortcutPath}')
-            $s.TargetPath = '{tool.Path}'
-            $s.WorkingDirectory = '{Path.GetDirectoryName(tool.Path) ?? ToolCatalog.ToolsRoot}'
-            $s.Description = '{tool.Name}'
+            $s.TargetPath = '{tool.EffectivePath}'
+            $s.WorkingDirectory = '{tool.EffectiveWorkingDir}'
+            $s.Description = '{tool.Name}{archSuffix}'
             $s.Save()
             """;
 
@@ -321,8 +269,8 @@ public sealed partial class HomePage : Page
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = tool.Path,
-                WorkingDirectory = Path.GetDirectoryName(tool.Path) ?? ToolCatalog.ToolsRoot,
+                FileName = tool.EffectivePath,
+                WorkingDirectory = tool.EffectiveWorkingDir,
                 UseShellExecute = true,
                 Verb = runAsAdmin ? "runAs" : null
             });
@@ -366,5 +314,20 @@ public sealed partial class HomePage : Page
     private static string ValueOrUnknown(string? value)
     {
         return string.IsNullOrWhiteSpace(value) ? "未知" : value;
+    }
+}
+
+public sealed class ArchOptionsCountConverter : Microsoft.UI.Xaml.Data.IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is int count && count > 1)
+            return Visibility.Visible;
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
     }
 }

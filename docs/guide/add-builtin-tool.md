@@ -1,3 +1,8 @@
+---
+title: 添加内置工具
+description: 如何开发新的内置工具，实现 IBuiltinTool 接口并注册到工具箱中。
+---
+
 # 添加内置工具
 
 内置工具是直接嵌入在应用中的功能，无需外部 exe。所有内置工具都实现 `IBuiltinTool` 接口。

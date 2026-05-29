@@ -1,3 +1,8 @@
+---
+title: 处理器工具
+description: CPU 检测与测试工具合集，包括 CPU-Z、Core Temp、Prime95、LinX 等 9 款处理器信息查看和稳定性测试工具。
+---
+
 # 处理器工具 <span class="badge">9 款</span>
 
 | 工具 | 说明 |

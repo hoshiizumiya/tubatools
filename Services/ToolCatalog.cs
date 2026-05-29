@@ -219,7 +219,7 @@ public static class ToolCatalog
         if (string.IsNullOrWhiteSpace(cleanName))
             cleanName = CleanupName(name);
 
-        return new ToolItem
+        var item = new ToolItem
         {
             Name = cleanName,
             Category = category,
@@ -238,6 +238,8 @@ public static class ToolCatalog
             PrimaryArch = archDisplay.Length > 0 ? archDisplay : null,
             AlternateVersions = alternates
         };
+        item.InitArchOptions();
+        return item;
     }
 
     private static ToolItem CreateToolItem(string category, string categoryRoot, string path)
@@ -248,7 +250,7 @@ public static class ToolCatalog
         var metadata = ToolMetadataService.GetMetadata(category, path);
         var isPlaceholder = !File.Exists(path) && !string.IsNullOrWhiteSpace(metadata.DownloadUrl);
 
-        return new ToolItem
+        var item = new ToolItem
         {
             Name = CleanupName(name),
             Category = category,
@@ -265,6 +267,8 @@ public static class ToolCatalog
             DownloadFilter = metadata.DownloadFilter,
             IsFavorite = isPlaceholder ? false : FavoritesService.IsFavorite(path)
         };
+        item.InitArchOptions();
+        return item;
     }
 
     private static bool IsLaunchable(string path)

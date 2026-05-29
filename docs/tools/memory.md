@@ -1,3 +1,8 @@
+---
+title: 内存工具
+description: 内存检测和 SPD 读取工具合集，包括 MemTest、TestMem5、Thaiphoon 等 7 款内存工具。
+---
+
 # 内存工具 <span class="badge">7 款</span>
 
 | 工具 | 说明 |

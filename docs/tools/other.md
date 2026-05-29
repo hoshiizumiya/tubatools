@@ -1,3 +1,8 @@
+---
+title: 其他工具
+description: 系统维护和实用工具合集，包括 Everything、Dism++、Rufus、Ventoy 等 18 款其他工具。
+---
+
 # 其他工具 <span class="badge">18 款</span>
 
 | 工具 | 说明 |

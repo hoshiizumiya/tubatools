@@ -1,3 +1,8 @@
+---
+title: 下载图吧工具箱
+description: 下载图吧工具箱 WinUI3 版，完全免费、纯离线运行，支持 x86/x64/ARM64 架构。
+---
+
 # 下载图吧工具箱
 
 <div class="download-card">

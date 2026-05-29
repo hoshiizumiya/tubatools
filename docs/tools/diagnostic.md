@@ -1,3 +1,8 @@
+---
+title: 综合检测
+description: 系统硬件综合信息工具合集，包括 AIDA64、HWiNFO、HWMonitor、Speccy 等 5 款综合检测工具。
+---
+
 # 综合检测 <span class="badge">5 款</span>
 
 | 工具 | 说明 |

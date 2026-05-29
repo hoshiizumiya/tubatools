@@ -1,5 +1,7 @@
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using TubaWinUi3.Services;
 
 namespace TubaWinUi3.Models;
 
@@ -58,26 +60,70 @@ public sealed class ToolItem : INotifyPropertyChanged
 
     public bool HasAlternateVersions => AlternateVersions.Count > 0;
 
+    public ObservableCollection<ArchOption> ArchOptions { get; } = [];
+
+    private ArchOption? _selectedArch;
+    public ArchOption? SelectedArch
+    {
+        get => _selectedArch;
+        set
+        {
+            if (SetField(ref _selectedArch, value))
+            {
+                OnPropertyChanged(nameof(EffectivePath));
+                OnPropertyChanged(nameof(EffectiveWorkingDir));
+                OnPropertyChanged(nameof(LaunchButtonText));
+            }
+        }
+    }
+
+    public string EffectivePath => SelectedArch?.Path ?? Path;
+
+    public string EffectiveWorkingDir =>
+        System.IO.Path.GetDirectoryName(EffectivePath) ?? ToolCatalog.ToolsRoot;
+
     public string LaunchButtonText
     {
         get
         {
             if (NeedsDownload)
                 return "下载";
-            if (PrimaryArch is not null)
-                return $"打开（{PrimaryArch}）";
+            var arch = SelectedArch?.Arch ?? PrimaryArch;
+            if (!string.IsNullOrEmpty(arch))
+                return $"打开（{arch}）";
             return "打开";
         }
     }
 
+    public void InitArchOptions()
+    {
+        ArchOptions.Clear();
+        var primary = new ArchOption { Name = Name, Path = Path, Arch = PrimaryArch ?? "" };
+        ArchOptions.Add(primary);
+        foreach (var v in AlternateVersions)
+        {
+            ArchOptions.Add(new ArchOption { Name = v.Name, Path = v.Path, Arch = v.Arch });
+        }
+        var preferred = ArchOptions.FirstOrDefault(a =>
+            a.Arch.Equals("x64", StringComparison.OrdinalIgnoreCase) && Environment.Is64BitOperatingSystem)
+            ?? ArchOptions.FirstOrDefault(a =>
+                a.Arch.Equals("x86", StringComparison.OrdinalIgnoreCase) && !Environment.Is64BitOperatingSystem)
+            ?? primary;
+        SelectedArch = preferred;
+    }
+
     public event PropertyChangedEventHandler? PropertyChanged;
 
-    private void SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
+    private bool SetField<T>(ref T field, T value, [CallerMemberName] string? propertyName = null)
     {
-        if (EqualityComparer<T>.Default.Equals(field, value)) return;
+        if (EqualityComparer<T>.Default.Equals(field, value)) return false;
         field = value;
         PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        return true;
     }
+
+    private void OnPropertyChanged(string propertyName) =>
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
 }
 
 public sealed class ArchVariant
@@ -85,4 +131,17 @@ public sealed class ArchVariant
     public required string Name { get; init; }
     public required string Path { get; init; }
     public required string Arch { get; init; }
+}
+
+public sealed class ArchOption : INotifyPropertyChanged
+{
+    public required string Name { get; init; }
+    public required string Path { get; init; }
+    public required string Arch { get; init; }
+
+    public string DisplayText => string.IsNullOrEmpty(Arch) ? "默认" : Arch;
+
+    public override string ToString() => DisplayText;
+
+    public event PropertyChangedEventHandler? PropertyChanged;
 }

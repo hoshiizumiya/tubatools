@@ -140,6 +140,27 @@
   z-index: 1;
 }
 
+.notice-banner {
+  max-width: 720px;
+  margin: 12px auto 0;
+  padding: 14px 24px;
+  border-radius: 12px;
+  background: var(--vp-c-brand-soft);
+  border: 1px solid var(--vp-c-brand-2);
+  color: var(--vp-c-text-1);
+  font-size: 14px;
+  line-height: 1.7;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.notice-banner i {
+  color: var(--vp-c-brand-1);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
 .stat-grid {
   display: flex;
   justify-content: center;

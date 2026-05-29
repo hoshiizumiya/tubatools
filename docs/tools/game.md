@@ -1,3 +1,8 @@
+---
+title: 游戏工具
+description: 游戏平台和加速器下载入口，包括 Steam、Epic Games、Battle.net 等 11 款游戏工具。
+---
+
 # 游戏工具 <span class="badge">11 款</span>
 
 | 工具 | 说明 |

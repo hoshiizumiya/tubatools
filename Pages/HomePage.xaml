@@ -14,6 +14,7 @@
         <local:NullToVisibilityConverter x:Key="NullToCollapse" />
         <local:HasAlternatesToVisibilityConverter x:Key="HasAlternatesToVis" />
         <local:NoAlternatesToVisibilityConverter x:Key="NoAlternatesToVis" />
+        <local:ArchOptionsCountConverter x:Key="ArchOptionsCountConverter" />
         <Style x:Key="ToolCardStyle" TargetType="GridViewItem">
             <Setter Property="MinWidth" Value="236" />
             <Setter Property="MaxWidth" Value="300" />
@@ -134,26 +135,26 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <Grid ColumnSpacing="12">
+                                    <Grid ColumnSpacing="14">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="42" />
+                                            <ColumnDefinition Width="56" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border
-                                            Width="42"
-                                            Height="42"
+                                            Width="56"
+                                            Height="56"
                                             Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                            CornerRadius="8">
+                                            CornerRadius="10">
                                             <Grid>
                                                 <Image
-                                                    Width="28"
-                                                    Height="28"
+                                                    Width="40"
+                                                    Height="40"
                                                     Source="{Binding IconPath}"
                                                     Stretch="Uniform"
                                                     Visibility="{Binding IconPath, Converter={StaticResource NullToCollapse}}" />
                                                 <FontIcon
-                                                    FontSize="20"
+                                                    FontSize="28"
                                                     Glyph="{Binding IconGlyph}"
                                                     Visibility="{Binding IconGlyph, Converter={StaticResource NullToCollapse}}" />
                                             </Grid>
@@ -198,6 +199,7 @@
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
                                             <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border
                                             HorizontalAlignment="Left"
@@ -209,8 +211,22 @@
                                                 FontWeight="SemiBold"
                                                 Text="{Binding Extension}" />
                                         </Border>
-                                        <Button
+                                        <ComboBox
                                             Grid.Column="1"
+                                            MinWidth="64"
+                                            Padding="6,2"
+                                            FontSize="12"
+                                            ItemsSource="{Binding ArchOptions}"
+                                            SelectedItem="{Binding SelectedArch, Mode=TwoWay}"
+                                            Visibility="{Binding ArchOptions.Count, Converter={StaticResource ArchOptionsCountConverter}}">
+                                            <ComboBox.ItemTemplate>
+                                                <DataTemplate>
+                                                    <TextBlock FontSize="12" Text="{Binding DisplayText}" />
+                                                </DataTemplate>
+                                            </ComboBox.ItemTemplate>
+                                        </ComboBox>
+                                        <Button
+                                            Grid.Column="2"
                                             HorizontalAlignment="Right"
                                             Padding="6,4"
                                             Click="SendToDesktopButton_Click"
@@ -218,7 +234,7 @@
                                             <FontIcon FontSize="12" Glyph="&#xE8BD;" />
                                         </Button>
                                         <Button
-                                            Grid.Column="2"
+                                            Grid.Column="3"
                                             HorizontalAlignment="Right"
                                             Padding="10,4"
                                             Click="RunAsAdminButton_Click"
@@ -229,25 +245,12 @@
                                                 <TextBlock FontSize="12" Text="管理员" />
                                             </StackPanel>
                                         </Button>
-                                        <SplitButton
-                                            Grid.Column="3"
-                                            HorizontalAlignment="Right"
-                                            Padding="10,4"
-                                            Click="LaunchSplitButton_Click"
-                                            Content="{Binding LaunchButtonText}"
-                                            Loaded="LaunchSplitButton_Loaded"
-                                            Visibility="{Binding HasAlternateVersions, Converter={StaticResource HasAlternatesToVis}}">
-                                            <SplitButton.Flyout>
-                                                <MenuFlyout />
-                                            </SplitButton.Flyout>
-                                        </SplitButton>
                                         <Button
-                                            Grid.Column="3"
+                                            Grid.Column="4"
                                             HorizontalAlignment="Right"
                                             Padding="10,4"
                                             Click="LaunchButton_Click"
-                                            Content="{Binding LaunchButtonText}"
-                                            Visibility="{Binding HasAlternateVersions, Converter={StaticResource NoAlternatesToVis}}" />
+                                            Content="{Binding LaunchButtonText}" />
                                     </Grid>
                                 </Grid>
                             </Border>

@@ -17,6 +17,11 @@ hero:
       link: /download
 ---
 
+<div class="notice-banner">
+  <i class="fa-solid fa-circle-info"></i>
+  <span>本项目为社区开发的 <strong>WinUI 3 重构版</strong>，采用全新现代界面、新增内置工具与硬件查询等功能，与原版图吧工具箱无隶属关系。</span>
+</div>
+
 <div class="stat-grid">
   <div class="stat-item"><div class="stat-number">94</div><div class="stat-label">收录工具</div></div>
   <div class="stat-item"><div class="stat-number">12</div><div class="stat-label">内置功能</div></div>

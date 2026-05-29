@@ -1,3 +1,8 @@
+---
+title: 硬盘工具
+description: 硬盘检测、分区和数据恢复工具合集，包括 CrystalDiskMark、CrystalDiskInfo、DiskGenius 等 20 款硬盘工具。
+---
+
 # 硬盘工具 <span class="badge">20 款</span>
 
 | 工具 | 说明 |

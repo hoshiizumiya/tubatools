@@ -104,10 +104,21 @@ public sealed partial class ToolDetailDialog : UserControl
         PublisherText.Text = ValueOrUnknown(tool.Publisher);
         VersionText.Text = ValueOrUnknown(tool.Version);
         FileTypeText.Text = tool.Extension.ToUpperInvariant();
-        PathText.Text = tool.Path;
+        PathText.Text = tool.EffectivePath;
 
         AdminButton.Visibility = tool.NeedsDownload ? Visibility.Collapsed : Visibility.Visible;
         LaunchButtonText.Text = tool.LaunchButtonText;
+
+        if (tool.ArchOptions.Count > 1)
+        {
+            ArchComboBox.ItemsSource = tool.ArchOptions;
+            ArchComboBox.SelectedItem = tool.SelectedArch;
+            ArchComboBox.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            ArchComboBox.Visibility = Visibility.Collapsed;
+        }
 
         UpdateFavoriteIcon(tool.IsFavorite);
 
@@ -342,8 +353,8 @@ public sealed partial class ToolDetailDialog : UserControl
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = _tool.Path,
-                WorkingDirectory = Path.GetDirectoryName(_tool.Path) ?? ToolCatalog.ToolsRoot,
+                FileName = _tool.EffectivePath,
+                WorkingDirectory = _tool.EffectiveWorkingDir,
                 UseShellExecute = true,
                 Verb = "runAs"
             });
@@ -363,6 +374,16 @@ public sealed partial class ToolDetailDialog : UserControl
         _tool.IsFavorite = !_tool.IsFavorite;
         UpdateFavoriteIcon(_tool.IsFavorite);
         FavoriteChanged?.Invoke(_tool);
+    }
+
+    private void ArchComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_tool is null || ArchComboBox.SelectedItem is not ArchOption selected)
+            return;
+
+        _tool.SelectedArch = selected;
+        PathText.Text = _tool.EffectivePath;
+        LaunchButtonText.Text = _tool.LaunchButtonText;
     }
 
     private void DesktopShortcutButton_Click(object sender, RoutedEventArgs e)
@@ -386,7 +407,7 @@ public sealed partial class ToolDetailDialog : UserControl
 
         try
         {
-            var dir = Path.GetDirectoryName(_tool.Path) ?? ToolCatalog.ToolsRoot;
+            var dir = _tool.EffectiveWorkingDir;
             Process.Start(new ProcessStartInfo
             {
                 FileName = dir,
@@ -416,14 +437,16 @@ public sealed partial class ToolDetailDialog : UserControl
     private static void CreateDesktopShortcut(ToolItem tool)
     {
         var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-        var shortcutPath = Path.Combine(desktop, $"{tool.Name}.lnk");
+        var archSuffix = tool.SelectedArch is not null && !string.IsNullOrEmpty(tool.SelectedArch.Arch)
+            ? $" ({tool.SelectedArch.Arch})" : "";
+        var shortcutPath = Path.Combine(desktop, $"{tool.Name}{archSuffix}.lnk");
 
         var psScript = $"""
             $ws = New-Object -ComObject WScript.Shell
             $s = $ws.CreateShortcut('{shortcutPath}')
-            $s.TargetPath = '{tool.Path}'
-            $s.WorkingDirectory = '{Path.GetDirectoryName(tool.Path) ?? ToolCatalog.ToolsRoot}'
-            $s.Description = '{tool.Name}'
+            $s.TargetPath = '{tool.EffectivePath}'
+            $s.WorkingDirectory = '{tool.EffectiveWorkingDir}'
+            $s.Description = '{tool.Name}{archSuffix}'
             $s.Save()
             """;
 

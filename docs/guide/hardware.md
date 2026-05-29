@@ -1,3 +1,8 @@
+---
+title: 硬件信息查询
+description: 通过 WMI 实时读取 CPU、主板、内存、显卡、硬盘等全面硬件信息，后台线程查询不阻塞 UI。
+---
+
 # 硬件信息查询
 
 通过 Windows Management Instrumentation (WMI) 实时读取系统硬件数据，无需安装任何驱动或第三方组件，信息准确可靠。

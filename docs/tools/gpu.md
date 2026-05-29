@@ -1,3 +1,8 @@
+---
+title: 显卡工具
+description: GPU 检测、驱动和超频工具合集，包括 GPU-Z、FurMark、DDU、nvidiaInspector 等 11 款显卡工具。
+---
+
 # 显卡工具 <span class="badge">11 款</span>
 
 | 工具 | 说明 |

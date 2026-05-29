@@ -1,3 +1,8 @@
+---
+title: 外设工具
+description: 键盘鼠标测试工具合集，包括 Keyboard Test Utility、MouseTester、Mouse Rate 等 7 款外设工具。
+---
+
 # 外设工具 <span class="badge">7 款</span>
 
 | 工具 | 说明 |

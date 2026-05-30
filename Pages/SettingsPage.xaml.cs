@@ -12,6 +12,7 @@ public sealed partial class SettingsPage : Page
 {
     private bool _isCheckingUpdate;
     private bool _opacityChanging;
+    private bool _compactModeInitializing;
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
     private struct OPENFILENAME
@@ -238,12 +239,15 @@ public sealed partial class SettingsPage : Page
 
     private void CompactModeToggle_Toggled(object sender, RoutedEventArgs e)
     {
+        if (_compactModeInitializing) return;
         CompactModeService.SetCompactModeEnabled(CompactModeToggle.IsOn);
     }
 
     private void InitCompactModeToggle()
     {
+        _compactModeInitializing = true;
         CompactModeToggle.IsOn = CompactModeService.IsCompactModeEnabled();
+        _compactModeInitializing = false;
     }
 
     private void ThrowErrorButton_Click(object sender, RoutedEventArgs e)

@@ -55,9 +55,7 @@
             </Setter>
         </Style>
         <Style x:Key="ToolCardStyle" TargetType="GridViewItem">
-            <Setter Property="MinWidth" Value="236" />
-            <Setter Property="MaxWidth" Value="300" />
-            <Setter Property="MinHeight" Value="152" />
+            <Setter Property="Width" Value="270" />
             <Setter Property="Margin" Value="0,0,12,12" />
             <Setter Property="HorizontalContentAlignment" Value="Stretch" />
             <Setter Property="VerticalContentAlignment" Value="Stretch" />
@@ -186,8 +184,9 @@
                                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                 BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
                                 BorderThickness="1"
-                                CornerRadius="8">
-                                <Grid RowSpacing="6">
+                                CornerRadius="8"
+                                VerticalAlignment="Stretch">
+                                <Grid RowSpacing="8">
                                     <Grid.RowDefinitions>
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="*" />
@@ -195,26 +194,26 @@
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
 
-                                    <Grid ColumnSpacing="14">
+                                    <Grid ColumnSpacing="12">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="56" />
+                                            <ColumnDefinition Width="48" />
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <Border
-                                            Width="56"
-                                            Height="56"
+                                            Width="48"
+                                            Height="48"
                                             Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                            CornerRadius="10">
+                                            CornerRadius="8">
                                             <Grid>
                                                 <Image
-                                                    Width="40"
-                                                    Height="40"
+                                                    Width="32"
+                                                    Height="32"
                                                     Source="{Binding IconPath}"
                                                     Stretch="Uniform"
                                                     Visibility="{Binding IconPath, Converter={StaticResource NullToCollapse}}" />
                                                 <FontIcon
-                                                    FontSize="28"
+                                                    FontSize="24"
                                                     Glyph="{Binding IconGlyph}"
                                                     Visibility="{Binding IconGlyph, Converter={StaticResource NullToCollapse}}" />
                                             </Grid>

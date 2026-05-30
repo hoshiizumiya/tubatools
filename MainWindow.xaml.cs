@@ -20,8 +20,17 @@ public sealed partial class MainWindow : Window
 
         ApplyTitleBarTheme(ElementTheme.Default);
 
+        WindowSizeService.ApplySavedWindowSize(this);
+
+        Closed += MainWindow_Closed;
+
         PopulateCategories();
         NavFrame.Navigate(typeof(HomePage), null);
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        WindowSizeService.SaveWindowSize(this);
     }
 
     public void ApplyTitleBarTheme(ElementTheme theme)

@@ -55,7 +55,9 @@ public static class HardwareInfoService
         section.Items.Add(Item("处理器", FirstName("Win32_Processor")));
         section.Items.Add(Item("内存", FormatMemory()));
         section.Items.Add(Item("显卡", JoinNames("Win32_VideoController", item =>
-            !ContainsAny(Get(item, "Name"), "Microsoft Basic Render", "Microsoft Remote Display", "DDA Wrapper"))));
+            !ContainsAny(Get(item, "Name"), "Microsoft Basic Render", "Microsoft Remote Display", "DDA Wrapper",
+                "Idd Desk", "GameViewer Virtual Display", "Honor Virtual Display", "Virtual Display",
+                "Virtual GPU", "Virtual Adapter", "虚拟", "Remote Display Adapter"))));
         section.Items.Add(Item("显示器", FormatDisplays()));
         section.Items.Add(Item("硬盘", FormatDisks()));
         section.Items.Add(Item("声卡", JoinNames("Win32_SoundDevice", item =>

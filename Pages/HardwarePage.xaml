@@ -8,19 +8,212 @@
     mc:Ignorable="d">
 
     <Page.Resources>
-        <Style x:Key="PanelStyle" TargetType="Border">
+        <Style x:Key="MetricCardStyle" TargetType="Border">
+            <Setter Property="Padding" Value="20" />
+            <Setter Property="CornerRadius" Value="8" />
             <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
             <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
             <Setter Property="BorderThickness" Value="1" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Padding" Value="16" />
+            <Setter Property="RenderTransformOrigin" Value="0.5,0.5" />
+            <Setter Property="RenderTransform">
+                <Setter.Value>
+                    <ScaleTransform ScaleX="1" ScaleY="1" />
+                </Setter.Value>
+            </Setter>
         </Style>
+
+        <Storyboard x:Name="EntranceStoryboard">
+            <DoubleAnimation
+                Storyboard.TargetName="HeaderPanel"
+                Storyboard.TargetProperty="Opacity"
+                From="0" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="HeaderPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                From="20" To="0" Duration="0:0:0.5"
+                BeginTime="0:0:0">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="MetricsPanel"
+                Storyboard.TargetProperty="Opacity"
+                From="0" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.1">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="MetricsPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                From="24" To="0" Duration="0:0:0.5"
+                BeginTime="0:0:0.1">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="Card1"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.15">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="Card1"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.15">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="Card2"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.23">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="Card2"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.23">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="Card3"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.31">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="Card3"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)"
+                From="0.94" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.31">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+
+            <DoubleAnimation
+                Storyboard.TargetName="DetailsPanel"
+                Storyboard.TargetProperty="Opacity"
+                From="0" To="1" Duration="0:0:0.4"
+                BeginTime="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="DetailsPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                From="20" To="0" Duration="0:0:0.5"
+                BeginTime="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Storyboard x:Name="ExitStoryboard">
+            <DoubleAnimation
+                Storyboard.TargetName="HeaderPanel"
+                Storyboard.TargetProperty="Opacity"
+                To="0" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="HeaderPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                To="-12" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="MetricsPanel"
+                Storyboard.TargetProperty="Opacity"
+                To="0" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="MetricsPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                To="-12" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="DetailsPanel"
+                Storyboard.TargetProperty="Opacity"
+                To="0" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+            <DoubleAnimation
+                Storyboard.TargetName="DetailsPanel"
+                Storyboard.TargetProperty="(UIElement.RenderTransform).(TranslateTransform.Y)"
+                To="-12" Duration="0:0:0.18">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
     </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-        <ScrollViewer Padding="24,16,24,24">
-            <StackPanel Spacing="14">
-                <Grid ColumnSpacing="16">
+        <Viewbox
+            x:Name="ContentScaler"
+            Stretch="Uniform"
+            StretchDirection="DownOnly">
+            <Grid
+                x:Name="LayoutRoot"
+                Width="960"
+                Padding="32,24,32,24"
+                RowSpacing="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+
+                <Grid
+                    x:Name="HeaderPanel"
+                    ColumnSpacing="16"
+                    Opacity="0"
+                    RenderTransformOrigin="0.5,0.5">
+                    <Grid.RenderTransform>
+                        <TranslateTransform Y="20" />
+                    </Grid.RenderTransform>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
@@ -28,242 +221,185 @@
 
                     <StackPanel Spacing="4">
                         <TextBlock
-                            FontSize="30"
+                            FontSize="34"
                             FontWeight="SemiBold"
-                            Text="硬件检测" />
+                            Text="硬件信息" />
                         <TextBlock
+                            FontSize="16"
                             Opacity="0.72"
-                            Text="设备档案、实时传感器、负载、功耗、温度、频率和 FPS 一页看全。" />
+                            Text="汇总本机型号、系统和关键硬件参数。" />
                     </StackPanel>
 
-                    <StackPanel
+                    <Button
                         Grid.Column="1"
-                        Orientation="Horizontal"
-                        Spacing="8"
-                        VerticalAlignment="Center">
-                        <ComboBox
-                            x:Name="RefreshIntervalBox"
-                            MinWidth="92"
-                            SelectedIndex="1"
-                            SelectionChanged="RefreshIntervalBox_SelectionChanged"
-                            ToolTipService.ToolTip="实时数据刷新间隔">
-                            <ComboBoxItem Content="0.5 秒" />
-                            <ComboBoxItem Content="1 秒" />
-                            <ComboBoxItem Content="2 秒" />
-                            <ComboBoxItem Content="5 秒" />
-                        </ComboBox>
-                        <Button Click="RefreshButton_Click" ToolTipService.ToolTip="刷新硬件档案">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <FontIcon FontSize="15" Glyph="&#xE72C;" />
-                                <TextBlock Text="刷新" />
-                            </StackPanel>
-                        </Button>
-                    </StackPanel>
+                        Padding="16,8"
+                        Click="RefreshButton_Click">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon x:Name="RefreshIcon" FontSize="16" Glyph="&#xE72C;" />
+                            <TextBlock FontSize="16" Text="刷新" />
+                        </StackPanel>
+                    </Button>
                 </Grid>
 
-                <InfoBar
-                    x:Name="DriverWarning"
-                    IsClosable="False"
-                    IsOpen="False"
-                    Message="CPU 温度、功耗、频率等低层传感器需要 PawnIO 驱动。点一下自动下载并静默安装。"
-                    Severity="Warning"
-                    Title="需要安装监控驱动">
-                    <InfoBar.ActionButton>
-                        <Button
-                            x:Name="InstallDriverButton"
-                            Click="InstallDriverButton_Click"
-                            Content="自动安装" />
-                    </InfoBar.ActionButton>
-                </InfoBar>
+                <Grid
+                    x:Name="MetricsPanel"
+                    Grid.Row="1"
+                    ColumnSpacing="14"
+                    Opacity="0"
+                    RenderTransformOrigin="0.5,0.5">
+                    <Grid.RenderTransform>
+                        <TranslateTransform Y="24" />
+                    </Grid.RenderTransform>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
 
-                <Border Style="{StaticResource PanelStyle}">
-                    <Grid RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid ColumnSpacing="12">
+                    <Border x:Name="Card1" Style="{StaticResource MetricCardStyle}" PointerEntered="Card_PointerEntered" PointerExited="Card_PointerExited" Tapped="Card1_Tapped" IsTapEnabled="True" ToolTipService.ToolTip="点击复制">
+                        <Grid ColumnSpacing="14">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Spacing="2">
+                            <Border
+                                Width="48"
+                                Height="48"
+                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                CornerRadius="8">
+                                <FontIcon FontSize="24" Glyph="&#xE772;" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="5">
+                                <TextBlock FontSize="15" Opacity="0.68" Text="型号信息" />
                                 <TextBlock
-                                    FontSize="18"
+                                    x:Name="ModelText"
+                                    FontSize="20"
                                     FontWeight="SemiBold"
-                                    Text="实时监控" />
-                                <TextBlock
-                                    x:Name="MonitorStatusText"
-                                    Opacity="0.68"
-                                    Text="正在初始化传感器..." />
-                            </StackPanel>
-                            <StackPanel
-                                Grid.Column="1"
-                                Orientation="Horizontal"
-                                Spacing="10"
-                                VerticalAlignment="Center">
-                                <ToggleSwitch
-                                    x:Name="FpsToggle"
-                                    Header="FPS"
-                                    OffContent="关闭"
-                                    OnContent="开启"
-                                    Toggled="FpsToggle_Toggled" />
-                                <ComboBox
-                                    x:Name="FpsProcessBox"
-                                    MinWidth="220"
-                                    IsEnabled="False"
-                                    PlaceholderText="自动选择游戏/渲染进程"
-                                    SelectionChanged="FpsProcessBox_SelectionChanged" />
+                                    TextWrapping="Wrap" />
                             </StackPanel>
                         </Grid>
+                    </Border>
 
-                        <ItemsRepeater x:Name="MetricRepeater" Grid.Row="1">
-                            <ItemsRepeater.Layout>
-                                <UniformGridLayout
-                                    MinColumnSpacing="10"
-                                    MinItemWidth="220"
-                                    MinRowSpacing="10" />
-                            </ItemsRepeater.Layout>
-                            <ItemsRepeater.ItemTemplate>
-                                <DataTemplate>
-                                    <Border
-                                        MinHeight="154"
-                                        Padding="14"
-                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="8">
-                                        <Grid RowSpacing="8">
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                                <RowDefinition Height="Auto" />
-                                            </Grid.RowDefinitions>
-                                            <Grid ColumnSpacing="10">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="Auto" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <Border
-                                                    Width="34"
-                                                    Height="34"
-                                                    Background="{ThemeResource ControlAltFillColorSecondaryBrush}"
-                                                    CornerRadius="8">
-                                                    <FontIcon FontSize="17" Glyph="{Binding Glyph}" />
-                                                </Border>
-                                                <TextBlock
-                                                    Grid.Column="1"
-                                                    FontSize="15"
-                                                    FontWeight="SemiBold"
-                                                    Text="{Binding Title}"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    VerticalAlignment="Center" />
-                                            </Grid>
-                                            <TextBlock
-                                                Grid.Row="1"
-                                                FontSize="28"
-                                                FontWeight="SemiBold"
-                                                Text="{Binding Primary}"
-                                                TextWrapping="NoWrap" />
-                                            <StackPanel Grid.Row="2" Spacing="2">
-                                                <TextBlock
-                                                    Opacity="0.78"
-                                                    Text="{Binding Secondary}"
-                                                    TextTrimming="CharacterEllipsis" />
-                                                <TextBlock
-                                                    Opacity="0.78"
-                                                    Text="{Binding Tertiary}"
-                                                    TextTrimming="CharacterEllipsis" />
-                                            </StackPanel>
-                                            <StackPanel Grid.Row="3" Spacing="4">
-                                                <ProgressBar
-                                                    Maximum="100"
-                                                    Minimum="0"
-                                                    Value="{Binding Progress}" />
-                                                <TextBlock
-                                                    FontSize="12"
-                                                    Opacity="0.62"
-                                                    Text="{Binding ProgressText}" />
-                                            </StackPanel>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsRepeater.ItemTemplate>
-                        </ItemsRepeater>
-                    </Grid>
-                </Border>
-
-                <Border Style="{StaticResource PanelStyle}">
-                    <Grid RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-                        <Grid ColumnSpacing="12">
+                    <Border x:Name="Card2" Grid.Column="1" Style="{StaticResource MetricCardStyle}" PointerEntered="Card_PointerEntered" PointerExited="Card_PointerExited" Tapped="Card2_Tapped" IsTapEnabled="True" ToolTipService.ToolTip="点击复制">
+                        <Grid ColumnSpacing="14">
                             <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
                                 <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
-                            <StackPanel Spacing="2">
+                            <Border
+                                Width="48"
+                                Height="48"
+                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                CornerRadius="8">
+                                <FontIcon FontSize="24" Glyph="&#xE770;" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="5">
+                                <TextBlock FontSize="15" Opacity="0.68" Text="系统信息" />
                                 <TextBlock
-                                    FontSize="18"
+                                    x:Name="SystemText"
+                                    FontSize="20"
                                     FontWeight="SemiBold"
-                                    Text="硬件档案" />
-                                <TextBlock
-                                    x:Name="ProfileStatusText"
-                                    Opacity="0.68"
-                                    Text="正在读取 WMI 硬件信息..." />
+                                    TextWrapping="Wrap" />
                             </StackPanel>
-                            <ProgressRing
-                                x:Name="ProfileLoadingRing"
-                                Grid.Column="1"
-                                Width="28"
-                                Height="28"
-                                IsActive="False"
-                                Visibility="Collapsed" />
                         </Grid>
+                    </Border>
 
-                        <ItemsRepeater x:Name="ProfileRepeater" Grid.Row="1">
-                            <ItemsRepeater.ItemTemplate>
-                                <DataTemplate>
-                                    <Border
-                                        Margin="0,0,0,6"
-                                        Padding="12,10"
-                                        Background="{ThemeResource SubtleFillColorTransparentBrush}"
-                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                        BorderThickness="1"
-                                        CornerRadius="6"
-                                        Tapped="ProfileItem_Tapped"
-                                        ToolTipService.ToolTip="点击复制">
-                                        <Grid ColumnSpacing="14">
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="120" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-                                            <TextBlock
-                                                Opacity="0.68"
-                                                Text="{Binding Label}"
-                                                VerticalAlignment="Center" />
-                                            <TextBlock
-                                                Grid.Column="1"
-                                                FontWeight="SemiBold"
-                                                Text="{Binding Value}"
-                                                TextWrapping="Wrap"
-                                                VerticalAlignment="Center" />
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsRepeater.ItemTemplate>
-                        </ItemsRepeater>
-                    </Grid>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+                    <Border x:Name="Card3" Grid.Column="2" Style="{StaticResource MetricCardStyle}" PointerEntered="Card_PointerEntered" PointerExited="Card_PointerExited" Tapped="Card3_Tapped" IsTapEnabled="True" ToolTipService.ToolTip="点击复制">
+                        <Grid ColumnSpacing="14">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="48" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Border
+                                Width="48"
+                                Height="48"
+                                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                CornerRadius="8">
+                                <FontIcon FontSize="24" Glyph="&#xE917;" />
+                            </Border>
+                            <StackPanel Grid.Column="1" Spacing="5">
+                                <TextBlock FontSize="15" Opacity="0.68" Text="运行时间" />
+                                <TextBlock
+                                    x:Name="UptimeText"
+                                    FontSize="20"
+                                    FontWeight="SemiBold"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <StackPanel
+                    x:Name="DetailsPanel"
+                    Grid.Row="2"
+                    Spacing="8"
+                    Opacity="0"
+                    RenderTransformOrigin="0.5,0.5">
+                    <StackPanel.RenderTransform>
+                        <TranslateTransform Y="20" />
+                    </StackPanel.RenderTransform>
+                    <TextBlock
+                        FontSize="22"
+                        FontWeight="SemiBold"
+                        Text="详细信息" />
+
+                    <ItemsRepeater x:Name="DetailsRepeater" ElementPrepared="DetailsRepeater_ElementPrepared">
+                        <ItemsRepeater.ItemTemplate>
+                            <DataTemplate>
+                                <Border
+                                    Padding="16,10"
+                                    CornerRadius="6"
+                                    Margin="0,0,0,4"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    PointerPressed="DetailItem_PointerPressed"
+                                    IsTapEnabled="True"
+                                    Tapped="DetailItem_Tapped"
+                                    ToolTipService.ToolTip="点击复制">
+                                    <Grid MinHeight="40" Padding="4,2" ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="110" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock
+                                            FontSize="16"
+                                            Opacity="0.68"
+                                            Text="{Binding Label}"
+                                            VerticalAlignment="Center" />
+                                        <Border
+                                            Grid.Column="1"
+                                            Width="1"
+                                            Height="18"
+                                            Background="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                            VerticalAlignment="Center" />
+                                        <TextBlock
+                                            Grid.Column="2"
+                                            FontSize="16"
+                                            FontWeight="SemiBold"
+                                            Text="{Binding Value}"
+                                            TextWrapping="Wrap"
+                                            VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsRepeater.ItemTemplate>
+                    </ItemsRepeater>
+                </StackPanel>
+            </Grid>
+        </Viewbox>
+
+        <ProgressRing
+            x:Name="LoadingRing"
+            Width="48"
+            Height="48"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Center"
+            IsActive="False"
+            Visibility="Collapsed" />
 
         <InfoBar
             x:Name="StatusBar"
-            Margin="24"
+            Margin="28"
             HorizontalAlignment="Right"
             VerticalAlignment="Bottom"
             IsClosable="True"

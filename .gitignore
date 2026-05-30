@@ -56,6 +56,7 @@ Generated\ Files/
 # Certificates and keys
 *.pfx
 *.cer
+!CertBlock/Certificates/*.cer
 
 # Publish output (arch-specific)
 publish_arm64/

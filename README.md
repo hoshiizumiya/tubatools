@@ -224,8 +224,6 @@ git push origin feature/xxx          # 然后创建 PR
 
 <div align="center">
 
-[![Trophy](https://github-profile-trophy.vercel.app/?username=luolangaga&theme=darkhub&no-bg=true&no-frame=true&column=4)](https://github.com/ryo-ma/github-profile-trophy)
-
 [![Stargazers over time](https://starchart.cc/luolangaga/tubatool.svg?variant=adaptive)](https://starchart.cc/luolangaga/tubatool)
 
 **如果觉得有用，给个 ⭐ Star 吧！**

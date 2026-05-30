@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Controls.Primitives;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.UI.Xaml.Media.Imaging;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -253,5 +254,33 @@ public sealed partial class SettingsPage : Page
     private void ThrowErrorButton_Click(object sender, RoutedEventArgs e)
     {
         throw new InvalidOperationException("这是一条手动抛出的测试异常，用于验证全局错误页面是否正常工作。");
+    }
+
+    private void OpenSourceButton_Click(object sender, RoutedEventArgs e)
+    {
+        DrawerOverlay.Visibility = Visibility.Visible;
+        DrawerOpenStoryboard.Begin();
+    }
+
+    private void DrawerCloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        CloseDrawer();
+    }
+
+    private void DrawerOverlayBackground_Tapped(object sender, Microsoft.UI.Xaml.Input.TappedRoutedEventArgs e)
+    {
+        CloseDrawer();
+    }
+
+    private void CloseDrawer()
+    {
+        DrawerCloseStoryboard.Completed += OnDrawerCloseCompleted;
+        DrawerCloseStoryboard.Begin();
+    }
+
+    private void OnDrawerCloseCompleted(object? sender, object e)
+    {
+        DrawerCloseStoryboard.Completed -= OnDrawerCloseCompleted;
+        DrawerOverlay.Visibility = Visibility.Collapsed;
     }
 }

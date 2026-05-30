@@ -63,7 +63,16 @@ public static class WindowSizeService
             var displayArea = DisplayArea.GetFromPoint(new Windows.Graphics.PointInt32(x.Value, y.Value), DisplayAreaFallback.Primary);
             if (displayArea is not null)
             {
-                appWindow.Move(new Windows.Graphics.PointInt32(x.Value, y.Value));
+                var workArea = displayArea.WorkArea;
+                bool isVisible = x.Value + width > workArea.X &&
+                                 x.Value < workArea.X + workArea.Width &&
+                                 y.Value + height > workArea.Y &&
+                                 y.Value < workArea.Y + workArea.Height;
+
+                if (isVisible)
+                {
+                    appWindow.Move(new Windows.Graphics.PointInt32(x.Value, y.Value));
+                }
             }
         }
 

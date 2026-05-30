@@ -48,7 +48,48 @@ public static class ToolDownloaderService
             return await ResolveBlenderBenchmarkAsync(ct);
         }
 
+        if (downloadUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+        {
+            return await ResolveDirectUrlAsync(downloadUrl, ct);
+        }
+
         return null;
+    }
+
+    private static async Task<ToolDownloadInfo?> ResolveDirectUrlAsync(
+        string url, CancellationToken ct)
+    {
+        try
+        {
+            using var request = new HttpRequestMessage(HttpMethod.Head, url);
+            request.Headers.Add("User-Agent", "TubaWinUi3-ToolDownloader");
+            using var response = await _httpClient.SendAsync(request, ct);
+
+            var fileName = Path.GetFileName(new Uri(url).AbsolutePath);
+            if (string.IsNullOrWhiteSpace(fileName))
+                fileName = "download";
+
+            var size = response.Content.Headers.ContentLength ?? 0L;
+            var isArchive = fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+                            fileName.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase);
+            var isInstaller = fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
+                              fileName.EndsWith(".msi", StringComparison.OrdinalIgnoreCase);
+
+            return new ToolDownloadInfo(url, fileName, size, isArchive, isInstaller);
+        }
+        catch
+        {
+            var fileName = Path.GetFileName(new Uri(url).AbsolutePath);
+            if (string.IsNullOrWhiteSpace(fileName))
+                fileName = "download";
+
+            var isArchive = fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
+                            fileName.EndsWith(".tar.gz", StringComparison.OrdinalIgnoreCase);
+            var isInstaller = fileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
+                              fileName.EndsWith(".msi", StringComparison.OrdinalIgnoreCase);
+
+            return new ToolDownloadInfo(url, fileName, 0, isArchive, isInstaller);
+        }
     }
 
     private static async Task<ToolDownloadInfo?> ResolveGitHubReleaseAsync(
@@ -175,6 +216,7 @@ public static class ToolDownloaderService
         if (File.Exists(filePath)) File.Delete(filePath);
 
         using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(30) };
+        client.DefaultRequestHeaders.Add("User-Agent", "TubaWinUi3-ToolDownloader");
         var sw = Stopwatch.StartNew();
 
         using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, ct);

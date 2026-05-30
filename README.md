@@ -394,7 +394,7 @@ git push origin feature/xxx              # 推送，然后创建 PR
 
 ## 开源协议
 
-MIT
+GPL-3.0
 
 
 [![Stargazers over time](https://starchart.cc/luolangaga/tubatool.svg?variant=adaptive)](https://starchart.cc/luolangaga/tubatool)

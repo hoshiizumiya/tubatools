@@ -33,7 +33,11 @@ public sealed partial class ToolDownloadDialog : ContentDialog
 
     private async void OnPrimaryButtonClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
     {
-        if (_isDownloading) return;
+        if (_isDownloading)
+        {
+            args.Cancel = true;
+            return;
+        }
 
         var deferral = args.GetDeferral();
         args.Cancel = true;
@@ -44,7 +48,7 @@ public sealed partial class ToolDownloadDialog : ContentDialog
         }
         finally
         {
-            deferral.Complete();
+            try { deferral.Complete(); } catch { }
         }
     }
 

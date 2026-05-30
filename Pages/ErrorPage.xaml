@@ -20,16 +20,15 @@
             MaxWidth="640"
             Spacing="24">
 
-            <Border
+            <Image
                 HorizontalAlignment="Center"
-                Padding="24"
-                Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                CornerRadius="20">
-                <FontIcon
-                    FontSize="52"
-                    Foreground="{ThemeResource SystemFillColorCriticalBrush}"
-                    Glyph="&#xE783;" />
-            </Border>
+                Width="180"
+                Height="180"
+                Stretch="UniformToFill">
+                <Image.Source>
+                    <BitmapImage UriSource="ms-appx:///Assets/error.gif" AutoPlay="True" />
+                </Image.Source>
+            </Image>
 
             <StackPanel HorizontalAlignment="Center" Spacing="6">
                 <TextBlock

@@ -119,6 +119,7 @@ file sealed class AnalyzerPage : Page
         _win = win;
         GetDiskInfo(path);
         InitUi();
+        win.Closed += (_, _) => _cts?.Cancel();
         _ = ScanAsync(path);
     }
 
@@ -309,7 +310,7 @@ file sealed class AnalyzerPage : Page
             _cur = node;
             _hoveredNode = null;
             SyncUi();
-            _win.AppWindow.Title = $"磁盘分析 - {node.Path}";
+            if (_win?.AppWindow != null) _win.AppWindow.Title = $"磁盘分析 - {node.Path}";
             RenderWithAnimation(null);
         }
     }
@@ -387,9 +388,9 @@ file sealed class AnalyzerPage : Page
         _cts = new CancellationTokenSource();
         var tk = _cts.Token;
 
-        _pb.Visibility = Visibility.Visible;
-        _st.Text = "正在扫描…";
-        _cv.Children.Clear();
+        if (_pb != null) _pb.Visibility = Visibility.Visible;
+        if (_st != null) _st.Text = "正在扫描…";
+        if (_cv != null) _cv.Children.Clear();
         _hoveredNode = null;
         _pBytes = 0; _pItems = 0;
         _scanning = true;
@@ -407,9 +408,10 @@ file sealed class AnalyzerPage : Page
         var renderTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(300) };
         renderTimer.Tick += (_, _) =>
         {
+            if (tk.IsCancellationRequested) { renderTimer.Stop(); return; }
             if (Interlocked.Exchange(ref _scanDirty, 0) > 0)
                 RenderIncremental();
-            _st.Text = $"正在扫描…  {_pItems:N0} 项  ·  {DiskSpaceAnalyzerTool.Fmt(_pBytes)}";
+            if (_st != null) _st.Text = $"正在扫描…  {_pItems:N0} 项  ·  {DiskSpaceAnalyzerTool.Fmt(_pBytes)}";
         };
         renderTimer.Start();
 
@@ -420,16 +422,20 @@ file sealed class AnalyzerPage : Page
         }
         catch (OperationCanceledException)
         {
-            renderTimer.Stop(); _pb.Visibility = Visibility.Collapsed; _scanning = false;
-            _st.Text = "扫描已取消"; return;
+            renderTimer.Stop();
+            if (_pb != null) _pb.Visibility = Visibility.Collapsed;
+            _scanning = false;
+            if (_st != null) _st.Text = "扫描已取消";
+            return;
         }
+        catch { renderTimer.Stop(); return; }
 
         renderTimer.Stop();
         _scanning = false;
         node.Children.Sort((a, b) => b.Size.CompareTo(a.Size));
-        _pb.Visibility = Visibility.Collapsed;
+        if (_pb != null) _pb.Visibility = Visibility.Collapsed;
         SyncUi();
-        _win.AppWindow.Title = $"磁盘分析 - {path}";
+        if (_win?.AppWindow != null) _win.AppWindow.Title = $"磁盘分析 - {path}";
         Render();
     }
 
@@ -490,7 +496,7 @@ file sealed class AnalyzerPage : Page
 
     private void RenderIncremental()
     {
-        if (_cur == null) return;
+        if (_cur == null || _cv == null) return;
         var W = _cv.ActualWidth;
         var H = _cv.ActualHeight;
         if (W <= 0 || H <= 0) return;
@@ -732,7 +738,7 @@ file sealed class AnalyzerPage : Page
         _cur = node;
         _hoveredNode = null;
         SyncUi();
-        _win.AppWindow.Title = $"磁盘分析 - {node.Path}";
+        if (_win?.AppWindow != null) _win.AppWindow.Title = $"磁盘分析 - {node.Path}";
         RenderWithAnimation(source);
     }
 
@@ -742,7 +748,7 @@ file sealed class AnalyzerPage : Page
         _cur = _nav.Pop();
         _hoveredNode = null;
         SyncUi();
-        _win.AppWindow.Title = $"磁盘分析 - {_cur.Path}";
+        if (_win?.AppWindow != null && _cur != null) _win.AppWindow.Title = $"磁盘分析 - {_cur.Path}";
         RenderWithAnimation(null);
     }
 

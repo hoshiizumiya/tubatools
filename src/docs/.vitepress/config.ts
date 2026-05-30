@@ -140,7 +140,7 @@ export default defineConfig({
     },
 
     footer: {
-      message: '基于开源协议发布',
+      message: '基于 <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank" rel="noopener">GPL-3.0</a> 开源协议发布',
       copyright: 'Copyright © 2026 罗澜嘎嘎',
     },
 

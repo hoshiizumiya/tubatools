@@ -54,6 +54,12 @@
                 </Setter.Value>
             </Setter>
         </Style>
+        <Style x:Key="CompactSearchBoxStyle" TargetType="AutoSuggestBox">
+            <Setter Property="MinHeight" Value="28" />
+            <Setter Property="MaxHeight" Value="32" />
+            <Setter Property="Padding" Value="8,2,8,2" />
+            <Setter Property="FontSize" Value="13" />
+        </Style>
         <Style x:Key="ToolCardStyle" TargetType="GridViewItem">
             <Setter Property="Width" Value="270" />
             <Setter Property="Margin" Value="0,0,12,12" />
@@ -113,6 +119,7 @@
                 x:Name="SearchBox"
                 Grid.Column="1"
                 MinWidth="260"
+                Style="{StaticResource CompactSearchBoxStyle}"
                 PlaceholderText="搜索工具"
                 QueryIcon="Find"
                 TextChanged="SearchBox_TextChanged" />

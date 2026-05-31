@@ -11,18 +11,21 @@ namespace TubaWinUi3.Pages;
 public sealed partial class FavoritesPage : Page
 {
     private readonly ObservableCollection<ToolItem> _tools = [];
+    private readonly ObservableCollection<ToolItem> _historyTools = [];
     private CancellationTokenSource? _iconLoadCts;
 
     public FavoritesPage()
     {
         InitializeComponent();
         ToolsGrid.ItemsSource = _tools;
+        HistoryGrid.ItemsSource = _historyTools;
     }
 
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
         LoadTools();
+        LoadHistory();
     }
 
     private void LoadTools()
@@ -50,6 +53,44 @@ public sealed partial class FavoritesPage : Page
         {
             _iconLoadCts = new CancellationTokenSource();
             _ = ToolIconService.LoadIconsAsync(favTools, DispatcherQueue);
+        }
+    }
+
+    private void LoadHistory()
+    {
+        _historyTools.Clear();
+
+        var historyPaths = LaunchHistoryService.GetHistory();
+        if (historyPaths.Count == 0)
+        {
+            HistorySection.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        var allTools = ToolCatalog.GetCategories()
+            .SelectMany(ToolCatalog.GetTools)
+            .ToList();
+
+        foreach (var path in historyPaths)
+        {
+            var tool = allTools.FirstOrDefault(t => t.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
+            if (tool is not null)
+                _historyTools.Add(tool);
+        }
+
+        HistorySection.Visibility = _historyTools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+        if (_historyTools.Count > 0)
+        {
+            _ = ToolIconService.LoadIconsAsync(_historyTools.ToList(), DispatcherQueue);
+        }
+    }
+
+    private void HistoryGrid_ItemClick(object sender, ItemClickEventArgs e)
+    {
+        if (e.ClickedItem is ToolItem tool)
+        {
+            LaunchTool(tool, runAsAdmin: false);
         }
     }
 
@@ -180,16 +221,24 @@ public sealed partial class FavoritesPage : Page
 
     private void LaunchTool(ToolItem tool, bool runAsAdmin)
     {
+        var exePath = tool.EffectivePath;
+        if (!File.Exists(exePath))
+        {
+            ShowStatus("启动失败", $"找不到文件：{exePath}", InfoBarSeverity.Error);
+            return;
+        }
+
         try
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = tool.EffectivePath,
+                FileName = exePath,
                 WorkingDirectory = tool.EffectiveWorkingDir,
                 UseShellExecute = true,
                 Verb = runAsAdmin ? "runAs" : null
             });
 
+            LaunchHistoryService.RecordLaunch(tool.Path);
             ShowStatus(runAsAdmin ? "已以管理员身份启动" : "已启动", tool.Name, InfoBarSeverity.Success);
         }
         catch (Exception ex)
@@ -217,6 +266,21 @@ public sealed class ArchOptionsCountConverterFav : Microsoft.UI.Xaml.Data.IValue
     public object Convert(object value, Type targetType, object parameter, string language)
     {
         if (value is int count && count > 1)
+            return Visibility.Visible;
+        return Visibility.Collapsed;
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, string language)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+public sealed class HistoryCountToVisibilityConverter : Microsoft.UI.Xaml.Data.IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, string language)
+    {
+        if (value is int count && count > 0)
             return Visibility.Visible;
         return Visibility.Collapsed;
     }

@@ -191,6 +191,14 @@
     </Page.Resources>
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Image
+            x:Name="BackgroundImg"
+            Stretch="UniformToFill"
+            Opacity="0.15"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            IsHitTestVisible="False" />
+
         <Viewbox
             x:Name="ContentScaler"
             Stretch="Uniform"

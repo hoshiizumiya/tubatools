@@ -23,11 +23,28 @@ public sealed partial class HardwarePage : Page
 
     private void HardwarePage_Loaded(object sender, RoutedEventArgs e)
     {
+        ApplyBackground();
         _ = LoadHardwareInfoAsync();
 
         _uptimeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _uptimeTimer.Tick += (_, _) => UpdateUptime();
         _uptimeTimer.Start();
+    }
+
+    private void ApplyBackground()
+    {
+        var bmp = BackgroundService.LoadBackgroundImage();
+        if (bmp is not null)
+        {
+            BackgroundImg.Source = bmp;
+            BackgroundImg.Opacity = BackgroundService.GetBackgroundOpacity();
+            BackgroundImg.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            BackgroundImg.Source = null;
+            BackgroundImg.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void HardwarePage_Unloaded(object sender, RoutedEventArgs e)

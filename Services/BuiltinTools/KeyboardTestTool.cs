@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
@@ -17,25 +18,156 @@ public sealed class KeyboardTestTool : IBuiltinTool
     public BuiltinToolKind Kind => BuiltinToolKind.Dialog;
 
     private static readonly Color KeyPressed = Color.FromArgb(255, 66, 133, 244);
+    private static readonly Color KeyVisited = Color.FromArgb(60, 66, 133, 244);
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
 
     private readonly Dictionary<VirtualKey, Border> _keyMap = [];
+    private readonly HashSet<VirtualKey> _visitedKeys = [];
     private Grid? _keyGrid;
     private int _totalPressed;
+
+    private delegate IntPtr LowLevelKeyboardProc(int nCode, IntPtr wParam, IntPtr lParam);
+    private IntPtr _hookId = IntPtr.Zero;
+    private LowLevelKeyboardProc? _hookProc;
+    private ContentDialog? _currentDialog;
+    private TextBlock? _countText;
+    private TextBlock? _lastKeyText;
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr SetWindowsHookEx(int idHook, LowLevelKeyboardProc lpfn, IntPtr hMod, uint dwThreadId);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool UnhookWindowsHookEx(IntPtr hhk);
+
+    [DllImport("user32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+    private static extern IntPtr GetModuleHandle(string lpModuleName);
+
+    private const int WH_KEYBOARD_LL = 13;
+    private const int WM_KEYDOWN = 0x0100;
+    private const int WM_SYSKEYDOWN = 0x0104;
+    private const int WM_KEYUP = 0x0101;
+    private const int WM_SYSKEYUP = 0x0105;
+
+    private IntPtr HookCallback(int nCode, IntPtr wParam, IntPtr lParam)
+    {
+        if (nCode >= 0 && _currentDialog != null)
+        {
+            int vkCode = Marshal.ReadInt32(lParam);
+            var key = (VirtualKey)vkCode;
+            bool isDown = wParam == (IntPtr)WM_KEYDOWN || wParam == (IntPtr)WM_SYSKEYDOWN;
+            bool isUp = wParam == (IntPtr)WM_KEYUP || wParam == (IntPtr)WM_SYSKEYUP;
+
+            if (isDown)
+            {
+                _currentDialog.DispatcherQueue.TryEnqueue(() =>
+                {
+                    HandleKeyDown(key);
+                });
+            }
+            else if (isUp)
+            {
+                _currentDialog.DispatcherQueue.TryEnqueue(() =>
+                {
+                    HandleKeyUp(key);
+                });
+            }
+
+            if (ShouldBlockKey(key))
+            {
+                return (IntPtr)1;
+            }
+        }
+        return CallNextHookEx(_hookId, nCode, wParam, lParam);
+    }
+
+    private static bool ShouldBlockKey(VirtualKey key)
+    {
+        return key is VirtualKey.LeftWindows or VirtualKey.RightWindows
+            or VirtualKey.Menu or VirtualKey.F4
+            or VirtualKey.Tab or VirtualKey.Escape;
+    }
+
+    private void InstallHook()
+    {
+        _hookProc = HookCallback;
+        using var curProcess = System.Diagnostics.Process.GetCurrentProcess();
+        using var curModule = curProcess.MainModule!;
+        _hookId = SetWindowsHookEx(WH_KEYBOARD_LL, _hookProc, GetModuleHandle(curModule.ModuleName), 0);
+    }
+
+    private void RemoveHook()
+    {
+        if (_hookId != IntPtr.Zero)
+        {
+            UnhookWindowsHookEx(_hookId);
+            _hookId = IntPtr.Zero;
+        }
+        _hookProc = null;
+    }
+
+    private void HandleKeyDown(VirtualKey key)
+    {
+        if (_keyMap.TryGetValue(key, out var keyBorder))
+        {
+            keyBorder.Background = new SolidColorBrush(KeyPressed);
+            var tb = FindTextBlock(keyBorder);
+            if (tb is not null) tb.Foreground = new SolidColorBrush(ThemeColors.PrimaryText);
+        }
+        if (_visitedKeys.Add(key))
+        {
+            _totalPressed++;
+        }
+        if (_countText is not null) _countText.Text = _totalPressed.ToString();
+        if (_lastKeyText is not null) _lastKeyText.Text = KeyDisplayName(key);
+    }
+
+    private void HandleKeyUp(VirtualKey key)
+    {
+        if (_keyMap.TryGetValue(key, out var keyBorder))
+        {
+            if (_visitedKeys.Contains(key))
+            {
+                keyBorder.Background = new SolidColorBrush(KeyVisited);
+                var tb = FindTextBlock(keyBorder);
+                if (tb is not null) tb.Foreground = new SolidColorBrush(ThemeColors.KeyText);
+            }
+            else
+            {
+                keyBorder.Background = new SolidColorBrush(ThemeColors.KeyDefault);
+            }
+        }
+    }
 
     public async Task ExecuteAsync(BuiltinToolContext context)
     {
         _keyGrid = null;
+        _countText = null;
+        _lastKeyText = null;
+        _visitedKeys.Clear();
+        _totalPressed = 0;
+
         var dialog = context.CreateDialog("键盘测试");
         dialog.Resources["ContentDialogMaxWidth"] = 1080;
         dialog.Resources["ContentDialogMaxHeight"] = 680;
 
         var content = BuildDialogContent();
         dialog.Content = content;
+        _currentDialog = dialog;
 
         dialog.Opened += (_, _) =>
         {
             _keyGrid?.Focus(FocusState.Programmatic);
+            InstallHook();
+        };
+
+        dialog.Closing += (_, e) =>
+        {
+            RemoveHook();
+            _currentDialog = null;
         };
 
         await dialog.ShowAsync();
@@ -47,13 +179,16 @@ public sealed class KeyboardTestTool : IBuiltinTool
         {
             FontSize = 18,
             FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new SolidColorBrush(AccentGreen)
+            Foreground = new SolidColorBrush(AccentGreen),
+            Text = "0"
         };
+        _countText = countText;
         var lastKeyText = new TextBlock
         {
             FontSize = 14,
             Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
+        _lastKeyText = lastKeyText;
 
         var statsBar = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 20 };
         statsBar.Children.Add(new StackPanel
@@ -87,30 +222,23 @@ public sealed class KeyboardTestTool : IBuiltinTool
         };
         _keyGrid = keyGrid;
 
-        BuildKeyboardLayout(keyGrid, countText, lastKeyText);
+        BuildKeyboardLayout(keyGrid);
 
         keyGrid.KeyDown += (s, e) =>
         {
-            if (_keyMap.TryGetValue(e.Key, out var keyBorder))
-            {
-                keyBorder.Background = new SolidColorBrush(KeyPressed);
-                var tb = FindTextBlock(keyBorder);
-                if (tb is not null) tb.Foreground = new SolidColorBrush(ThemeColors.PrimaryText);
-            }
-            _totalPressed++;
-            countText.Text = _totalPressed.ToString();
-            lastKeyText.Text = KeyDisplayName(e.Key);
+            HandleKeyDown(e.Key);
             e.Handled = true;
         };
 
         keyGrid.KeyUp += (s, e) =>
         {
-            if (_keyMap.TryGetValue(e.Key, out var keyBorder))
-            {
-                keyBorder.Background = new SolidColorBrush(ThemeColors.KeyDefault);
-                var tb = FindTextBlock(keyBorder);
-                if (tb is not null) tb.Foreground = new SolidColorBrush(ThemeColors.KeyText);
-            }
+            HandleKeyUp(e.Key);
+            e.Handled = true;
+        };
+
+        keyGrid.PointerPressed += (s, e) =>
+        {
+            keyGrid.Focus(FocusState.Programmatic);
             e.Handled = true;
         };
 
@@ -130,6 +258,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
         resetBtn.Click += (_, _) =>
         {
             _totalPressed = 0;
+            _visitedKeys.Clear();
             countText.Text = "0";
             lastKeyText.Text = "";
             foreach (var border in _keyMap.Values)
@@ -138,11 +267,12 @@ public sealed class KeyboardTestTool : IBuiltinTool
                 var tb = FindTextBlock(border);
                 if (tb is not null) tb.Foreground = new SolidColorBrush(ThemeColors.KeyText);
             }
+            keyGrid.Focus(FocusState.Programmatic);
         };
 
         var tipText = new TextBlock
         {
-            Text = "点击下方键盘区域后开始按键测试，按键会高亮显示",
+            Text = "点击下方键盘区域后开始按键测试，按键会高亮显示，已按过的键会留有浅色标记",
             FontSize = 12,
             Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
@@ -159,7 +289,7 @@ public sealed class KeyboardTestTool : IBuiltinTool
         return new ScrollViewer { Content = root, MaxWidth = 1080, VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
     }
 
-    private void BuildKeyboardLayout(Grid rootGrid, TextBlock countText, TextBlock lastKeyText)
+    private void BuildKeyboardLayout(Grid rootGrid)
     {
         _keyMap.Clear();
         var rows = GetKeyboardRows();

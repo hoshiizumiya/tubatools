@@ -349,11 +349,18 @@ public sealed partial class ToolDetailDialog : UserControl
     {
         if (_tool is null) return;
 
+        var exePath = _tool.EffectivePath;
+        if (!File.Exists(exePath))
+        {
+            ShowStatus("启动失败", $"找不到文件：{exePath}", InfoBarSeverity.Error);
+            return;
+        }
+
         try
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = _tool.EffectivePath,
+                FileName = exePath,
                 WorkingDirectory = _tool.EffectiveWorkingDir,
                 UseShellExecute = true,
                 Verb = "runAs"

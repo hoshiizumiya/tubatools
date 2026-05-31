@@ -5,6 +5,7 @@ using Microsoft.UI.Xaml.Navigation;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.Diagnostics;
+using System.Linq;
 using TubaWinUi3.Models;
 using TubaWinUi3.Pages;
 using TubaWinUi3.Services;
@@ -240,6 +241,16 @@ public sealed partial class HomePage : Page
         }
     }
 
+    private void CompactGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    {
+        var tool = FindAncestorDataContext<ToolItem>(e.OriginalSource as FrameworkElement);
+        if (tool is null) return;
+        if (tool.ArchOptions.Count > 1)
+            _ = ShowArchPickerAndLaunchAsync(tool, runAsAdmin: false);
+        else
+            LaunchTool(tool, runAsAdmin: false);
+    }
+
     private void CompactItem_RightTapped(object sender, RightTappedRoutedEventArgs e)
     {
         if (sender is FrameworkElement fe && fe.DataContext is ToolItem)
@@ -327,6 +338,23 @@ public sealed partial class HomePage : Page
         {
             ShowToolDetail(tool);
         }
+    }
+
+    private void ToolsGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    {
+        var tool = FindAncestorDataContext<ToolItem>(e.OriginalSource as FrameworkElement);
+        if (tool is not null)
+            LaunchTool(tool, runAsAdmin: false);
+    }
+
+    private static T? FindAncestorDataContext<T>(FrameworkElement? element) where T : class
+    {
+        while (element is not null)
+        {
+            if (element.DataContext is T t) return t;
+            element = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element) as FrameworkElement;
+        }
+        return null;
     }
 
     private void LaunchButton_Click(object sender, RoutedEventArgs e)
@@ -491,16 +519,24 @@ public sealed partial class HomePage : Page
             return;
         }
 
+        var exePath = tool.EffectivePath;
+        if (!File.Exists(exePath))
+        {
+            ShowStatus("启动失败", $"找不到文件：{exePath}", InfoBarSeverity.Error);
+            return;
+        }
+
         try
         {
             Process.Start(new ProcessStartInfo
             {
-                FileName = tool.EffectivePath,
+                FileName = exePath,
                 WorkingDirectory = tool.EffectiveWorkingDir,
                 UseShellExecute = true,
                 Verb = runAsAdmin ? "runAs" : null
             });
 
+            LaunchHistoryService.RecordLaunch(tool.Path);
             ShowStatus(runAsAdmin ? "已以管理员身份启动" : "已启动", tool.Name, InfoBarSeverity.Success);
         }
         catch (Exception ex)

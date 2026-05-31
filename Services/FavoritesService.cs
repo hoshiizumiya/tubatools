@@ -1,39 +1,31 @@
-using Windows.Storage;
+using System.Text.Json;
 
 namespace TubaWinUi3.Services;
 
 public static class FavoritesService
 {
     private const string Key = "FavoriteTools";
+    private static readonly string _favoritesPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "TubaWinUi3", "favorites.json");
     private static List<string>? _cache;
-
-    private static ApplicationDataContainer? GetSettings()
-    {
-        try
-        {
-            return ApplicationData.Current.LocalSettings;
-        }
-        catch
-        {
-            return null;
-        }
-    }
 
     public static IReadOnlyList<string> GetFavorites()
     {
         if (_cache is not null)
             return _cache;
 
-        var settings = GetSettings();
-        if (settings is null || settings.Values[Key] is not string json)
-        {
-            _cache = [];
-            return _cache;
-        }
-
         try
         {
-            _cache = System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? [];
+            if (File.Exists(_favoritesPath))
+            {
+                var json = File.ReadAllText(_favoritesPath);
+                _cache = JsonSerializer.Deserialize<List<string>>(json) ?? [];
+            }
+            else
+            {
+                _cache = [];
+            }
         }
         catch
         {
@@ -88,11 +80,13 @@ public static class FavoritesService
 
     private static void Save(List<string> favorites)
     {
-        var settings = GetSettings();
-        if (settings is null)
-            return;
-
-        var json = System.Text.Json.JsonSerializer.Serialize(favorites);
-        settings.Values[Key] = json;
+        try
+        {
+            var dir = Path.GetDirectoryName(_favoritesPath)!;
+            Directory.CreateDirectory(dir);
+            var json = JsonSerializer.Serialize(favorites);
+            File.WriteAllText(_favoritesPath, json);
+        }
+        catch { }
     }
 }

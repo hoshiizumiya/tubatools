@@ -106,17 +106,30 @@ public static class HardwareInfoService
 
     private static string FormatMemory()
     {
-        var modules = Query("Win32_PhysicalMemory").ToList();
-        if (modules.Count == 0)
+        var allSlots = Query("Win32_PhysicalMemory").ToList();
+        if (allSlots.Count == 0)
         {
             return "未知";
+        }
+
+        var modules = allSlots.Where(item => ToLong(Get(item, "Capacity")) > 0).ToList();
+
+        var totalSlots = Query("Win32_PhysicalMemoryArray")
+            .Select(item => ToInt(Get(item, "MemoryDevices")))
+            .Where(v => v > 0)
+            .Sum();
+        if (totalSlots == 0) totalSlots = allSlots.Count;
+
+        if (modules.Count == 0)
+        {
+            return $"空插槽 {totalSlots} 个";
         }
 
         var totalBytes = modules.Sum(item => ToLong(Get(item, "Capacity")));
         var manufacturer = modules.Select(item => Get(item, "Manufacturer")).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
         var speed = modules.Select(item => Get(item, "Speed")).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
-        return $"{manufacturer} {totalBytes / 1024d / 1024d / 1024d:0.#}GB {speed}MHz ({modules.Count} 条)";
+        return $"{manufacturer} {totalBytes / 1024d / 1024d / 1024d:0.#}GB {speed}MHz ({modules.Count}/{totalSlots} 插槽)";
     }
 
     private static string FormatDisks()
@@ -327,6 +340,11 @@ public static class HardwareInfoService
     private static long ToLong(string? value)
     {
         return long.TryParse(value, out var number) ? number : 0;
+    }
+
+    private static int ToInt(string? value)
+    {
+        return int.TryParse(value, out var number) ? number : 0;
     }
 
     private static string Join(params string?[] values)

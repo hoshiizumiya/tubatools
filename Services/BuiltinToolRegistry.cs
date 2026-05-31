@@ -17,7 +17,6 @@ public static class BuiltinToolRegistry
 
     public static void RegisterDefaults()
     {
-        Register(new PowerMonitorTool());
         Register(new CertBlockTool());
         Register(new PortViewerTool());
         Register(new HostsEditorTool());

@@ -138,7 +138,36 @@ public static class HardwareInfoService
         var manufacturer = modules.Select(item => CleanMemManufacturer(Get(item, "Manufacturer"))).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
 
         var memType = ToInt(modules.Select(item => Get(item, "SMBIOSMemoryType")).FirstOrDefault(value => !string.IsNullOrWhiteSpace(value)));
-        var prefix = memType switch
+        var prefix = GetMemoryTypeLabel(memType);
+
+        var speeds = modules
+            .Select(item => GetMemoryDataRateMts(item, memType))
+            .Where(mts => mts > 0)
+            .Distinct()
+            .OrderByDescending(mts => mts)
+            .ToList();
+
+        var speedLabel = speeds.Count switch
+        {
+            0 => "",
+            1 => prefix.Length > 0 ? $"{prefix}-{speeds[0]} MT/s" : $"{speeds[0]} MT/s",
+            _ => prefix.Length > 0
+                ? string.Join("/", speeds.Select(s => $"{prefix}-{s} MT/s"))
+                : string.Join("/", speeds.Select(s => $"{s} MT/s"))
+        };
+
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(manufacturer)) parts.Add(manufacturer);
+        parts.Add($"{totalBytes / 1024d / 1024d / 1024d:0.#}GB");
+        if (speedLabel.Length > 0) parts.Add(speedLabel);
+        parts.Add($"({modules.Count}/{totalSlots} 插槽)");
+
+        return string.Join(" ", parts);
+    }
+
+    private static string GetMemoryTypeLabel(int smbiosMemoryType)
+    {
+        return smbiosMemoryType switch
         {
             18 => "DDR",
             19 => "DDR2",
@@ -155,59 +184,43 @@ public static class HardwareInfoService
             36 => "HBM3",
             _ => ""
         };
-
-        var speeds = modules
-            .Select(item => GetMemorySpeedMts(item))
-            .Where(mts => mts > 0)
-            .Distinct()
-            .OrderByDescending(mts => mts)
-            .ToList();
-
-        var speedLabel = speeds.Count switch
-        {
-            0 => "",
-            1 => prefix.Length > 0 ? $"{prefix}-{speeds[0]}" : $"{speeds[0]}MHz",
-            _ => prefix.Length > 0 ? string.Join("/", speeds.Select(s => $"{prefix}-{s}")) : string.Join("/", speeds.Select(s => $"{s}MHz"))
-        };
-
-        var parts = new List<string>();
-        if (!string.IsNullOrWhiteSpace(manufacturer)) parts.Add(manufacturer);
-        parts.Add($"{totalBytes / 1024d / 1024d / 1024d:0.#}GB");
-        if (speedLabel.Length > 0) parts.Add(speedLabel);
-        parts.Add($"({modules.Count}/{totalSlots} 插槽)");
-
-        return string.Join(" ", parts);
     }
 
-    private static int GetMemorySpeedMts(ManagementBaseObject item)
+    private static int GetMemoryDataRateMts(ManagementBaseObject item, int smbiosMemoryType)
     {
-        var configuredSpeed = ToInt(Get(item, "ConfiguredClockSpeed"));
+        var configuredClockSpeed = ToInt(Get(item, "ConfiguredClockSpeed"));
         var speed = ToInt(Get(item, "Speed"));
 
-        if (configuredSpeed > 0 && speed > 0)
-        {
-            if (configuredSpeed == speed)
-            {
-                return configuredSpeed;
-            }
-            if (configuredSpeed < speed)
-            {
-                return configuredSpeed * 2;
-            }
-            return configuredSpeed;
-        }
-
-        if (configuredSpeed > 0)
-        {
-            return configuredSpeed;
-        }
-
-        if (speed > 0)
+        if (configuredClockSpeed <= 0)
         {
             return speed;
         }
 
-        return 0;
+        if (speed <= 0)
+        {
+            return configuredClockSpeed;
+        }
+
+        if (configuredClockSpeed >= speed)
+        {
+            return configuredClockSpeed;
+        }
+
+        if (IsDdrMemoryType(smbiosMemoryType))
+        {
+            var doubledClock = configuredClockSpeed * 2;
+            if (doubledClock >= speed)
+            {
+                return doubledClock;
+            }
+        }
+
+        return configuredClockSpeed;
+    }
+
+    private static bool IsDdrMemoryType(int smbiosMemoryType)
+    {
+        return smbiosMemoryType is 18 or 19 or 20 or 24 or 25 or 26 or 27 or 28 or 29 or 30 or 34 or 35;
     }
 
     private static string? CleanMemManufacturer(string? raw)

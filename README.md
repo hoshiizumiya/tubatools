@@ -226,7 +226,15 @@ git push origin feature/xxx          # 然后创建 PR
 
 <div align="center">
 
-[![Stargazers over time](https://starchart.cc/luolangaga/tubatool.svg?variant=adaptive)](https://starchart.cc/luolangaga/tubatool)
+![Alt](https://repobeats.axiom.co/api/embed/4b0d8326594907dda0ab84b9485aa4eda1e2a336.svg "Repobeats analytics image")
+
+<a href="https://www.star-history.com/?repos=luolangaga%2Ftubatools&type=date&legend=bottom-right">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=luolangaga/tubatools&type=date&theme=dark&legend=bottom-right" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=luolangaga/tubatools&type=date&legend=bottom-right" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=luolangaga/tubatools&type=date&legend=bottom-right" />
+ </picture>
+</a>
 
 **如果觉得有用，给个 ⭐ Star 吧！**
 

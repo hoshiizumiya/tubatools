@@ -226,6 +226,8 @@ git push origin feature/xxx          # 然后创建 PR
 
 <div align="center">
 
+![Alt](https://repobeats.axiom.co/api/embed/4b0d8326594907dda0ab84b9485aa4eda1e2a336.svg "Repobeats analytics image")
+
 <a href="https://www.star-history.com/?repos=luolangaga%2Ftubatools&type=date&legend=bottom-right">
  <picture>
    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=luolangaga/tubatools&type=date&theme=dark&legend=bottom-right" />

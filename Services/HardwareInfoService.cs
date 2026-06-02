@@ -57,6 +57,8 @@ public static class HardwareInfoService
     }
 
     private const int ENUM_CURRENT_SETTINGS = -1;
+    private const uint DISPLAY_DEVICE_ATTACHED_TO_DESKTOP = 0x1;
+    private const uint DISPLAY_DEVICE_PRIMARY_DEVICE = 0x4;
 
     private static IReadOnlyList<HardwareInfoSection>? _cache;
     private static readonly object _lock = new();
@@ -487,54 +489,7 @@ public static class HardwareInfoService
 
     private static string FormatDisplays()
     {
-        var monitorInfos = new List<(string Label, string? Resolution)>();
-
-        try
-        {
-            var wmiMonitors = new List<(string InstanceName, string Label)>();
-            using var searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM WmiMonitorID");
-            foreach (ManagementBaseObject item in searcher.Get())
-            {
-                var mfr = DecodeWmiArray(item, "ManufacturerName");
-                var product = DecodeWmiArray(item, "ProductName");
-                var serial = DecodeWmiArray(item, "SerialNumberID");
-                var instanceName = Get(item, "InstanceName") ?? "";
-                var pnpId = instanceName.Split('\\').FirstOrDefault() ?? "";
-
-                var mfrLabel = ResolveManufacturer(mfr);
-                var parts = new List<string>();
-                if (!string.IsNullOrWhiteSpace(mfrLabel)) parts.Add(mfrLabel);
-                if (!string.IsNullOrWhiteSpace(product) && product != mfrLabel) parts.Add(product);
-                if (parts.Count == 0 && !string.IsNullOrWhiteSpace(pnpId))
-                {
-                    var pnpMfr = ResolveManufacturer(pnpId.Length >= 3 ? pnpId.Substring(0, 3) : pnpId);
-                    if (!string.IsNullOrWhiteSpace(pnpMfr)) parts.Add(pnpMfr);
-                }
-
-                var label = string.Join(" ", parts.Distinct());
-                if (!string.IsNullOrWhiteSpace(serial) && serial != "0") label += $" (SN:{serial})";
-                wmiMonitors.Add((instanceName, label));
-            }
-
-            var deviceResolutions = GetDisplayDeviceResolutions();
-
-            foreach (var (instanceName, label) in wmiMonitors)
-            {
-                var pnpPart = instanceName.Split('\\').FirstOrDefault() ?? "";
-                var resolution = deviceResolutions.FirstOrDefault(kv =>
-                    kv.Key.Equals(pnpPart, StringComparison.OrdinalIgnoreCase)).Value;
-                monitorInfos.Add((label, resolution));
-            }
-
-            if (monitorInfos.Count == 0)
-            {
-                foreach (var res in deviceResolutions.Values)
-                {
-                    monitorInfos.Add(("", res));
-                }
-            }
-        }
-        catch { }
+        var monitorInfos = GetActiveDisplayInfos();
 
         if (monitorInfos.Count == 0)
         {
@@ -553,7 +508,7 @@ public static class HardwareInfoService
             for (int i = 0; i < pnpNames.Count; i++)
             {
                 var res = i < fallbackRes.Count ? fallbackRes[i] : null;
-                monitorInfos.Add((pnpNames[i]!, res));
+                monitorInfos.Add(new DisplayInfo(pnpNames[i]!, res, false));
             }
         }
 
@@ -563,63 +518,179 @@ public static class HardwareInfoService
         {
             if (string.IsNullOrWhiteSpace(mi.Label) && string.IsNullOrWhiteSpace(mi.Resolution))
                 return "";
-            if (string.IsNullOrWhiteSpace(mi.Label)) return mi.Resolution;
-            if (string.IsNullOrWhiteSpace(mi.Resolution)) return mi.Label;
-            return $"{mi.Label} [{mi.Resolution}]";
+            var label = mi.IsPrimary && !string.IsNullOrWhiteSpace(mi.Label) ? $"主屏 {mi.Label}" : mi.Label;
+            if (string.IsNullOrWhiteSpace(label)) return mi.Resolution;
+            if (string.IsNullOrWhiteSpace(mi.Resolution)) return label;
+            return $"{label} [{mi.Resolution}]";
         }).Where(s => !string.IsNullOrWhiteSpace(s)));
     }
 
-    private static Dictionary<string, string> GetDisplayDeviceResolutions()
+    private sealed record DisplayInfo(string Label, string? Resolution, bool IsPrimary);
+
+    private static List<DisplayInfo> GetActiveDisplayInfos()
     {
-        var results = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var results = new List<DisplayInfo>();
+        var wmiLabels = GetWmiMonitorLabelsByPnpCode();
 
-        var dd = new DISPLAY_DEVICE { Size = Marshal.SizeOf<DISPLAY_DEVICE>() };
-        for (uint i = 0; EnumDisplayDevices(null, i, ref dd, 0); i++)
+        try
         {
-            var adapterName = dd.DeviceName;
-            var adapterDeviceId = dd.DeviceID;
-
-            var mon = new DISPLAY_DEVICE { Size = Marshal.SizeOf<DISPLAY_DEVICE>() };
-            for (uint j = 0; EnumDisplayDevices(adapterName, j, ref mon, 0); j++)
+            var adapter = NewDisplayDevice();
+            for (uint i = 0; EnumDisplayDevices(null, i, ref adapter, 0); i++)
             {
-                if ((mon.StateFlags & 1) != 0)
+                if ((adapter.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) != 0)
                 {
-                    var pnpDeviceId = ExtractPnpFromDeviceId(mon.DeviceID);
-                    if (string.IsNullOrWhiteSpace(pnpDeviceId))
-                    {
-                        mon = new DISPLAY_DEVICE { Size = Marshal.SizeOf<DISPLAY_DEVICE>() };
-                        continue;
-                    }
+                    var resolution = GetCurrentResolution(adapter.DeviceName);
+                    var isPrimary = (adapter.StateFlags & DISPLAY_DEVICE_PRIMARY_DEVICE) != 0;
+                    var monitor = GetDisplayMonitor(adapter.DeviceName);
+                    var pnpCode = ExtractMonitorPnpCode(monitor?.DeviceID);
+                    var label = ChooseDisplayLabel(monitor?.DeviceString, pnpCode, adapter.DeviceString, wmiLabels);
 
-                    var mode = new DEVMODE();
-                    mode.dmSize = (ushort)Marshal.SizeOf<DEVMODE>();
-                    if (EnumDisplaySettings(adapterName, ENUM_CURRENT_SETTINGS, ref mode))
+                    if (!string.IsNullOrWhiteSpace(label) || !string.IsNullOrWhiteSpace(resolution))
                     {
-                        var res = $"{mode.dmPelsWidth} x {mode.dmPelsHeight}";
-                        if (!results.ContainsKey(pnpDeviceId))
-                        {
-                            results[pnpDeviceId] = res;
-                        }
+                        results.Add(new DisplayInfo(label, resolution, isPrimary));
                     }
                 }
-                mon = new DISPLAY_DEVICE { Size = Marshal.SizeOf<DISPLAY_DEVICE>() };
-            }
 
-            dd = new DISPLAY_DEVICE { Size = Marshal.SizeOf<DISPLAY_DEVICE>() };
+                adapter = NewDisplayDevice();
+            }
         }
+        catch { }
 
         return results;
     }
 
-    private static string ExtractPnpFromDeviceId(string deviceId)
+    private static DISPLAY_DEVICE NewDisplayDevice() => new() { Size = Marshal.SizeOf<DISPLAY_DEVICE>() };
+
+    private static DISPLAY_DEVICE? GetDisplayMonitor(string displayDeviceName)
+    {
+        DISPLAY_DEVICE? fallback = null;
+        var monitor = NewDisplayDevice();
+        for (uint i = 0; EnumDisplayDevices(displayDeviceName, i, ref monitor, 0); i++)
+        {
+            if (fallback == null) fallback = monitor;
+            if ((monitor.StateFlags & DISPLAY_DEVICE_ATTACHED_TO_DESKTOP) != 0)
+            {
+                return monitor;
+            }
+
+            monitor = NewDisplayDevice();
+        }
+
+        return fallback;
+    }
+
+    private static string? GetCurrentResolution(string displayDeviceName)
+    {
+        var mode = new DEVMODE { dmSize = (ushort)Marshal.SizeOf<DEVMODE>() };
+        if (!EnumDisplaySettings(displayDeviceName, ENUM_CURRENT_SETTINGS, ref mode) ||
+            mode.dmPelsWidth == 0 ||
+            mode.dmPelsHeight == 0)
+        {
+            return null;
+        }
+
+        return $"{mode.dmPelsWidth} x {mode.dmPelsHeight}";
+    }
+
+    private static string ChooseDisplayLabel(
+        string? monitorDeviceString,
+        string? pnpCode,
+        string? adapterDeviceString,
+        IReadOnlyDictionary<string, string> wmiLabels)
+    {
+        var monitorLabel = CleanDisplayLabel(monitorDeviceString);
+        if (!string.IsNullOrWhiteSpace(pnpCode) &&
+            wmiLabels.TryGetValue(pnpCode, out var wmiLabel) &&
+            !string.IsNullOrWhiteSpace(wmiLabel))
+        {
+            return wmiLabel;
+        }
+
+        if (!string.IsNullOrWhiteSpace(monitorLabel) && !IsGenericMonitorLabel(monitorLabel))
+        {
+            return monitorLabel;
+        }
+
+        var pnpMfr = pnpCode?.Length >= 3 ? ResolveManufacturer(pnpCode[..3]) : null;
+        if (!string.IsNullOrWhiteSpace(pnpMfr)) return pnpMfr;
+
+        return CleanDisplayLabel(adapterDeviceString);
+    }
+
+    private static string CleanDisplayLabel(string? label)
+    {
+        if (string.IsNullOrWhiteSpace(label)) return "";
+        return label.Trim();
+    }
+
+    private static bool IsGenericMonitorLabel(string? label)
+    {
+        return string.IsNullOrWhiteSpace(label) ||
+            ContainsAny(label, "Generic PnP", "通用 PnP", "通用即插即用", "Default Monitor", "默认监视器");
+    }
+
+    private static Dictionary<string, string> GetWmiMonitorLabelsByPnpCode()
+    {
+        var labels = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        try
+        {
+            using var searcher = new ManagementObjectSearcher("root\\WMI", "SELECT * FROM WmiMonitorID");
+            foreach (ManagementBaseObject item in searcher.Get())
+            {
+                var pnpCode = ExtractMonitorPnpCode(Get(item, "InstanceName"));
+                if (string.IsNullOrWhiteSpace(pnpCode) || labels.ContainsKey(pnpCode)) continue;
+
+                var label = BuildWmiMonitorLabel(item);
+                if (!string.IsNullOrWhiteSpace(label))
+                {
+                    labels[pnpCode] = label;
+                }
+            }
+        }
+        catch { }
+
+        return labels;
+    }
+
+    private static string BuildWmiMonitorLabel(ManagementBaseObject item)
+    {
+        var mfr = DecodeWmiArray(item, "ManufacturerName");
+        var product = DecodeWmiArray(item, "ProductName");
+        var serial = DecodeWmiArray(item, "SerialNumberID");
+        var pnpCode = ExtractMonitorPnpCode(Get(item, "InstanceName"));
+
+        var mfrLabel = ResolveManufacturer(mfr);
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(mfrLabel)) parts.Add(mfrLabel);
+        if (!string.IsNullOrWhiteSpace(product) && product != mfrLabel) parts.Add(product);
+        if (parts.Count == 0 && !string.IsNullOrWhiteSpace(pnpCode))
+        {
+            var pnpMfr = ResolveManufacturer(pnpCode.Length >= 3 ? pnpCode[..3] : pnpCode);
+            if (!string.IsNullOrWhiteSpace(pnpMfr)) parts.Add(pnpMfr);
+        }
+
+        var label = string.Join(" ", parts.Distinct());
+        if (!string.IsNullOrWhiteSpace(serial) && serial != "0") label += $" (SN:{serial})";
+        return label.Trim();
+    }
+
+    private static string ExtractMonitorPnpCode(string? deviceId)
     {
         if (string.IsNullOrWhiteSpace(deviceId)) return "";
-        var parts = deviceId.Split('#');
-        if (parts.Length >= 2)
+
+        var normalized = deviceId.Replace('#', '\\');
+        var parts = normalized.Split('\\', StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 0; i < parts.Length - 1; i++)
         {
-            return parts[1];
+            if (parts[i].Equals("DISPLAY", StringComparison.OrdinalIgnoreCase) ||
+                parts[i].Equals("MONITOR", StringComparison.OrdinalIgnoreCase))
+            {
+                return parts[i + 1];
+            }
         }
-        return deviceId;
+
+        return parts.FirstOrDefault(part => part.Length >= 3 && char.IsLetter(part[0]) && char.IsLetter(part[1]) && char.IsLetter(part[2])) ?? "";
     }
 
     private static List<string> GetFallbackResolutions()

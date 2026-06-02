@@ -244,6 +244,21 @@ jobs:
           mkdir -p release_files
           find artifacts -type f \( -name '*.exe' -o -name '*.zip' \) -exec cp {} release_files/ \;
 
+      - name: Calculate file hashes
+        id: hashes
+        run: |
+          cd release_files
+          echo "## SHA256 哈希值" > ../hash_table.md
+          echo "" >> ../hash_table.md
+          echo "| 文件 | SHA256 |" >> ../hash_table.md
+          echo "|------|--------|" >> ../hash_table.md
+          for f in *.exe *.zip; do
+            [ -f "$f" ] || continue
+            HASH=$(sha256sum "$f" | awk '{print $1}')
+            echo "| \`$f\` | \`$HASH\` |" >> ../hash_table.md
+          done
+          cat ../hash_table.md
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -266,3 +281,5 @@ jobs:
             | `TubaWinUi3_Portable_${{ inputs.version }}_x64.zip` | x64 便携版 |
             | `TubaWinUi3_Portable_${{ inputs.version }}_x86.zip` | x86 便携版 |
             | `TubaWinUi3_Portable_${{ inputs.version }}_arm64.zip` | ARM64 便携版 |
+
+            $(cat hash_table.md)

@@ -15,16 +15,7 @@
       "contributions": [
         "test"
       ]
-    },
-    { 
-       "login": "Laniakeaea", 
-       "name": "Laniakeaea", 
-       "avatar_url": "https://avatars.githubusercontent.com/u/93756972?v=4", 
-       "profile": "https://github.com/Laniakeaea", 
-       "contributions": [ 
-         "infra"
-       ] 
-     }
+    }
   ],
   "contributorsPerLine": 7,
   "skipCi": true,

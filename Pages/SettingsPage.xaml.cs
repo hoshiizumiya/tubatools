@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using TubaWinUi3;
 using TubaWinUi3.Services;
 using Windows.ApplicationModel.DataTransfer;
+using static TubaWinUi3.Services.ConfigManager;
 
 namespace TubaWinUi3.Pages;
 
@@ -24,6 +25,7 @@ public sealed partial class SettingsPage : Page
     private bool _watermarkFontInitializing;
     private bool _defaultPageInitializing;
     private bool _brandLogoInitializing;
+    private bool _driverBusy;
 
     private static readonly (string Tag, string DisplayName)[] DefaultPageOptions =
     [
@@ -92,6 +94,7 @@ public sealed partial class SettingsPage : Page
         InitBrandLogoToggle();
         InitWatermarkSettings();
         LoadBackgroundSettings();
+        InitDriverStatus();
     }
 
     private void LoadSettingsGif()
@@ -173,9 +176,7 @@ public sealed partial class SettingsPage : Page
 
         try
         {
-            var bgDir = System.IO.Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "TubaWinUi3", "Backgrounds");
+            var bgDir = ConfigManager.GetBackgroundsDir();
             System.IO.Directory.CreateDirectory(bgDir);
 
             var destName = $"bg_{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}{System.IO.Path.GetExtension(sourcePath)}";
@@ -1003,9 +1004,110 @@ public sealed partial class SettingsPage : Page
         await dialog.ShowAsync();
     }
 
+    private void ConfigManagerButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new ConfigManagerDialog
+        {
+            XamlRoot = XamlRoot,
+            RequestedTheme = ThemeService.CurrentElementTheme
+        };
+        _ = dialog.ShowAsync();
+    }
+
     private void ThrowErrorButton_Click(object sender, RoutedEventArgs e)
     {
         throw new InvalidOperationException("这是一条手动抛出的测试异常，用于验证全局错误页面是否正常工作。");
+    }
+
+    private void InitDriverStatus()
+    {
+        UpdateDriverStatusUI();
+    }
+
+    private void UpdateDriverStatusUI()
+    {
+        var (installed, version) = LiteMonitorService.GetDriverStatus();
+        var ready = LiteMonitorService.IsDriverReady();
+
+        if (ready)
+        {
+            DriverStatusText.Text = version != null
+                ? $"PawnIO 驱动已安装 (v{version})"
+                : "PawnIO 驱动已安装";
+            DriverInstallButton.Visibility = Visibility.Collapsed;
+            DriverDivider.Visibility = Visibility.Visible;
+            DriverUninstallPanel.Visibility = Visibility.Visible;
+        }
+        else if (installed)
+        {
+            DriverStatusText.Text = version != null
+                ? $"PawnIO 驱动版本过低 (v{version})，需要重新安装"
+                : "PawnIO 驱动需要更新";
+            DriverInstallButton.Visibility = Visibility.Visible;
+            DriverDivider.Visibility = Visibility.Collapsed;
+            DriverUninstallPanel.Visibility = Visibility.Collapsed;
+        }
+        else
+        {
+            DriverStatusText.Text = "PawnIO 驱动未安装";
+            DriverInstallButton.Visibility = Visibility.Visible;
+            DriverDivider.Visibility = Visibility.Collapsed;
+            DriverUninstallPanel.Visibility = Visibility.Collapsed;
+        }
+    }
+
+    private async void DriverInstallButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_driverBusy) return;
+        _driverBusy = true;
+        DriverInstallButton.IsEnabled = false;
+        DriverUninstallButton.IsEnabled = false;
+
+        try
+        {
+            var ok = await LiteMonitorService.Instance.EnsureDriverAsync(XamlRoot);
+            UpdateDriverStatusUI();
+
+            if (!ok)
+            {
+                DriverStatusText.Text = "驱动安装未成功";
+            }
+        }
+        finally
+        {
+            _driverBusy = false;
+            DriverInstallButton.IsEnabled = true;
+            DriverUninstallButton.IsEnabled = true;
+        }
+    }
+
+    private async void DriverUninstallButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_driverBusy) return;
+        _driverBusy = true;
+        DriverInstallButton.IsEnabled = false;
+        DriverUninstallButton.IsEnabled = false;
+
+        try
+        {
+            var ok = await LiteMonitorService.UninstallDriverAsync(XamlRoot);
+            UpdateDriverStatusUI();
+
+            if (ok)
+            {
+                await ShowMessageAsync("卸载成功", "PawnIO 驱动已卸载。");
+            }
+            else
+            {
+                await ShowMessageAsync("卸载失败", "驱动卸载未成功，请重试。");
+            }
+        }
+        finally
+        {
+            _driverBusy = false;
+            DriverInstallButton.IsEnabled = true;
+            DriverUninstallButton.IsEnabled = true;
+        }
     }
 
     private void OpenSourceButton_Click(object sender, RoutedEventArgs e)

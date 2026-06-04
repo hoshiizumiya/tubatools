@@ -184,9 +184,7 @@ public static class UpdateService
         }
     }
 
-    private static readonly string _skipVersionFilePath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "TubaWinUi3", "skipped_version.txt");
+    private static string SkipVersionFilePath => ConfigManager.GetSkippedVersionPath();
 
     public static string? GetSkippedVersion()
     {
@@ -199,8 +197,8 @@ public static class UpdateService
 
         try
         {
-            if (File.Exists(_skipVersionFilePath))
-                return File.ReadAllText(_skipVersionFilePath).Trim();
+            if (File.Exists(SkipVersionFilePath))
+                return File.ReadAllText(SkipVersionFilePath).Trim();
         }
         catch { }
 
@@ -219,9 +217,9 @@ public static class UpdateService
 
         try
         {
-            var dir = Path.GetDirectoryName(_skipVersionFilePath)!;
+            var dir = Path.GetDirectoryName(SkipVersionFilePath)!;
             Directory.CreateDirectory(dir);
-            File.WriteAllText(_skipVersionFilePath, version);
+            File.WriteAllText(SkipVersionFilePath, version);
         }
         catch { }
     }

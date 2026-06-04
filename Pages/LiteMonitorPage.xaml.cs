@@ -10,15 +10,19 @@ using System.Linq;
 using Windows.Foundation;
 using Windows.Graphics;
 using Windows.UI;
+using static TubaWinUi3.Services.ConfigManager;
 
 namespace TubaWinUi3.Pages;
 
 public sealed class PopupSettings
 {
-    public bool ShowCpu = true, ShowGpu = true, ShowFps = true, ShowMem = true, ShowNet = true, ShowBat = true;
-    public bool ShowCpuChart = true, ShowGpuChart = true, ShowFpsChart = true;
-    public bool ShowCpuTemp = true, ShowCpuClock = true, ShowCpuPower = true;
-    public bool ShowGpuTemp = true, ShowGpuClock = true, ShowGpuPower = true;
+    public bool ShowCpu = true, ShowGpu = true, ShowFps = true, ShowMem = true, ShowDisk = true, ShowNet = true, ShowBat = true;
+    public bool ShowCpuChart = true, ShowCpuTemp = true, ShowCpuClock = true, ShowCpuPower = true;
+    public bool ShowGpuChart = true, ShowGpuTemp = true, ShowGpuClock = true, ShowGpuPower = true;
+    public bool ShowFpsChart = true;
+    public bool ShowMemChart = false, ShowMemUsed = true;
+    public bool ShowDiskChart = false, ShowDiskRead = true, ShowDiskWrite = true;
+    public bool ShowNetChart = false, ShowNetUp = true, ShowNetDown = true;
     public byte Opacity = 240;
     public bool Topmost = true;
 
@@ -27,7 +31,7 @@ public sealed class PopupSettings
         var s = new PopupSettings();
         try
         {
-            var path = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TubaWinUi3", "popup_settings.json");
+            var path = ConfigManager.GetPopupSettingsPath();
             if (!System.IO.File.Exists(path)) return s;
             var json = System.IO.File.ReadAllText(path);
             var doc = System.Text.Json.JsonDocument.Parse(json);
@@ -36,17 +40,26 @@ public sealed class PopupSettings
             if (root.TryGetProperty("show_gpu", out p)) s.ShowGpu = p.GetBoolean();
             if (root.TryGetProperty("show_fps", out p)) s.ShowFps = p.GetBoolean();
             if (root.TryGetProperty("show_mem", out p)) s.ShowMem = p.GetBoolean();
+            if (root.TryGetProperty("show_disk", out p)) s.ShowDisk = p.GetBoolean();
             if (root.TryGetProperty("show_net", out p)) s.ShowNet = p.GetBoolean();
             if (root.TryGetProperty("show_bat", out p)) s.ShowBat = p.GetBoolean();
             if (root.TryGetProperty("show_cpu_chart", out p)) s.ShowCpuChart = p.GetBoolean();
-            if (root.TryGetProperty("show_gpu_chart", out p)) s.ShowGpuChart = p.GetBoolean();
-            if (root.TryGetProperty("show_fps_chart", out p)) s.ShowFpsChart = p.GetBoolean();
             if (root.TryGetProperty("show_cpu_temp", out p)) s.ShowCpuTemp = p.GetBoolean();
             if (root.TryGetProperty("show_cpu_clock", out p)) s.ShowCpuClock = p.GetBoolean();
             if (root.TryGetProperty("show_cpu_power", out p)) s.ShowCpuPower = p.GetBoolean();
+            if (root.TryGetProperty("show_gpu_chart", out p)) s.ShowGpuChart = p.GetBoolean();
             if (root.TryGetProperty("show_gpu_temp", out p)) s.ShowGpuTemp = p.GetBoolean();
             if (root.TryGetProperty("show_gpu_clock", out p)) s.ShowGpuClock = p.GetBoolean();
             if (root.TryGetProperty("show_gpu_power", out p)) s.ShowGpuPower = p.GetBoolean();
+            if (root.TryGetProperty("show_fps_chart", out p)) s.ShowFpsChart = p.GetBoolean();
+            if (root.TryGetProperty("show_mem_chart", out p)) s.ShowMemChart = p.GetBoolean();
+            if (root.TryGetProperty("show_mem_used", out p)) s.ShowMemUsed = p.GetBoolean();
+            if (root.TryGetProperty("show_disk_chart", out p)) s.ShowDiskChart = p.GetBoolean();
+            if (root.TryGetProperty("show_disk_read", out p)) s.ShowDiskRead = p.GetBoolean();
+            if (root.TryGetProperty("show_disk_write", out p)) s.ShowDiskWrite = p.GetBoolean();
+            if (root.TryGetProperty("show_net_chart", out p)) s.ShowNetChart = p.GetBoolean();
+            if (root.TryGetProperty("show_net_up", out p)) s.ShowNetUp = p.GetBoolean();
+            if (root.TryGetProperty("show_net_down", out p)) s.ShowNetDown = p.GetBoolean();
             if (root.TryGetProperty("opacity", out p)) s.Opacity = p.GetByte();
             if (root.TryGetProperty("topmost", out p)) s.Topmost = p.GetBoolean();
         }
@@ -58,9 +71,9 @@ public sealed class PopupSettings
     {
         try
         {
-            var dir = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TubaWinUi3");
+            var dir = ConfigManager.GetDataDir();
             System.IO.Directory.CreateDirectory(dir);
-            var path = System.IO.Path.Combine(dir, "popup_settings.json");
+            var path = ConfigManager.GetPopupSettingsPath();
             using var ms = new System.IO.MemoryStream();
             using var writer = new System.Text.Json.Utf8JsonWriter(ms);
             writer.WriteStartObject();
@@ -68,17 +81,26 @@ public sealed class PopupSettings
             writer.WriteBoolean("show_gpu", ShowGpu);
             writer.WriteBoolean("show_fps", ShowFps);
             writer.WriteBoolean("show_mem", ShowMem);
+            writer.WriteBoolean("show_disk", ShowDisk);
             writer.WriteBoolean("show_net", ShowNet);
             writer.WriteBoolean("show_bat", ShowBat);
             writer.WriteBoolean("show_cpu_chart", ShowCpuChart);
-            writer.WriteBoolean("show_gpu_chart", ShowGpuChart);
-            writer.WriteBoolean("show_fps_chart", ShowFpsChart);
             writer.WriteBoolean("show_cpu_temp", ShowCpuTemp);
             writer.WriteBoolean("show_cpu_clock", ShowCpuClock);
             writer.WriteBoolean("show_cpu_power", ShowCpuPower);
+            writer.WriteBoolean("show_gpu_chart", ShowGpuChart);
             writer.WriteBoolean("show_gpu_temp", ShowGpuTemp);
             writer.WriteBoolean("show_gpu_clock", ShowGpuClock);
             writer.WriteBoolean("show_gpu_power", ShowGpuPower);
+            writer.WriteBoolean("show_fps_chart", ShowFpsChart);
+            writer.WriteBoolean("show_mem_chart", ShowMemChart);
+            writer.WriteBoolean("show_mem_used", ShowMemUsed);
+            writer.WriteBoolean("show_disk_chart", ShowDiskChart);
+            writer.WriteBoolean("show_disk_read", ShowDiskRead);
+            writer.WriteBoolean("show_disk_write", ShowDiskWrite);
+            writer.WriteBoolean("show_net_chart", ShowNetChart);
+            writer.WriteBoolean("show_net_up", ShowNetUp);
+            writer.WriteBoolean("show_net_down", ShowNetDown);
             writer.WriteNumber("opacity", Opacity);
             writer.WriteBoolean("topmost", Topmost);
             writer.WriteEndObject();
@@ -295,55 +317,93 @@ public sealed partial class LiteMonitorPage : Page
     private void PopupSettingsBtn_Click(object sender, RoutedEventArgs e)
     {
         var settings = PopupSettings.Load();
-        var panel = new StackPanel { Spacing = 8 };
+        var panel = new StackPanel { Spacing = 4 };
 
-        panel.Children.Add(new TextBlock { Text = "显示监测项", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Opacity = 0.8 });
-        var showCpu = new CheckBox { Content = "CPU 处理器", IsChecked = settings.ShowCpu };
-        var showGpu = new CheckBox { Content = "GPU 显卡", IsChecked = settings.ShowGpu };
-        var showFps = new CheckBox { Content = "FPS 帧率", IsChecked = settings.ShowFps };
-        var showMem = new CheckBox { Content = "MEM 内存", IsChecked = settings.ShowMem };
-        var showNet = new CheckBox { Content = "NET 网络", IsChecked = settings.ShowNet };
-        var showBat = new CheckBox { Content = "BAT 电池", IsChecked = settings.ShowBat };
-        panel.Children.Add(showCpu);
-        panel.Children.Add(showGpu);
-        panel.Children.Add(showFps);
-        panel.Children.Add(showMem);
-        panel.Children.Add(showNet);
-        panel.Children.Add(showBat);
+        StackPanel AddGroup(string title)
+        {
+            var header = new TextBlock
+            {
+                Text = title,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Opacity = 0.8,
+                Margin = new Thickness(0, 8, 0, 2)
+            };
+            panel.Children.Add(header);
+            var group = new StackPanel { Spacing = 2, Margin = new Thickness(16, 0, 0, 0) };
+            panel.Children.Add(group);
+            return group;
+        }
 
-        panel.Children.Add(new TextBlock { Text = "CPU 子项", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Opacity = 0.8, Margin = new Thickness(0, 4, 0, 0) });
-        var showCpuChart = new CheckBox { Content = "CPU 曲线", IsChecked = settings.ShowCpuChart };
-        var showCpuTemp = new CheckBox { Content = "CPU 温度", IsChecked = settings.ShowCpuTemp };
-        var showCpuClock = new CheckBox { Content = "CPU 频率", IsChecked = settings.ShowCpuClock };
-        var showCpuPower = new CheckBox { Content = "CPU 功耗", IsChecked = settings.ShowCpuPower };
-        panel.Children.Add(showCpuChart);
-        panel.Children.Add(showCpuTemp);
-        panel.Children.Add(showCpuClock);
-        panel.Children.Add(showCpuPower);
+        var gCpu = AddGroup("CPU 处理器");
+        var showCpu = new CheckBox { Content = "显示", IsChecked = settings.ShowCpu };
+        var showCpuChart = new CheckBox { Content = "曲线图", IsChecked = settings.ShowCpuChart, Margin = new Thickness(16, 0, 0, 0) };
+        var showCpuTemp = new CheckBox { Content = "温度", IsChecked = settings.ShowCpuTemp, Margin = new Thickness(16, 0, 0, 0) };
+        var showCpuClock = new CheckBox { Content = "频率", IsChecked = settings.ShowCpuClock, Margin = new Thickness(16, 0, 0, 0) };
+        var showCpuPower = new CheckBox { Content = "功耗", IsChecked = settings.ShowCpuPower, Margin = new Thickness(16, 0, 0, 0) };
+        gCpu.Children.Add(showCpu);
+        gCpu.Children.Add(showCpuChart);
+        gCpu.Children.Add(showCpuTemp);
+        gCpu.Children.Add(showCpuClock);
+        gCpu.Children.Add(showCpuPower);
 
-        panel.Children.Add(new TextBlock { Text = "GPU 子项", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Opacity = 0.8, Margin = new Thickness(0, 4, 0, 0) });
-        var showGpuChart = new CheckBox { Content = "GPU 曲线", IsChecked = settings.ShowGpuChart };
-        var showGpuTemp = new CheckBox { Content = "GPU 温度", IsChecked = settings.ShowGpuTemp };
-        var showGpuClock = new CheckBox { Content = "GPU 频率", IsChecked = settings.ShowGpuClock };
-        var showGpuPower = new CheckBox { Content = "GPU 功耗", IsChecked = settings.ShowGpuPower };
-        panel.Children.Add(showGpuChart);
-        panel.Children.Add(showGpuTemp);
-        panel.Children.Add(showGpuClock);
-        panel.Children.Add(showGpuPower);
+        var gGpu = AddGroup("GPU 显卡");
+        var showGpu = new CheckBox { Content = "显示", IsChecked = settings.ShowGpu };
+        var showGpuChart = new CheckBox { Content = "曲线图", IsChecked = settings.ShowGpuChart, Margin = new Thickness(16, 0, 0, 0) };
+        var showGpuTemp = new CheckBox { Content = "温度", IsChecked = settings.ShowGpuTemp, Margin = new Thickness(16, 0, 0, 0) };
+        var showGpuClock = new CheckBox { Content = "频率", IsChecked = settings.ShowGpuClock, Margin = new Thickness(16, 0, 0, 0) };
+        var showGpuPower = new CheckBox { Content = "功耗", IsChecked = settings.ShowGpuPower, Margin = new Thickness(16, 0, 0, 0) };
+        gGpu.Children.Add(showGpu);
+        gGpu.Children.Add(showGpuChart);
+        gGpu.Children.Add(showGpuTemp);
+        gGpu.Children.Add(showGpuClock);
+        gGpu.Children.Add(showGpuPower);
 
-        panel.Children.Add(new TextBlock { Text = "FPS 曲线", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Opacity = 0.8, Margin = new Thickness(0, 4, 0, 0) });
-        var showFpsChart = new CheckBox { Content = "显示 FPS 曲线", IsChecked = settings.ShowFpsChart };
-        panel.Children.Add(showFpsChart);
+        var gFps = AddGroup("FPS 帧率");
+        var showFps = new CheckBox { Content = "显示", IsChecked = settings.ShowFps };
+        var showFpsChart = new CheckBox { Content = "曲线图", IsChecked = settings.ShowFpsChart, Margin = new Thickness(16, 0, 0, 0) };
+        gFps.Children.Add(showFps);
+        gFps.Children.Add(showFpsChart);
 
-        panel.Children.Add(new TextBlock { Text = "窗口设置", FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Opacity = 0.8, Margin = new Thickness(0, 4, 0, 0) });
+        var gMem = AddGroup("MEM 内存");
+        var showMem = new CheckBox { Content = "显示", IsChecked = settings.ShowMem };
+        var showMemChart = new CheckBox { Content = "曲线图", IsChecked = settings.ShowMemChart, Margin = new Thickness(16, 0, 0, 0) };
+        var showMemUsed = new CheckBox { Content = "已用/总量", IsChecked = settings.ShowMemUsed, Margin = new Thickness(16, 0, 0, 0) };
+        gMem.Children.Add(showMem);
+        gMem.Children.Add(showMemChart);
+        gMem.Children.Add(showMemUsed);
+
+        var gDisk = AddGroup("磁盘");
+        var showDisk = new CheckBox { Content = "显示", IsChecked = settings.ShowDisk };
+        var showDiskChart = new CheckBox { Content = "曲线图", IsChecked = settings.ShowDiskChart, Margin = new Thickness(16, 0, 0, 0) };
+        var showDiskRead = new CheckBox { Content = "读取速度", IsChecked = settings.ShowDiskRead, Margin = new Thickness(16, 0, 0, 0) };
+        var showDiskWrite = new CheckBox { Content = "写入速度", IsChecked = settings.ShowDiskWrite, Margin = new Thickness(16, 0, 0, 0) };
+        gDisk.Children.Add(showDisk);
+        gDisk.Children.Add(showDiskChart);
+        gDisk.Children.Add(showDiskRead);
+        gDisk.Children.Add(showDiskWrite);
+
+        var gNet = AddGroup("NET 网络");
+        var showNet = new CheckBox { Content = "显示", IsChecked = settings.ShowNet };
+        var showNetChart = new CheckBox { Content = "曲线图", IsChecked = settings.ShowNetChart, Margin = new Thickness(16, 0, 0, 0) };
+        var showNetUp = new CheckBox { Content = "上传速度", IsChecked = settings.ShowNetUp, Margin = new Thickness(16, 0, 0, 0) };
+        var showNetDown = new CheckBox { Content = "下载速度", IsChecked = settings.ShowNetDown, Margin = new Thickness(16, 0, 0, 0) };
+        gNet.Children.Add(showNet);
+        gNet.Children.Add(showNetChart);
+        gNet.Children.Add(showNetUp);
+        gNet.Children.Add(showNetDown);
+
+        var gBat = AddGroup("BAT 电池");
+        var showBat = new CheckBox { Content = "显示", IsChecked = settings.ShowBat };
+        gBat.Children.Add(showBat);
+
+        var gWin = AddGroup("窗口设置");
         var opacitySlider = new Slider { Minimum = 40, Maximum = 255, Value = settings.Opacity, StepFrequency = 5, HorizontalAlignment = HorizontalAlignment.Stretch };
         var opacityLabel = new TextBlock { Text = $"透明度 {settings.Opacity * 100 / 255}%", Opacity = 0.7, FontSize = 12 };
         opacitySlider.ValueChanged += (_, _) => opacityLabel.Text = $"透明度 {(int)opacitySlider.Value * 100 / 255}%";
-        panel.Children.Add(opacitySlider);
-        panel.Children.Add(opacityLabel);
-
+        gWin.Children.Add(opacitySlider);
+        gWin.Children.Add(opacityLabel);
         var topmostCheck = new CheckBox { Content = "默认窗口置顶", IsChecked = settings.Topmost };
-        panel.Children.Add(topmostCheck);
+        gWin.Children.Add(topmostCheck);
 
         var dialog = new ContentDialog
         {
@@ -361,17 +421,26 @@ public sealed partial class LiteMonitorPage : Page
             settings.ShowGpu = showGpu.IsChecked == true;
             settings.ShowFps = showFps.IsChecked == true;
             settings.ShowMem = showMem.IsChecked == true;
+            settings.ShowDisk = showDisk.IsChecked == true;
             settings.ShowNet = showNet.IsChecked == true;
             settings.ShowBat = showBat.IsChecked == true;
             settings.ShowCpuChart = showCpuChart.IsChecked == true;
-            settings.ShowGpuChart = showGpuChart.IsChecked == true;
-            settings.ShowFpsChart = showFpsChart.IsChecked == true;
             settings.ShowCpuTemp = showCpuTemp.IsChecked == true;
             settings.ShowCpuClock = showCpuClock.IsChecked == true;
             settings.ShowCpuPower = showCpuPower.IsChecked == true;
+            settings.ShowGpuChart = showGpuChart.IsChecked == true;
             settings.ShowGpuTemp = showGpuTemp.IsChecked == true;
             settings.ShowGpuClock = showGpuClock.IsChecked == true;
             settings.ShowGpuPower = showGpuPower.IsChecked == true;
+            settings.ShowFpsChart = showFpsChart.IsChecked == true;
+            settings.ShowMemChart = showMemChart.IsChecked == true;
+            settings.ShowMemUsed = showMemUsed.IsChecked == true;
+            settings.ShowDiskChart = showDiskChart.IsChecked == true;
+            settings.ShowDiskRead = showDiskRead.IsChecked == true;
+            settings.ShowDiskWrite = showDiskWrite.IsChecked == true;
+            settings.ShowNetChart = showNetChart.IsChecked == true;
+            settings.ShowNetUp = showNetUp.IsChecked == true;
+            settings.ShowNetDown = showNetDown.IsChecked == true;
             settings.Opacity = (byte)opacitySlider.Value;
             settings.Topmost = topmostCheck.IsChecked == true;
             settings.Save();
@@ -485,29 +554,19 @@ public sealed partial class LiteMonitorPage : Page
             }
         };
 
-        bool dragging = false;
-        int dragOffsetX = 0, dragOffsetY = 0;
-        topGrid.PointerPressed += (_, e) =>
+        border.PointerPressed += (_, e) =>
         {
-            dragging = true;
-            var screenPt = e.GetCurrentPoint(null).Position;
-            var winPos = window.AppWindow.Position;
-            dragOffsetX = (int)screenPt.X - winPos.X;
-            dragOffsetY = (int)screenPt.Y - winPos.Y;
-            topGrid.CapturePointer(e.Pointer);
+            if (popupHwnd == IntPtr.Zero)
+                popupHwnd = WinRT.Interop.WindowNative.GetWindowHandle(window);
+            if (popupHwnd == IntPtr.Zero) return;
+
             e.Handled = true;
-        };
-        topGrid.PointerMoved += (_, e) =>
-        {
-            if (!dragging) return;
-            var screenPt = e.GetCurrentPoint(null).Position;
-            window.AppWindow.Move(new PointInt32((int)screenPt.X - dragOffsetX, (int)screenPt.Y - dragOffsetY));
-            e.Handled = true;
-        };
-        topGrid.PointerReleased += (_, e) =>
-        {
-            dragging = false;
-            topGrid.ReleasePointerCapture(e.Pointer);
+            var pt = e.GetCurrentPoint(border).Position;
+            var lo = (int)((ushort)pt.X);
+            var hi = (int)((ushort)pt.Y);
+            var lParam = (hi << 16) | lo;
+            ReleaseCapture();
+            PostMessage(popupHwnd, WM_NCLBUTTONDOWN, HTCAPTION, lParam);
         };
 
         var cpuH = new List<float>();
@@ -808,6 +867,15 @@ void ApplyTopmost()
 
     [DllImport("user32.dll")]
     private static extern bool SetLayeredWindowAttributes(IntPtr hWnd, uint crKey, byte bAlpha, uint dwFlags);
+
+    [DllImport("user32.dll")]
+    private static extern bool ReleaseCapture();
+
+    [DllImport("user32.dll", CharSet = CharSet.Unicode)]
+    private static extern bool PostMessage(IntPtr hWnd, int Msg, IntPtr wParam, int lParam);
+
+    private const int WM_NCLBUTTONDOWN = 0x00A1;
+    private static readonly IntPtr HTCAPTION = new(2);
 
     private const int GWL_EXSTYLE = -20;
     private const int WS_EX_LAYERED = 0x00080000;

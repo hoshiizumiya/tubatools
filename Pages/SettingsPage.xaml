@@ -445,6 +445,131 @@
 
                 <TextBlock
                     Style="{StaticResource SectionHeaderStyle}"
+                    Text="配置管理" />
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE8B7;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="配置管理" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="管理配置文件的存储位置、导出和导入" />
+                        </StackPanel>
+
+                        <Button
+                            x:Name="ConfigManagerButton"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Padding="14,6"
+                            Click="ConfigManagerButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="12" Glyph="&#xE9D9;" />
+                                <TextBlock Text="管理" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <TextBlock
+                    Style="{StaticResource SectionHeaderStyle}"
+                    Text="硬件监控" />
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Style="{StaticResource IconBorderStyle}">
+                                <FontIcon FontSize="18" Glyph="&#xE9D9;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="监控驱动" />
+                                <TextBlock
+                                    x:Name="DriverStatusText"
+                                    Opacity="0.68"
+                                    FontSize="13"
+                                    Text="正在检测..." />
+                            </StackPanel>
+
+                            <Button
+                                x:Name="DriverInstallButton"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Padding="14,6"
+                                Click="DriverInstallButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="12" Glyph="&#xE896;" />
+                                    <TextBlock Text="安装驱动" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <Border
+                            Grid.Row="1"
+                            x:Name="DriverDivider"
+                            Padding="0,1"
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                        <Grid Grid.Row="2" ColumnSpacing="16" x:Name="DriverUninstallPanel">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Style="{StaticResource IconBorderStyle}">
+                                <FontIcon FontSize="18" Glyph="&#xE74D;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="卸载驱动" />
+                                <TextBlock
+                                    Opacity="0.68"
+                                    FontSize="13"
+                                    TextWrapping="Wrap"
+                                    Text="卸载 PawnIO 驱动，卸载后将无法获取传感器数据" />
+                            </StackPanel>
+
+                            <Button
+                                x:Name="DriverUninstallButton"
+                                Grid.Column="2"
+                                VerticalAlignment="Center"
+                                Padding="14,6"
+                                Click="DriverUninstallButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="12" Glyph="&#xE74D;" />
+                                    <TextBlock Text="卸载" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <TextBlock
+                    Style="{StaticResource SectionHeaderStyle}"
                     Text="外观" />
 
                 <Border Style="{StaticResource SettingsCardStyle}">

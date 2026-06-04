@@ -8,10 +8,7 @@ namespace TubaWinUi3.Services;
 
 public static class ToolIconService
 {
-    private static readonly string CacheRoot = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "TubaWinUi3",
-        "IconCache");
+    private static string CacheRoot => ConfigManager.GetIconCacheDir();
 
     private static readonly TimeSpan CacheMaxAge = TimeSpan.FromDays(90);
 

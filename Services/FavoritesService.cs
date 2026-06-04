@@ -5,9 +5,7 @@ namespace TubaWinUi3.Services;
 public static class FavoritesService
 {
     private const string Key = "FavoriteTools";
-    private static readonly string _favoritesPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "TubaWinUi3", "favorites.json");
+    private static string FavoritesPath => ConfigManager.GetFavoritesPath();
     private static List<string>? _cache;
 
     public static IReadOnlyList<string> GetFavorites()
@@ -17,9 +15,9 @@ public static class FavoritesService
 
         try
         {
-            if (File.Exists(_favoritesPath))
+            if (File.Exists(FavoritesPath))
             {
-                var json = File.ReadAllText(_favoritesPath);
+                var json = File.ReadAllText(FavoritesPath);
                 _cache = JsonSerializer.Deserialize<List<string>>(json) ?? [];
             }
             else
@@ -78,14 +76,19 @@ public static class FavoritesService
             AddFavorite(toolPath);
     }
 
+    public static void InvalidateCache()
+    {
+        _cache = null;
+    }
+
     private static void Save(List<string> favorites)
     {
         try
         {
-            var dir = Path.GetDirectoryName(_favoritesPath)!;
+            var dir = Path.GetDirectoryName(FavoritesPath)!;
             Directory.CreateDirectory(dir);
             var json = JsonSerializer.Serialize(favorites);
-            File.WriteAllText(_favoritesPath, json);
+            File.WriteAllText(FavoritesPath, json);
         }
         catch { }
     }

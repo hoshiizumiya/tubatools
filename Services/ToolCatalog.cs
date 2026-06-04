@@ -444,6 +444,19 @@ public static class ToolCatalog
     {
         var dirName = Path.GetFileName(toolDir);
 
+        var launchTarget = ToolMetadataService.GetLaunchTarget(toolDir);
+        if (!string.IsNullOrWhiteSpace(launchTarget))
+        {
+            var targetPath = Path.Combine(toolDir, launchTarget);
+            if (File.Exists(targetPath) && IsLaunchable(targetPath))
+                return targetPath;
+
+            var deepTarget = Directory.EnumerateFiles(toolDir, launchTarget, SearchOption.AllDirectories)
+                .FirstOrDefault(f => IsLaunchable(f));
+            if (deepTarget is not null)
+                return deepTarget;
+        }
+
         var allLaunchables = Directory.EnumerateFiles(toolDir, "*", SearchOption.AllDirectories)
             .Where(IsLaunchable)
             .ToList();

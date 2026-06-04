@@ -11,6 +11,7 @@ public sealed record ToolMetadata(
     string? DownloadUrl,
     string? DownloadFilter,
     string? WingetId,
+    string? LaunchTarget,
     IReadOnlyList<string>? Tags);
 
 public sealed record JsonArchVariantResult(string? File, string? Dir, string? Arch);
@@ -60,6 +61,7 @@ public static class ToolMetadataService
             jsonMetadata?.DownloadUrl,
             jsonMetadata?.DownloadFilter,
             jsonMetadata?.WingetId,
+            jsonMetadata?.LaunchTarget,
             jsonMetadata?.Tags);
     }
 
@@ -92,6 +94,12 @@ public static class ToolMetadataService
                  MatchesFlexible(dirName, item.Match)))
             .OrderByDescending(item => item.Match!.Length)
             .FirstOrDefault();
+    }
+
+    public static string? GetLaunchTarget(string toolDir)
+    {
+        var jsonMetadata = FindJsonMetadataByDir(toolDir);
+        return jsonMetadata?.LaunchTarget;
     }
 
     private static JsonToolMetadata? FindJsonMetadataByDir(string toolDir)
@@ -226,6 +234,8 @@ public static class ToolMetadataService
         public string? DownloadFilter { get; set; }
 
         public string? WingetId { get; set; }
+
+        public string? LaunchTarget { get; set; }
 
         public List<string>? Tags { get; set; }
 

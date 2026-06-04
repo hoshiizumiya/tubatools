@@ -129,6 +129,7 @@
       "match": "FurMark_win64",
       "description": "FurMark 2（64 位）GPU 压力测试和烤机工具，支持 Vulkan 和 OpenGL，用于检测显卡稳定性。",
       "publisher": "Geeks3D",
+      "launchTarget": "FurMark_GUI.exe",
       "tags": [ "烤机", "显卡", "稳定性测试", "x64" ]
     },
     {

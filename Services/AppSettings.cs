@@ -4,9 +4,7 @@ namespace TubaWinUi3.Services;
 
 public static class AppSettings
 {
-    private static readonly string _settingsPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "TubaWinUi3", "settings.json");
+    private static string SettingsPath => ConfigManager.GetSettingsPath();
 
     private static Dictionary<string, string>? _cache;
     private static bool _dirty;
@@ -16,9 +14,9 @@ public static class AppSettings
         if (_cache is not null) return _cache;
         try
         {
-            if (File.Exists(_settingsPath))
+            if (File.Exists(SettingsPath))
             {
-                var json = File.ReadAllText(_settingsPath);
+                var json = File.ReadAllText(SettingsPath);
                 _cache = JsonSerializer.Deserialize<Dictionary<string, string>>(json) ?? [];
             }
             else
@@ -38,10 +36,10 @@ public static class AppSettings
         if (!_dirty || _cache is null) return;
         try
         {
-            var dir = Path.GetDirectoryName(_settingsPath)!;
+            var dir = Path.GetDirectoryName(SettingsPath)!;
             Directory.CreateDirectory(dir);
             var json = JsonSerializer.Serialize(_cache);
-            File.WriteAllText(_settingsPath, json);
+            File.WriteAllText(SettingsPath, json);
             _dirty = false;
         }
         catch { }
@@ -89,5 +87,11 @@ public static class AppSettings
     {
         var v = Get(key);
         return v is not null && double.TryParse(v, out var d) ? d : defaultValue;
+    }
+
+    public static void InvalidateCache()
+    {
+        _cache = null;
+        _dirty = false;
     }
 }

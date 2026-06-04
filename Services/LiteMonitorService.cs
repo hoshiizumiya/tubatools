@@ -120,7 +120,7 @@ public sealed class LiteMonitorService : IDisposable
                     if (!s_debugLogged)
                     {
                         s_debugLogged = true;
-                        var logPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "TubaWinUi3", "sensor_dump.txt");
+                        var logPath = ConfigManager.GetSensorDumpPath();
                         try
                         {
                             System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(logPath)!);
@@ -328,23 +328,296 @@ public sealed class LiteMonitorService : IDisposable
         return installed && (version == null || version >= required);
     }
 
+    public static (bool Installed, Version? Version) GetDriverStatus() => GetPawnIOInfo();
+
+    public static async Task<bool> UninstallDriverAsync(XamlRoot xamlRoot)
+    {
+        var (installed, _) = GetPawnIOInfo();
+        if (!installed) return true;
+
+        var tcs = new TaskCompletionSource<bool>();
+
+        var dialog = new ContentDialog
+        {
+            Title = "卸载监控驱动",
+            Content = "确定要卸载 PawnIO 硬件监控驱动吗？\n\n卸载后将无法获取 CPU 温度/频率/功耗等传感器数据。",
+            PrimaryButtonText = "卸载",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = xamlRoot,
+            RequestedTheme = ThemeService.CurrentElementTheme
+        };
+
+        dialog.PrimaryButtonClick += async (_, e) =>
+        {
+            var deferral = e.GetDeferral();
+            try
+            {
+                var setupPath = FindFile(AssetDir, "PawnIO_setup.exe", "pawnio.exe", "PawnIO.exe");
+                if (setupPath == null)
+                {
+                    setupPath = FindDriverInSystem();
+                }
+
+                if (setupPath != null)
+                {
+                    var psi = new ProcessStartInfo
+                    {
+                        FileName = setupPath,
+                        Arguments = "-uninstall -silent",
+                        UseShellExecute = true,
+                        Verb = "runas",
+                        WindowStyle = ProcessWindowStyle.Hidden
+                    };
+                    var proc = Process.Start(psi);
+                    if (proc != null) await proc.WaitForExitAsync();
+                }
+
+                var stillInstalled = GetPawnIOInfo().Installed;
+                if (!stillInstalled)
+                {
+                    ReinitLhm();
+                    tcs.TrySetResult(true);
+                }
+                else
+                {
+                    tcs.TrySetResult(false);
+                }
+            }
+            catch { tcs.TrySetResult(false); }
+            finally { deferral.Complete(); }
+        };
+
+        dialog.CloseButtonClick += (_, _) => tcs.TrySetResult(false);
+
+        var result = await dialog.ShowAsync();
+        return await tcs.Task;
+    }
+
+    private static string? FindDriverInSystem()
+    {
+        try
+        {
+            var keyPath = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\PawnIO";
+            foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
+            {
+                using var key = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view).OpenSubKey(keyPath);
+                if (key?.GetValue("DisplayIcon") is string iconPath && File.Exists(iconPath))
+                {
+                    var dir = Path.GetDirectoryName(iconPath);
+                    if (dir != null)
+                    {
+                        var found = FindFile(dir, "PawnIO_setup.exe", "pawnio.exe", "PawnIO.exe");
+                        if (found != null) return found;
+                    }
+                }
+            }
+        }
+        catch { }
+        return null;
+    }
+
     public async Task<bool> EnsureDriverAsync(XamlRoot xamlRoot)
     {
         if (IsDriverReady()) return true;
 
+        return await InstallDriverWithProgressAsync(xamlRoot);
+    }
+
+    private async Task<bool> InstallDriverWithProgressAsync(XamlRoot xamlRoot)
+    {
         Directory.CreateDirectory(AssetDir);
         var tempZip = Path.Combine(Path.GetTempPath(), $"LiteMonitor_driver_{Guid.NewGuid()}.zip");
 
-        bool ok = await DownloadWithDialogAsync(xamlRoot, "安装硬件监控驱动",
-            "CPU 温度/频率/功耗等数据需要 PawnIO 驱动支持。\n点击安装自动获取并安装（约3MB）。",
-            s_driverUrls, tempZip);
-        if (!ok) return false;
+        var tcs = new TaskCompletionSource<bool>();
+        var cts = new CancellationTokenSource();
 
+        var dialog = new ContentDialog
+        {
+            Title = "安装硬件监控驱动",
+            XamlRoot = xamlRoot,
+            PrimaryButtonText = "安装",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Primary,
+            RequestedTheme = ThemeService.CurrentElementTheme
+        };
+
+        var stack = new StackPanel { Spacing = 8 };
+        var descLabel = new TextBlock { Text = "CPU 温度/频率/功耗等数据需要 PawnIO 驱动支持。\n点击「安装」自动下载并安装（约3MB）。", TextWrapping = TextWrapping.Wrap, Opacity = 0.85 };
+        stack.Children.Add(descLabel);
+        var progressBar = new ProgressBar { IsIndeterminate = true, Visibility = Visibility.Collapsed };
+        stack.Children.Add(progressBar);
+        var detailLabel = new TextBlock { Opacity = 0.68, FontSize = 12, Visibility = Visibility.Collapsed };
+        stack.Children.Add(detailLabel);
+        dialog.Content = stack;
+
+        dialog.PrimaryButtonClick += (s, args) =>
+        {
+            args.Cancel = true;
+            dialog.IsPrimaryButtonEnabled = false;
+            descLabel.Text = "正在下载驱动...";
+            progressBar.Visibility = Visibility.Visible;
+            detailLabel.Visibility = Visibility.Visible;
+            detailLabel.Text = "准备中...";
+
+            RunDriverInstall(dialog, descLabel, progressBar, detailLabel, tempZip, tcs, cts);
+        };
+
+        dialog.CloseButtonClick += (_, _) =>
+        {
+            cts.Cancel();
+            tcs.TrySetResult(false);
+        };
+
+        _ = dialog.ShowAsync();
+        return await tcs.Task;
+    }
+
+    private static async void RunDriverInstall(ContentDialog dialog, TextBlock descLabel, ProgressBar progressBar, TextBlock detailLabel, string tempZip, TaskCompletionSource<bool> tcs, CancellationTokenSource cts)
+    {
         try
         {
-            ZipFile.ExtractToDirectory(tempZip, AssetDir, true);
+            bool success = false;
+
+            foreach (var url in s_driverUrls)
+            {
+                if (cts.Token.IsCancellationRequested) break;
+                try
+                {
+                    descLabel.Text = "正在下载驱动...";
+                    detailLabel.Text = $"连接 {new Uri(url).Host}...";
+                    progressBar.IsIndeterminate = true;
+
+                    var handler = new SocketsHttpHandler
+                    {
+                        SslOptions = new SslClientAuthenticationOptions
+                        {
+                            RemoteCertificateValidationCallback = delegate { return true; }
+                        }
+                    };
+                    using var http = new HttpClient(handler) { Timeout = TimeSpan.FromMinutes(10) };
+                    http.DefaultRequestHeaders.UserAgent.ParseAdd("TubaWinUi3/1.0");
+
+                    using var resp = await http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cts.Token);
+                    resp.EnsureSuccessStatusCode();
+
+                    var contentType = resp.Content.Headers.ContentType?.MediaType ?? "";
+                    if (contentType.StartsWith("text/", StringComparison.OrdinalIgnoreCase))
+                    {
+                        detailLabel.Text = $"{new Uri(url).Host} 返回了非二进制文件，切换源...";
+                        continue;
+                    }
+
+                    var total = resp.Content.Headers.ContentLength ?? -1;
+                    if (total > 0 && total < 100 * 1024)
+                    {
+                        detailLabel.Text = $"文件过小({total / 1024}KB)，可能是无效文件，切换源...";
+                        continue;
+                    }
+
+                    using var stream = await resp.Content.ReadAsStreamAsync(cts.Token);
+                    Directory.CreateDirectory(Path.GetDirectoryName(tempZip)!);
+                    using var fs = File.Create(tempZip);
+
+                    var buf = new byte[81920];
+                    long read = 0;
+                    int chunk;
+                    var sw = Stopwatch.StartNew();
+                    long lastBytes = 0;
+                    var lastTime = sw.Elapsed;
+
+                    while ((chunk = await stream.ReadAsync(buf, cts.Token)) > 0)
+                    {
+                        await fs.WriteAsync(buf.AsMemory(0, chunk), cts.Token);
+                        read += chunk;
+
+                        var now = sw.Elapsed;
+                        if ((now - lastTime).TotalMilliseconds > 300)
+                        {
+                            if (total > 0)
+                            {
+                                progressBar.IsIndeterminate = false;
+                                progressBar.Value = (double)read / total * 100;
+                            }
+                            var speed = (read - lastBytes) / Math.Max((now - lastTime).TotalSeconds, 0.001) / 1048576.0;
+                            detailLabel.Text = $"{read / 1048576.0:F1}MB / {(total > 0 ? $"{total / 1048576.0:F1}MB" : "??")}  {speed:F1}MB/s";
+                            lastBytes = read;
+                            lastTime = now;
+                        }
+                    }
+
+                    fs.Close();
+                    if (!ValidateDownload(tempZip))
+                    {
+                        try { File.Delete(tempZip); } catch { }
+                        detailLabel.Text = "下载文件校验失败，切换源...";
+                        continue;
+                    }
+
+                    success = true;
+                    break;
+                }
+                catch (OperationCanceledException) { throw; }
+                catch { detailLabel.Text = "切换下载源..."; continue; }
+            }
+
+            if (!success)
+            {
+                descLabel.Text = "下载失败";
+                detailLabel.Text = "所有下载源均不可用，请检查网络后重试";
+                progressBar.IsIndeterminate = false;
+                progressBar.Value = 0;
+                dialog.CloseButtonText = "关闭";
+                tcs.TrySetResult(false);
+                return;
+            }
+
+            descLabel.Text = "正在解压...";
+            progressBar.IsIndeterminate = true;
+            detailLabel.Text = "";
+
+            lock (s_lock) { try { s_computer?.Close(); } catch { } s_computer = null; s_initDone = false; }
+            try { Instance._fpsDetector?.Dispose(); Instance._fpsDetector = null; } catch { }
+            FpsDetector.KillZombies();
+
+            try
+            {
+                using var zipArchive = ZipFile.OpenRead(tempZip);
+                foreach (var entry in zipArchive.Entries)
+                {
+                    if (cts.Token.IsCancellationRequested) break;
+                    var destPath = Path.Combine(AssetDir, entry.FullName);
+                    if (string.IsNullOrEmpty(entry.Name)) { Directory.CreateDirectory(destPath); continue; }
+                    Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                    try { if (File.Exists(destPath)) File.Delete(destPath); } catch { continue; }
+                    entry.ExtractToFile(destPath);
+                }
+            }
+            catch (Exception ex)
+            {
+                descLabel.Text = "解压失败";
+                detailLabel.Text = ex.Message;
+                progressBar.IsIndeterminate = false;
+                progressBar.Value = 0;
+                dialog.CloseButtonText = "关闭";
+                tcs.TrySetResult(false);
+                return;
+            }
+
+            descLabel.Text = "正在安装驱动...";
+            detailLabel.Text = "请在弹出的窗口中允许 UAC 提权";
+
             var setupPath = FindFile(AssetDir, "PawnIO_setup.exe", "pawnio.exe", "PawnIO.exe");
-            if (setupPath == null) return false;
+            if (setupPath == null)
+            {
+                descLabel.Text = "未找到驱动安装程序";
+                detailLabel.Text = "";
+                progressBar.IsIndeterminate = false;
+                progressBar.Value = 0;
+                dialog.CloseButtonText = "关闭";
+                tcs.TrySetResult(false);
+                return;
+            }
 
             var psi = new ProcessStartInfo
             {
@@ -356,11 +629,30 @@ public sealed class LiteMonitorService : IDisposable
             };
             var proc = Process.Start(psi);
             if (proc != null) await proc.WaitForExitAsync();
+
             var ready = IsDriverReady();
-            if (ready) ReinitLhm();
-            return ready;
+            if (ready)
+            {
+                ReinitLhm();
+                descLabel.Text = "安装完成！";
+                progressBar.Value = 100;
+                detailLabel.Text = "";
+                await Task.Delay(1000);
+                tcs.TrySetResult(true);
+            }
+            else
+            {
+                descLabel.Text = "驱动安装未成功";
+                detailLabel.Text = proc == null ? "UAC 提权被拒绝，请重试并允许" : "安装程序可能需要手动确认 UAC 提权";
+                progressBar.IsIndeterminate = false;
+                progressBar.Value = 0;
+                dialog.CloseButtonText = "关闭";
+                tcs.TrySetResult(false);
+                return;
+            }
         }
-        catch { return false; }
+        catch (OperationCanceledException) { tcs.TrySetResult(false); }
+        catch { tcs.TrySetResult(false); }
         finally { try { File.Delete(tempZip); } catch { } }
     }
 

@@ -5,9 +5,7 @@ namespace TubaWinUi3.Services;
 public static class LaunchHistoryService
 {
     private const int MaxEntries = 5;
-    private static readonly string _historyPath = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "TubaWinUi3", "launch_history.json");
+    private static string HistoryPath => ConfigManager.GetLaunchHistoryPath();
     private static List<string>? _cache;
 
     public static IReadOnlyList<string> GetHistory()
@@ -17,9 +15,9 @@ public static class LaunchHistoryService
 
         try
         {
-            if (File.Exists(_historyPath))
+            if (File.Exists(HistoryPath))
             {
-                var json = File.ReadAllText(_historyPath);
+                var json = File.ReadAllText(HistoryPath);
                 _cache = JsonSerializer.Deserialize<List<string>>(json) ?? [];
             }
             else
@@ -56,14 +54,19 @@ public static class LaunchHistoryService
         Save([]);
     }
 
+    public static void InvalidateCache()
+    {
+        _cache = null;
+    }
+
     private static void Save(List<string> history)
     {
         try
         {
-            var dir = Path.GetDirectoryName(_historyPath)!;
+            var dir = Path.GetDirectoryName(HistoryPath)!;
             Directory.CreateDirectory(dir);
             var json = JsonSerializer.Serialize(history);
-            File.WriteAllText(_historyPath, json);
+            File.WriteAllText(HistoryPath, json);
         }
         catch { }
     }

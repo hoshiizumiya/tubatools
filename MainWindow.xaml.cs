@@ -24,6 +24,7 @@ public sealed partial class MainWindow : Window
         WindowSizeService.ApplySavedWindowSize(this);
 
         Closed += MainWindow_Closed;
+        AppWindow.Changed += AppWindow_Changed;
 
         PopulateCategories();
         NavigateToDefaultPage();
@@ -31,7 +32,35 @@ public sealed partial class MainWindow : Window
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)
     {
+        AppWindow.Changed -= AppWindow_Changed;
         WindowSizeService.SaveWindowSize(this);
+    }
+
+    private void AppWindow_Changed(AppWindow sender, AppWindowChangedEventArgs args)
+    {
+        if (!args.DidSizeChange) return;
+        var size = sender.Size;
+        var minWidth = 800;
+        var minHeight = 600;
+        var needsResize = false;
+        var newW = size.Width;
+        var newH = size.Height;
+
+        if (size.Width < minWidth)
+        {
+            newW = minWidth;
+            needsResize = true;
+        }
+        if (size.Height < minHeight)
+        {
+            newH = minHeight;
+            needsResize = true;
+        }
+
+        if (needsResize)
+        {
+            sender.Resize(new Windows.Graphics.SizeInt32(newW, newH));
+        }
     }
 
     public void ApplyTitleBarTheme(ElementTheme theme)

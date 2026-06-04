@@ -193,11 +193,7 @@ public static class CpuRankingService
         catch { }
     }
 
-    private static string GetCacheDir()
-    {
-        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
-        return System.IO.Path.Combine(localAppData, "TubaWinUi3");
-    }
+    private static string GetCacheDir() => ConfigManager.GetDataDir();
 
     private static string? FindDataFile()
     {

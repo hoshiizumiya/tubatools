@@ -117,27 +117,54 @@ public static class ToolIconService
         if (itemsToLoad.Count == 0)
             return;
 
+        var alreadyCached = new List<ToolItem>();
+        var needExtract = new List<ToolItem>();
+
         foreach (var tool in itemsToLoad)
         {
             var cached = GetCachedIconPath(tool.Path);
             if (cached is not null)
             {
-                if (dispatcher is not null)
-                    dispatcher.TryEnqueue(() => tool.IconPath = cached);
-                else
-                    tool.IconPath = cached;
-                continue;
+                tool.IconPath = cached;
+                alreadyCached.Add(tool);
             }
-
-            var iconPath = await ExtractIconToCacheAsync(tool.Path);
-            if (iconPath is not null)
+            else
             {
-                if (dispatcher is not null)
-                    dispatcher.TryEnqueue(() => tool.IconPath = iconPath);
-                else
-                    tool.IconPath = iconPath;
+                needExtract.Add(tool);
             }
         }
+
+        if (dispatcher is not null && alreadyCached.Count > 0)
+        {
+            dispatcher.TryEnqueue(() =>
+            {
+                foreach (var t in alreadyCached)
+                    t.IconPath = GetCachedIconPath(t.Path);
+            });
+        }
+
+        if (needExtract.Count == 0)
+            return;
+
+        var semaphore = new SemaphoreSlim(Environment.ProcessorCount >= 4 ? 8 : 4);
+        var tasks = needExtract.Select(async tool =>
+        {
+            await semaphore.WaitAsync();
+            try
+            {
+                var iconPath = await ExtractIconToCacheAsync(tool.Path);
+                if (iconPath is not null)
+                {
+                    if (dispatcher is not null)
+                        dispatcher.TryEnqueue(() => tool.IconPath = iconPath);
+                    else
+                        tool.IconPath = iconPath;
+                }
+            }
+            finally { semaphore.Release(); }
+        });
+
+        await Task.WhenAll(tasks);
     }
 
     public static void CleanExpiredCache()

@@ -18,8 +18,6 @@ public sealed partial class BuiltinToolsPage : Page
         ToolsGrid.ItemsSource = _tools;
         PopulateCategoryFilter();
         LoadTools(null);
-
-        Loaded += BuiltinToolsPage_Loaded;
     }
 
     protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
@@ -31,6 +29,12 @@ public sealed partial class BuiltinToolsPage : Page
         if (e.Parameter is SearchNavigationTarget target && target.HighlightBuiltinId is not null)
         {
             _pendingHighlightId = target.HighlightBuiltinId;
+        }
+
+        if (_pendingHighlightId is not null)
+        {
+            _ = HighlightBuiltinToolAsync(_pendingHighlightId);
+            _pendingHighlightId = null;
         }
     }
 
@@ -47,17 +51,6 @@ public sealed partial class BuiltinToolsPage : Page
         {
             BackgroundImg.Source = null;
             BackgroundImg.Visibility = Visibility.Collapsed;
-        }
-    }
-
-    private void BuiltinToolsPage_Loaded(object sender, RoutedEventArgs e)
-    {
-        Loaded -= BuiltinToolsPage_Loaded;
-
-        if (_pendingHighlightId is not null)
-        {
-            _ = HighlightBuiltinToolAsync(_pendingHighlightId);
-            _pendingHighlightId = null;
         }
     }
 

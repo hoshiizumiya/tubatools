@@ -1,0 +1,21 @@
+{
+  "name": "图吧工具箱WinUI3",
+  "short_name": "图吧工具箱",
+  "description": "更现代化的图吧工具箱——PC 硬件检测与系统维护工具集",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#5b5fc7",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

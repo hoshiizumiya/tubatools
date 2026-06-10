@@ -64,7 +64,8 @@ public sealed partial class CustomToolManagerWindow : Window
             presenter.IsMaximizable = true;
         }
 
-        ThemeService.ApplySavedTheme();
+        if (Content is FrameworkElement root)
+            root.RequestedTheme = ThemeService.CurrentElementTheme;
 
         LoadCategories();
     }

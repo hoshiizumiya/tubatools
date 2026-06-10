@@ -7,7 +7,15 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <ScrollViewer Padding="20,8,20,16">
+    <Grid>
+        <Image
+            x:Name="BackgroundImg"
+            Stretch="UniformToFill"
+            HorizontalAlignment="Center"
+            VerticalAlignment="Stretch"
+            IsHitTestVisible="False" />
+
+        <ScrollViewer Padding="20,8,20,16">
         <StackPanel Spacing="12">
 
             <Grid ColumnSpacing="10">
@@ -76,4 +84,5 @@
             </Border>
         </StackPanel>
     </ScrollViewer>
+    </Grid>
 </Page>

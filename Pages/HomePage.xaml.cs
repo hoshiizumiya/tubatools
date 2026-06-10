@@ -21,6 +21,11 @@ public sealed partial class HomePage : Page
     private bool _compactMode;
     private string? _highlightToolPath;
     private string _searchQuery = string.Empty;
+    private string? _lastLoadedCategory;
+    private string? _lastLoadedTag;
+    private string _lastLoadedQuery = string.Empty;
+    private int _lastCacheVersion = -1;
+    private int _tagBarCacheVersion = -1;
 
     public HomePage()
     {
@@ -104,7 +109,7 @@ public sealed partial class HomePage : Page
             _highlightToolPath = target.HighlightToolPath;
             try
             {
-                var tool = ToolCatalog.GetAllToolsLazy(0, int.MaxValue)
+                var tool = ToolCatalog.GetAllToolsCached()
                     .FirstOrDefault(t => t.Path.Equals(_highlightToolPath, StringComparison.OrdinalIgnoreCase));
                 _category = tool?.Category;
             }
@@ -125,10 +130,25 @@ public sealed partial class HomePage : Page
         _selectedTag = null;
         ApplyBackground();
         UpdateTitle();
-        _ = LoadToolsAsync();
-        if (_category is null)
+
+        var needsReload = _category != _lastLoadedCategory ||
+                          _selectedTag != _lastLoadedTag ||
+                          _searchQuery != _lastLoadedQuery ||
+                          ToolCatalog.CacheVersion != _lastCacheVersion;
+
+        if (needsReload)
+        {
+            _ = LoadToolsAsync();
+        }
+        else if (_highlightToolPath is not null)
+        {
+            _ = HighlightToolAsync(_highlightToolPath);
+            _highlightToolPath = null;
+        }
+
+        if (_category is null && ToolCatalog.CacheVersion != _tagBarCacheVersion)
             _ = PopulateTagBarAsync();
-        else
+        else if (_category is not null)
             TagBarScrollViewer.Visibility = Visibility.Collapsed;
     }
 
@@ -175,6 +195,8 @@ public sealed partial class HomePage : Page
                 btn.Click += TagRadioButton_Click;
                 TagBarPanel.Children.Add(btn);
             }
+
+            _tagBarCacheVersion = ToolCatalog.CacheVersion;
         });
     }
 
@@ -229,12 +251,17 @@ public sealed partial class HomePage : Page
                     return ToolCatalog.Search(query, _selectedTag);
                 if (_category is not null)
                     return ToolCatalog.GetTools(_category);
-                return ToolCatalog.GetAllToolsLazy(0, int.MaxValue);
+                return ToolCatalog.GetAllToolsCached();
             }, cts.Token);
 
             cts.Token.ThrowIfCancellationRequested();
 
             _tools.AddRange(tools);
+
+            _lastLoadedCategory = _category;
+            _lastLoadedTag = _selectedTag;
+            _lastLoadedQuery = query;
+            _lastCacheVersion = ToolCatalog.CacheVersion;
 
             ToolCountText.Text = _tools.Count > 0 ? $"{_tools.Count} 个工具" : "";
             ToolCountText.Visibility = _tools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;

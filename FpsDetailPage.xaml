@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="TubaWinUi3.Pages.FpsDetailPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <ScrollViewer Padding="24,16,24,20">
+        <StackPanel Spacing="12" x:Name="RootPanel">
+
+            <TextBlock x:Name="TitleText" Text="帧率详细分析" FontSize="22" FontWeight="Bold" />
+
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="14">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="硬件信息" FontSize="14" FontWeight="SemiBold" Opacity="0.8" />
+                    <TextBlock x:Name="HwInfoText" FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="14">
+                <StackPanel Spacing="4">
+                    <TextBlock Text="硬件状态" FontSize="14" FontWeight="SemiBold" Opacity="0.8" />
+                    <TextBlock x:Name="HwStatusText" FontSize="12" Opacity="0.7" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="按应用分类统计" FontSize="16" FontWeight="SemiBold" Margin="0,8,0,0" />
+
+            <StackPanel x:Name="AppsPanel" Spacing="8" />
+
+            <StackPanel x:Name="EmptyPanel" Visibility="Collapsed" Spacing="8">
+                <TextBlock Text="暂无帧率数据，请先在监控页开启 FPS 检测并运行游戏或应用。" Opacity="0.6" />
+            </StackPanel>
+
+            <Button x:Name="ExportBtn" Content="导出报告" Padding="16,8" Click="ExportBtn_Click" Margin="0,8,0,0" />
+
+        </StackPanel>
+    </ScrollViewer>
+</Page>

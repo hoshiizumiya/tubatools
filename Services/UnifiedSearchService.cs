@@ -195,7 +195,7 @@ public static class UnifiedSearchService
     {
         try
         {
-            return ToolCatalog.GetAllToolsLazy(0, int.MaxValue)
+            return ToolCatalog.GetAllToolsCached()
                 .FirstOrDefault(t => t.Path.Equals(toolPath, StringComparison.OrdinalIgnoreCase));
         }
         catch

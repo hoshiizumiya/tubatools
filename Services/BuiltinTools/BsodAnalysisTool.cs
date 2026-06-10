@@ -81,11 +81,27 @@ public sealed class BsodAnalysisTool : IBuiltinTool
             }
         };
 
+        var copyBtn = new Button
+        {
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children =
+                {
+                    new FontIcon { Glyph = "\uE8C8", FontSize = 12 },
+                    new TextBlock { Text = "复制详情" }
+                }
+            }
+        };
+
         var actionBar = new Grid { ColumnSpacing = 10 };
         actionBar.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         actionBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        actionBar.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         actionBar.Children.Add(searchBox);
-        actionBar.Children.Add(refreshBtn); Grid.SetColumn(refreshBtn, 1);
+        actionBar.Children.Add(copyBtn); Grid.SetColumn(copyBtn, 1);
+        actionBar.Children.Add(refreshBtn); Grid.SetColumn(refreshBtn, 2);
 
         var eventList = new StackPanel { Spacing = 6 };
         var eventScroll = new ScrollViewer
@@ -162,6 +178,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
             RecentText = recentText,
             TypeCountText = typeCountText,
             SearchBox = searchBox,
+            CopyBtn = copyBtn,
             RefreshBtn = refreshBtn,
             EventList = eventList,
             EventScroll = eventScroll,
@@ -179,7 +196,80 @@ public sealed class BsodAnalysisTool : IBuiltinTool
             await LoadDataAsync(scrollViewer);
         };
 
+        copyBtn.Click += (_, _) =>
+        {
+            CopyDetailsToClipboard(scrollViewer);
+        };
+
         return scrollViewer;
+    }
+
+    private void CopyDetailsToClipboard(ScrollViewer root)
+    {
+        if (_entries is null || _entries.Count == 0) return;
+
+        var sb = new System.Text.StringBuilder();
+        sb.AppendLine("=== 蓝屏分析报告 ===");
+        sb.AppendLine($"生成时间: {DateTimeOffset.Now:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"蓝屏次数: {_entries.Count}");
+        sb.AppendLine($"最近发生: {_entries[0].Time:yyyy-MM-dd HH:mm:ss}");
+        sb.AppendLine($"错误类型数: {_entries.Select(e => e.BugCheckCode).Distinct().Count()}");
+        sb.AppendLine();
+
+        sb.AppendLine("=== 蓝屏记录 ===");
+        for (int i = 0; i < _entries.Count; i++)
+        {
+            var entry = _entries[i];
+            var insight = BsodAnalysisService.GetInsight(entry.BugCheckCode);
+            sb.AppendLine($"[{i + 1}] {entry.Time:yyyy-MM-dd HH:mm:ss}");
+            sb.AppendLine($"    错误代码: {entry.BugCheckCode}");
+            if (insight is not null)
+                sb.AppendLine($"    类型: {insight.Title} (严重度: {insight.Severity})");
+            if (!string.IsNullOrEmpty(entry.CausingDriver))
+                sb.AppendLine($"    驱动: {entry.CausingDriver}");
+            if (!string.IsNullOrEmpty(entry.BugCheckParameter))
+                sb.AppendLine($"    参数: {entry.BugCheckParameter}");
+            if (!string.IsNullOrEmpty(entry.Message))
+                sb.AppendLine($"    信息: {entry.Message.ReplaceLineEndings(" ")}");
+            sb.AppendLine();
+        }
+
+        var insights = BsodAnalysisService.GetInsightsForEntries(_entries);
+        if (insights.Count > 0)
+        {
+            sb.AppendLine("=== 诊断分析 ===");
+            foreach (var insight in insights)
+            {
+                sb.AppendLine($"[{insight.BugCheckCode}] {insight.Title} (严重度: {insight.Severity})");
+                sb.AppendLine($"  描述: {insight.Description}");
+                sb.AppendLine($"  建议措施:");
+                sb.AppendLine($"  {insight.Suggestions.ReplaceLineEndings("\n  ")}");
+                sb.AppendLine();
+            }
+        }
+
+        var dp = new Windows.ApplicationModel.DataTransfer.DataPackage();
+        dp.SetText(sb.ToString());
+        Windows.ApplicationModel.DataTransfer.Clipboard.SetContent(dp);
+
+        var state = GetState(root);
+        if (state is not null)
+        {
+            var originalContent = (StackPanel)state.CopyBtn.Content;
+            var textBlock = originalContent.Children.OfType<TextBlock>().First();
+            textBlock.Text = "已复制!";
+            _ = Task.Delay(2000).ContinueWith(_ =>
+            {
+                root.DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (state.CopyBtn.Content is StackPanel sp)
+                    {
+                        var tb = sp.Children.OfType<TextBlock>().FirstOrDefault();
+                        if (tb is not null) tb.Text = "复制详情";
+                    }
+                });
+            });
+        }
     }
 
     private async Task LoadDataAsync(ScrollViewer root)
@@ -554,6 +644,7 @@ public sealed class BsodAnalysisTool : IBuiltinTool
         public TextBlock RecentText = null!;
         public TextBlock TypeCountText = null!;
         public AutoSuggestBox SearchBox = null!;
+        public Button CopyBtn = null!;
         public Button RefreshBtn = null!;
         public StackPanel EventList = null!;
         public ScrollViewer EventScroll = null!;

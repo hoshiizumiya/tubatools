@@ -83,9 +83,16 @@ public static class ToolCatalog
             return [];
         }
 
+        lock (_cacheLock)
+        {
+            if (_toolsCache.TryGetValue(category, out var cached))
+                return cached;
+        }
+
         var categoryRoot = Path.Combine(ToolsRoot, category);
         if (!Directory.Exists(categoryRoot))
         {
+            lock (_cacheLock) { _toolsCache[category] = []; }
             return [];
         }
 
@@ -109,25 +116,31 @@ public static class ToolCatalog
             catch { }
         }
 
+        IReadOnlyList<ToolItem> result;
         if (toolOrder is not null && toolOrder.Count > 0)
         {
             var orderedSet = new HashSet<string>(toolOrder, StringComparer.CurrentCultureIgnoreCase);
-            var result = toolOrder
+            var ordered = toolOrder
                 .Where(name => items.Any(it => it.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
                 .Select(name => items.First(it => it.Name.Equals(name, StringComparison.CurrentCultureIgnoreCase)))
                 .ToList();
             foreach (var item in items.OrderBy(it => it.Name, StringComparer.CurrentCultureIgnoreCase))
             {
                 if (!orderedSet.Contains(item.Name))
-                    result.Add(item);
+                    ordered.Add(item);
             }
-            return result;
+            result = ordered;
+        }
+        else
+        {
+            result = items
+                .OrderBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(item => item.RelativePath, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
         }
 
-        return items
-            .OrderBy(item => item.Name, StringComparer.CurrentCultureIgnoreCase)
-            .ThenBy(item => item.RelativePath, StringComparer.CurrentCultureIgnoreCase)
-            .ToList();
+        lock (_cacheLock) { _toolsCache[category] = result; }
+        return result;
     }
 
     private static List<string> MergeArchDirectories(List<string> toolDirs)
@@ -183,8 +196,13 @@ public static class ToolCatalog
 
     private static IReadOnlyList<string>? _cachedTags;
     private static IReadOnlyList<ToolItem>? _cachedAllTools;
+    private static readonly object _cacheLock = new();
+    private static readonly Dictionary<string, IReadOnlyList<ToolItem>> _toolsCache = new(StringComparer.OrdinalIgnoreCase);
+    private static int _cacheVersion;
 
-    private static IReadOnlyList<ToolItem> GetAllToolsCached()
+    public static int CacheVersion => _cacheVersion;
+
+    public static IReadOnlyList<ToolItem> GetAllToolsCached()
     {
         if (_cachedAllTools is not null)
             return _cachedAllTools;
@@ -217,6 +235,8 @@ public static class ToolCatalog
     {
         _cachedTags = null;
         _cachedAllTools = null;
+        lock (_cacheLock) { _toolsCache.Clear(); }
+        Interlocked.Increment(ref _cacheVersion);
     }
 
     public static IReadOnlyList<ToolItem> Search(string query, string? tag = null)

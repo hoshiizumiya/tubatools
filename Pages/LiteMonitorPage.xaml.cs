@@ -142,6 +142,7 @@ public sealed partial class LiteMonitorPage : Page
     public LiteMonitorPage()
     {
         InitializeComponent();
+        ApplyBackground();
         InitCards();
         StartTimer(TimeSpan.FromSeconds(1));
     }
@@ -155,6 +156,22 @@ public sealed partial class LiteMonitorPage : Page
         NetCard.Child = BuildMiniCard("网络", "\uE968", NetAccent, out _netUp, out _netDown);
         FpsCard.Child = BuildCard("帧率", "\uE7FC", FpsAccent, out _fpsVal, out _fpsProc, out _, out _, out _fpsChart);
         BatCard.Child = BuildMiniCard("电池", "\uE85A", BatAccent, out _batPct, out _batPow);
+    }
+
+    private void ApplyBackground()
+    {
+        var bmp = BackgroundService.LoadBackgroundImage();
+        if (bmp is not null)
+        {
+            BackgroundImg.Source = bmp;
+            BackgroundImg.Opacity = BackgroundService.GetBackgroundOpacity();
+            BackgroundImg.Visibility = Visibility.Visible;
+        }
+        else
+        {
+            BackgroundImg.Source = null;
+            BackgroundImg.Visibility = Visibility.Collapsed;
+        }
     }
 
     private void StartTimer(TimeSpan interval)

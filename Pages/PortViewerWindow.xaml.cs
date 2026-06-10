@@ -1,0 +1,261 @@
+using Microsoft.UI.Windowing;
+using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using TubaWinUi3.Services;
+using Windows.Graphics;
+using Windows.UI;
+
+namespace TubaWinUi3.Pages;
+
+public sealed partial class PortViewerWindow : Window
+{
+    private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
+    private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
+    private static readonly Color AccentOrange = Color.FromArgb(255, 251, 146, 60);
+    private static readonly Color AccentPurple = Color.FromArgb(255, 167, 139, 250);
+    private static readonly Color AccentRed = Color.FromArgb(255, 248, 113, 113);
+
+    private List<PortEntry>? _allEntries;
+    private string _filter = "";
+    private string _protocolFilter = "全部";
+
+    public PortViewerWindow()
+    {
+        InitializeComponent();
+
+        AppWindow.Title = "端口占用";
+        AppWindow.Resize(new SizeInt32(900, 720));
+        AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
+
+        var presenter = AppWindow.Presenter as OverlappedPresenter;
+        if (presenter is not null)
+        {
+            presenter.IsResizable = true;
+            presenter.IsMaximizable = true;
+        }
+
+        if (Content is FrameworkElement root)
+            root.RequestedTheme = ThemeService.CurrentElementTheme;
+
+        HeaderBorder.Background = new SolidColorBrush(ThemeColors.HeaderBg);
+        ListBorder.BorderBrush = new SolidColorBrush(ThemeColors.BorderColor);
+
+        _ = LoadDataAsync();
+    }
+
+    private async Task LoadDataAsync()
+    {
+        LoadingRing.IsActive = true;
+        LoadingPanel.Visibility = Visibility.Visible;
+        ListBorder.Visibility = Visibility.Collapsed;
+        HeaderBorder.Visibility = Visibility.Collapsed;
+
+        _allEntries = await PortViewerService.ScanAsync();
+        ApplyFilter();
+
+        LoadingRing.IsActive = false;
+        LoadingPanel.Visibility = Visibility.Collapsed;
+        ListBorder.Visibility = Visibility.Visible;
+        HeaderBorder.Visibility = Visibility.Visible;
+    }
+
+    private void ApplyFilter()
+    {
+        if (_allEntries is null) return;
+
+        var filtered = _allEntries.AsEnumerable();
+
+        if (_protocolFilter != "全部")
+            filtered = filtered.Where(e => e.Protocol == _protocolFilter);
+
+        if (!string.IsNullOrWhiteSpace(_filter))
+        {
+            var f = _filter.Trim();
+            filtered = filtered.Where(e =>
+                e.LocalPort.ToString().Contains(f, StringComparison.OrdinalIgnoreCase) ||
+                e.ProcessName.Contains(f, StringComparison.OrdinalIgnoreCase) ||
+                e.ProcessId.ToString().Contains(f) ||
+                e.LocalAddress.ToString().Contains(f, StringComparison.OrdinalIgnoreCase) ||
+                e.State.ToString().Contains(f, StringComparison.OrdinalIgnoreCase));
+        }
+
+        var list = filtered.ToList();
+        CountText.Text = $"{list.Count} 个连接";
+        RenderList(list);
+    }
+
+    private void RenderList(List<PortEntry> entries)
+    {
+        ListContainer.Children.Clear();
+
+        foreach (var entry in entries)
+        {
+            var row = CreateRow(entry);
+            ListContainer.Children.Add(row);
+        }
+    }
+
+    private Border CreateRow(PortEntry entry)
+    {
+        var protoBadge = new Border
+        {
+            Padding = new Thickness(8, 2, 8, 2),
+            CornerRadius = new CornerRadius(4),
+            Background = new SolidColorBrush(entry.Protocol == "TCP"
+                ? Color.FromArgb(40, 96, 165, 250)
+                : Color.FromArgb(40, 167, 139, 250)),
+            Child = new TextBlock
+            {
+                Text = entry.Protocol,
+                FontSize = 11,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(entry.Protocol == "TCP" ? AccentBlue : AccentPurple)
+            }
+        };
+
+        var portText = new TextBlock
+        {
+            Text = entry.LocalPort.ToString(),
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var addrText = new TextBlock
+        {
+            Text = entry.LocalAddress.ToString(),
+            FontSize = 12,
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var stateBadge = entry.Protocol == "TCP" ? MakeStateBadge(entry.State) : null;
+
+        var procText = new TextBlock
+        {
+            Text = entry.ProcessName,
+            FontSize = 12,
+            Foreground = new SolidColorBrush(AccentGreen),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var pidText = new TextBlock
+        {
+            Text = $"PID {entry.ProcessId}",
+            FontSize = 11,
+            Foreground = new SolidColorBrush(ThemeColors.DimText),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var killBtn = new Button
+        {
+            Content = new FontIcon { Glyph = "\uE894", FontSize = 11 },
+            Padding = new Thickness(6, 2, 6, 2),
+            Background = new SolidColorBrush(Color.FromArgb(0, 0, 0, 0)),
+            Foreground = new SolidColorBrush(AccentRed),
+            VerticalAlignment = VerticalAlignment.Center,
+            Tag = entry
+        };
+        killBtn.Click += async (_, _) =>
+        {
+            if (PortViewerService.KillProcess(entry.ProcessId, out var error))
+            {
+                await LoadDataAsync();
+            }
+            else
+            {
+                ErrorBar.Title = "结束进程失败";
+                ErrorBar.Message = $"无法结束进程 {entry.ProcessName} (PID {entry.ProcessId})：{error}";
+                ErrorBar.Severity = InfoBarSeverity.Error;
+                ErrorBar.IsOpen = true;
+            }
+        };
+
+        var grid = new Grid { ColumnSpacing = 10 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(70) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        if (stateBadge is not null)
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var col = 0;
+        grid.Children.Add(protoBadge); Grid.SetColumn(protoBadge, col++);
+        grid.Children.Add(portText); Grid.SetColumn(portText, col++);
+        grid.Children.Add(addrText); Grid.SetColumn(addrText, col++);
+        if (stateBadge is not null) { grid.Children.Add(stateBadge); Grid.SetColumn(stateBadge, col++); }
+        grid.Children.Add(procText); Grid.SetColumn(procText, col++);
+        grid.Children.Add(pidText); Grid.SetColumn(pidText, col++);
+        grid.Children.Add(killBtn); Grid.SetColumn(killBtn, col++);
+
+        return new Border
+        {
+            Padding = new Thickness(12, 8, 12, 8),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
+            BorderThickness = new Thickness(0, 0, 0, 1),
+            Child = grid
+        };
+    }
+
+    private static Border MakeStateBadge(PortTcpState state)
+    {
+        var (text, color) = state switch
+        {
+            PortTcpState.Listen => ("LISTENING", AccentGreen),
+            PortTcpState.Established => ("ESTABLISHED", AccentBlue),
+            PortTcpState.TimeWait => ("TIME_WAIT", AccentOrange),
+            PortTcpState.CloseWait => ("CLOSE_WAIT", AccentOrange),
+            PortTcpState.SynSent => ("SYN_SENT", AccentPurple),
+            PortTcpState.SynReceived => ("SYN_RCVD", AccentPurple),
+            _ => (state.ToString(), ThemeColors.DimText)
+        };
+
+        return new Border
+        {
+            Padding = new Thickness(6, 1, 6, 1),
+            CornerRadius = new CornerRadius(3),
+            Background = new SolidColorBrush(Color.FromArgb(30, color.R, color.G, color.B)),
+            Child = new TextBlock
+            {
+                Text = text,
+                FontSize = 10,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(color),
+                VerticalAlignment = VerticalAlignment.Center
+            }
+        };
+    }
+
+    private void SearchBox_TextChanged(AutoSuggestBox sender, AutoSuggestBoxTextChangedEventArgs args)
+    {
+        _filter = sender.Text;
+        ApplyFilter();
+    }
+
+    private void SearchBox_QuerySubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+    {
+        _filter = sender.Text;
+        ApplyFilter();
+    }
+
+    private void ProtoCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ProtoCombo.SelectedItem is string s)
+            _protocolFilter = s;
+        ApplyFilter();
+    }
+
+    private async void RefreshBtn_Click(object sender, RoutedEventArgs e)
+    {
+        await LoadDataAsync();
+    }
+
+    private void CloseButton_Click(object sender, RoutedEventArgs e)
+    {
+        Close();
+    }
+}

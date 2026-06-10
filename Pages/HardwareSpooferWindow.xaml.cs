@@ -82,7 +82,8 @@ public sealed partial class HardwareSpooferWindow : Window
             presenter.IsMaximizable = true;
         }
 
-        ThemeService.ApplySavedTheme();
+        if (Content is FrameworkElement root)
+            root.RequestedTheme = ThemeService.CurrentElementTheme;
 
         WarningBorder.Background = new SolidColorBrush(Color.FromArgb(30, 251, 146, 60));
         WarningBorder.BorderBrush = new SolidColorBrush(Color.FromArgb(80, 251, 146, 60));

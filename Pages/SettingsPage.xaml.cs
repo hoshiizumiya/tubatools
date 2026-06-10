@@ -33,7 +33,6 @@ public sealed partial class SettingsPage : Page
     private bool _backdropInitializing;
 
     private Border[] _backdropOptions = [];
-    private Border[] _presetColorBorders = [];
 
     private static readonly (string Tag, string DisplayName)[] DefaultPageOptions =
     [
@@ -112,6 +111,12 @@ public sealed partial class SettingsPage : Page
         {
             _pendingHighlightKey = target.HighlightSettingKey;
         }
+
+        if (_pendingHighlightKey is not null)
+        {
+            _ = HighlightSettingAsync(_pendingHighlightKey);
+            _pendingHighlightKey = null;
+        }
     }
 
     public SettingsPage()
@@ -136,19 +141,6 @@ public sealed partial class SettingsPage : Page
         InitBackdropSettings();
         InitCpuzDataSourceStatus();
         InitUpdateSection();
-
-        Loaded += SettingsPage_Loaded;
-    }
-
-    private void SettingsPage_Loaded(object sender, RoutedEventArgs e)
-    {
-        Loaded -= SettingsPage_Loaded;
-
-        if (_pendingHighlightKey is not null)
-        {
-            _ = HighlightSettingAsync(_pendingHighlightKey);
-            _pendingHighlightKey = null;
-        }
     }
 
     private async Task HighlightSettingAsync(string settingKey)
@@ -1151,13 +1143,9 @@ public sealed partial class SettingsPage : Page
         _backdropInitializing = true;
 
         _backdropOptions = [BackdropMicaOption, BackdropMicaAltOption, BackdropAcrylicOption];
-        _presetColorBorders = [PresetColor0, PresetColor1, PresetColor2, PresetColor3, PresetColor4, PresetColor5, PresetColor6, PresetColor7];
 
         var currentType = BackdropService.GetBackdropType();
         UpdateBackdropOptionSelection(currentType);
-        UpdateAcrylicPanelVisibility(currentType);
-
-        UpdateTintColorPreview();
 
         _backdropInitializing = false;
     }
@@ -1175,44 +1163,6 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private void UpdateAcrylicPanelVisibility(BackdropType type)
-    {
-        var showAcrylic = type == BackdropType.Acrylic;
-        BackdropAcrylicDivider.Visibility = showAcrylic ? Visibility.Visible : Visibility.Collapsed;
-        BackdropAcrylicPanel.Visibility = showAcrylic ? Visibility.Visible : Visibility.Collapsed;
-    }
-
-    private void UpdateTintColorPreview()
-    {
-        var tintColor = BackdropService.GetTintColor();
-        if (tintColor.A == 0)
-        {
-            var isDark = ThemeService.CurrentTheme == AppTheme.Dark ||
-                         (ThemeService.CurrentTheme == AppTheme.Default && Application.Current.RequestedTheme == ApplicationTheme.Dark);
-            CustomColorPreview.Background = new SolidColorBrush(isDark ? Color.FromArgb(255, 32, 32, 32) : Color.FromArgb(255, 243, 243, 243));
-        }
-        else
-        {
-            CustomColorPreview.Background = new SolidColorBrush(tintColor);
-        }
-
-        UpdatePresetColorSelection(tintColor);
-    }
-
-    private void UpdatePresetColorSelection(Color tintColor)
-    {
-        var currentHex = tintColor.A == 0 ? "" : $"#{tintColor.A:X2}{tintColor.R:X2}{tintColor.G:X2}{tintColor.B:X2}";
-        foreach (var border in _presetColorBorders)
-        {
-            if (border is null) continue;
-            var tag = border.Tag?.ToString();
-            var isSelected = string.Equals(tag, currentHex, StringComparison.OrdinalIgnoreCase);
-            border.BorderBrush = isSelected
-                ? new SolidColorBrush(Color.FromArgb(255, 0, 120, 215))
-                : (Brush)App.Current.Resources["CardStrokeColorDefaultBrush"];
-        }
-    }
-
     private void BackdropOption_Tapped(object sender, TappedRoutedEventArgs e)
     {
         if (_backdropInitializing) return;
@@ -1221,7 +1171,6 @@ public sealed partial class SettingsPage : Page
 
         BackdropService.SetBackdropType(type);
         UpdateBackdropOptionSelection(type);
-        UpdateAcrylicPanelVisibility(type);
     }
 
     private void BackdropOption_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -1240,112 +1189,4 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private void PresetColor_Tapped(object sender, TappedRoutedEventArgs e)
-    {
-        if (sender is not Border border) return;
-        var hex = border.Tag?.ToString();
-        if (string.IsNullOrEmpty(hex)) return;
-
-        if (TryParseHexColor(hex, out var color))
-        {
-            BackdropService.SetTintColor(color);
-            UpdateTintColorPreview();
-        }
-    }
-
-    private void PresetColorReset_Tapped(object sender, TappedRoutedEventArgs e)
-    {
-        BackdropService.SetTintColor(Color.FromArgb(0, 0, 0, 0));
-        UpdateTintColorPreview();
-    }
-
-    private void PresetColor_PointerEntered(object sender, PointerRoutedEventArgs e)
-    {
-        if (sender is Border border)
-        {
-            border.Scale = new System.Numerics.Vector3(1.1f, 1.1f, 1.0f);
-        }
-    }
-
-    private void PresetColor_PointerExited(object sender, PointerRoutedEventArgs e)
-    {
-        if (sender is Border border)
-        {
-            border.Scale = new System.Numerics.Vector3(1.0f, 1.0f, 1.0f);
-        }
-    }
-
-    private async void CustomColorButton_Click(object sender, RoutedEventArgs e)
-    {
-        var currentColor = BackdropService.GetTintColor();
-        var isDark = ThemeService.CurrentTheme == AppTheme.Dark ||
-                     (ThemeService.CurrentTheme == AppTheme.Default && Application.Current.RequestedTheme == ApplicationTheme.Dark);
-
-        var colorPicker = new ColorPicker
-        {
-            IsAlphaEnabled = false,
-            Color = currentColor.A == 0
-                ? (isDark ? Color.FromArgb(255, 32, 32, 32) : Color.FromArgb(255, 243, 243, 243))
-                : currentColor,
-            IsColorSliderVisible = true,
-            IsColorChannelTextInputVisible = true,
-            IsHexInputVisible = true,
-            MinWidth = 280
-        };
-
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = "自定义着色颜色",
-            Content = new ScrollViewer
-            {
-                Content = colorPicker,
-                MaxHeight = 400
-            },
-            PrimaryButtonText = "确定",
-            CloseButtonText = "取消",
-            DefaultButton = ContentDialogButton.Primary,
-            RequestedTheme = ThemeService.CurrentElementTheme
-        };
-
-        var result = await dialog.ShowAsync();
-        if (result == ContentDialogResult.Primary)
-        {
-            var selected = colorPicker.Color;
-            BackdropService.SetTintColor(selected);
-            UpdateTintColorPreview();
-        }
-    }
-
-    private void TintOpacitySlider_ValueChanged(object sender, RangeBaseValueChangedEventArgs e)
-    {
-    }
-
-    private static bool TryParseHexColor(string hex, out Color color)
-    {
-        color = default;
-        try
-        {
-            if (hex.StartsWith('#')) hex = hex[1..];
-            if (hex.Length == 8)
-            {
-                var a = byte.Parse(hex[..2], System.Globalization.NumberStyles.HexNumber);
-                var r = byte.Parse(hex[2..4], System.Globalization.NumberStyles.HexNumber);
-                var g = byte.Parse(hex[4..6], System.Globalization.NumberStyles.HexNumber);
-                var b = byte.Parse(hex[6..8], System.Globalization.NumberStyles.HexNumber);
-                color = Color.FromArgb(a, r, g, b);
-                return true;
-            }
-            if (hex.Length == 6)
-            {
-                var r = byte.Parse(hex[..2], System.Globalization.NumberStyles.HexNumber);
-                var g = byte.Parse(hex[2..4], System.Globalization.NumberStyles.HexNumber);
-                var b = byte.Parse(hex[4..6], System.Globalization.NumberStyles.HexNumber);
-                color = Color.FromArgb(255, r, g, b);
-                return true;
-            }
-        }
-        catch { }
-        return false;
-    }
 }

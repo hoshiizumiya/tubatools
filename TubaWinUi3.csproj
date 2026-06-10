@@ -65,14 +65,14 @@
   -->
   <ItemGroup>
     <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
-    <PackageReference Include="Microsoft.Graphics.Win2D" Version="1.4.0" />
+
     <PackageReference Include="Microsoft.Diagnostics.Tracing.TraceEvent" Version="3.2.2" />
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.7705" />
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.8.260317003" />
     <PackageReference Include="System.Diagnostics.EventLog" Version="10.0.2" />
     <PackageReference Include="System.Drawing.Common" Version="10.0.0" />
     <PackageReference Include="System.Management" Version="10.0.8" />
-    <PackageReference Include="Vortice.Win32.Graphics.Direct3D11" Version="1.7.5" />
+
   </ItemGroup>
 
   <!-- Publish Properties -->

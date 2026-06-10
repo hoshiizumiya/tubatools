@@ -1,6 +1,7 @@
+using Microsoft.UI;
+using Microsoft.UI.Composition.SystemBackdrops;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
-using Windows.UI;
 
 namespace TubaWinUi3.Services;
 
@@ -27,20 +28,6 @@ public static class BackdropService
         BackdropChanged?.Invoke();
     }
 
-    public static Color GetTintColor()
-    {
-        var hex = AppSettings.Get("BackdropTintColor");
-        if (!string.IsNullOrEmpty(hex) && TryParseHexColor(hex, out var c))
-            return c;
-        return Color.FromArgb(0, 0, 0, 0);
-    }
-
-    public static void SetTintColor(Color color)
-    {
-        AppSettings.Set("BackdropTintColor", $"#{color.A:X2}{color.R:X2}{color.G:X2}{color.B:X2}");
-        BackdropChanged?.Invoke();
-    }
-
     public static void ApplyBackdrop(Window window)
     {
         var type = GetBackdropType();
@@ -52,52 +39,14 @@ public static class BackdropService
                 break;
 
             case BackdropType.MicaAlt:
-                var mica = new MicaBackdrop();
-                try
-                {
-                    var kindProp = typeof(MicaBackdrop).GetProperty("Kind");
-                    if (kindProp is not null)
-                    {
-                        var kindType = kindProp.PropertyType;
-                        var baseAlt = Enum.Parse(kindType, "BaseAlt");
-                        kindProp.SetValue(mica, baseAlt);
-                    }
-                }
-                catch { }
-                window.SystemBackdrop = mica;
+                var micaAlt = new MicaBackdrop();
+                micaAlt.Kind = MicaKind.BaseAlt;
+                window.SystemBackdrop = micaAlt;
                 break;
 
             case BackdropType.Acrylic:
                 window.SystemBackdrop = new DesktopAcrylicBackdrop();
                 break;
         }
-    }
-
-    private static bool TryParseHexColor(string hex, out Color color)
-    {
-        color = default;
-        try
-        {
-            if (hex.StartsWith('#')) hex = hex[1..];
-            if (hex.Length == 8)
-            {
-                var a = byte.Parse(hex[..2], System.Globalization.NumberStyles.HexNumber);
-                var r = byte.Parse(hex[2..4], System.Globalization.NumberStyles.HexNumber);
-                var g = byte.Parse(hex[4..6], System.Globalization.NumberStyles.HexNumber);
-                var b = byte.Parse(hex[6..8], System.Globalization.NumberStyles.HexNumber);
-                color = Color.FromArgb(a, r, g, b);
-                return true;
-            }
-            if (hex.Length == 6)
-            {
-                var r = byte.Parse(hex[..2], System.Globalization.NumberStyles.HexNumber);
-                var g = byte.Parse(hex[2..4], System.Globalization.NumberStyles.HexNumber);
-                var b = byte.Parse(hex[4..6], System.Globalization.NumberStyles.HexNumber);
-                color = Color.FromArgb(255, r, g, b);
-                return true;
-            }
-        }
-        catch { }
-        return false;
     }
 }

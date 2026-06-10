@@ -80,11 +80,30 @@ public sealed partial class HardwarePage : Page
     private void HardwarePage_Loaded(object sender, RoutedEventArgs e)
     {
         ApplyBackground();
-        _ = LoadHardwareInfoAsync();
+        StartUptimeTimer();
+    }
 
+    private void StartUptimeTimer()
+    {
+        _uptimeTimer?.Stop();
         _uptimeTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
         _uptimeTimer.Tick += (_, _) => UpdateUptime();
         _uptimeTimer.Start();
+    }
+
+    protected override void OnNavigatedTo(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    {
+        base.OnNavigatedTo(e);
+        ApplyBackground();
+        StartUptimeTimer();
+        _ = LoadHardwareInfoAsync();
+    }
+
+    protected override void OnNavigatedFrom(Microsoft.UI.Xaml.Navigation.NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        _uptimeTimer?.Stop();
+        _uptimeTimer = null;
     }
 
     private void ApplyBackground()
@@ -107,7 +126,6 @@ public sealed partial class HardwarePage : Page
     {
         _uptimeTimer?.Stop();
         _uptimeTimer = null;
-        AppSettings.SettingChanged -= OnSettingChanged;
     }
 
     private void UpdateUptime()

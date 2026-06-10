@@ -7,10 +7,15 @@ public static class BackgroundService
     private const string PathKey = "BackgroundImagePath";
     private const string OpacityKey = "BackgroundOpacity";
 
+    private static BitmapImage? _cachedImage;
+    private static string? _cachedPath;
+
     public static string? GetBackgroundPath() => AppSettings.Get(PathKey);
 
     public static void SetBackgroundPath(string? path)
     {
+        _cachedImage = null;
+        _cachedPath = null;
         if (path is not null)
             AppSettings.Set(PathKey, path);
         else
@@ -25,13 +30,27 @@ public static class BackgroundService
     {
         var path = GetBackgroundPath();
         if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            _cachedImage = null;
+            _cachedPath = null;
             return null;
+        }
+
+        if (string.Equals(path, _cachedPath, StringComparison.OrdinalIgnoreCase) && _cachedImage is not null)
+            return _cachedImage;
 
         try
         {
-            return new BitmapImage(new Uri(path));
+            _cachedImage = new BitmapImage(new Uri(path));
+            _cachedPath = path;
+            return _cachedImage;
         }
-        catch { return null; }
+        catch
+        {
+            _cachedImage = null;
+            _cachedPath = null;
+            return null;
+        }
     }
 
     public static List<BackgroundImageEntry> GetImportedBackgrounds()

@@ -156,8 +156,6 @@ public sealed partial class MainWindow : Window
                     break;
             }
         }
-
-        ThemeService.ApplySavedTheme();
     }
 
     private void NavigateToDefaultPage()
@@ -255,11 +253,6 @@ public sealed partial class MainWindow : Window
         if (category.Contains("游戏", StringComparison.CurrentCultureIgnoreCase))
         {
             return "\uE7FC";
-        }
-
-        if (category.Contains("烤鸡", StringComparison.CurrentCultureIgnoreCase))
-        {
-            return "\uEC4A";
         }
 
         if (category.Contains("声卡", StringComparison.CurrentCultureIgnoreCase))
@@ -390,8 +383,6 @@ public sealed partial class MainWindow : Window
                 HandleQuickAction(result.MatchKey);
                 break;
         }
-
-        ThemeService.ApplySavedTheme();
     }
 
     private void SyncNavSelection(string tag)
@@ -412,7 +403,7 @@ public sealed partial class MainWindow : Window
     {
         try
         {
-            var tools = ToolCatalog.GetAllToolsLazy(0, int.MaxValue);
+            var tools = ToolCatalog.GetAllToolsCached();
             var tool = tools.FirstOrDefault(t => t.Path.Equals(toolPath, StringComparison.OrdinalIgnoreCase));
             if (tool is not null)
             {

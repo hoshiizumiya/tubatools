@@ -23,6 +23,14 @@
       ]
     },
     {
+      "match": "y-cruncher",
+      "description": "y-cruncher 圆周率计算烤机工具，支持多线程极致压力测试，可同时压测 CPU 和内存。",
+      "publisher": "Alex Yee",
+      "tags": [ "CPU", "内存", "烤机", "稳定性测试" ],
+      "launchTarget": "y-cruncher.exe",
+      "remoteUrl": "https://cdn.numberworld.org/y-cruncher-downloads/y-cruncher%20v0.8.7.9547b.zip"
+    },
+    {
       "match": "C2CLatency",
       "description": "CPU 缓存到缓存延迟测试工具，测量 L1/L2/L3 缓存间通信延迟。",
       "publisher": "",

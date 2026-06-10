@@ -57,8 +57,8 @@ public sealed partial class FavoritesPage : Page
     {
         base.OnNavigatedTo(e);
         ApplyBackground();
-        LoadTools();
-        LoadHistory();
+        _ = LoadToolsAsync();
+        _ = LoadHistoryAsync();
     }
 
     private void ApplyBackground()
@@ -77,23 +77,41 @@ public sealed partial class FavoritesPage : Page
         }
     }
 
-    private void LoadTools()
+    private async Task LoadToolsAsync()
     {
         _iconLoadCts?.Cancel();
         _tools.Clear();
 
         var favPaths = FavoritesService.GetFavorites();
-        var favTools = ToolCatalog.GetCategories()
-            .SelectMany(ToolCatalog.GetTools)
-            .Where(t => favPaths.Contains(t.Path, StringComparer.OrdinalIgnoreCase))
-            .ToList();
+        if (favPaths.Count == 0)
+        {
+            ToolCountText.Text = "暂无收藏";
+            ClearAllButton.Visibility = Visibility.Collapsed;
+            EmptyState.Visibility = Visibility.Visible;
+            ToolsGrid.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        List<ToolItem> favTools;
+        try
+        {
+            favTools = await Task.Run(() => ToolCatalog.GetCategories()
+                .SelectMany(ToolCatalog.GetTools)
+                .Where(t => favPaths.Contains(t.Path, StringComparer.OrdinalIgnoreCase))
+                .ToList());
+        }
+        catch
+        {
+            ToolCountText.Text = "加载失败";
+            return;
+        }
 
         foreach (var tool in favTools)
         {
             _tools.Add(tool);
         }
 
-        ToolCountText.Text = _tools.Count > 0 ? $"已收藏 {_tools.Count} 个工具" : "暂无收藏";
+        ToolCountText.Text = $"已收藏 {_tools.Count} 个工具";
         ClearAllButton.Visibility = _tools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         EmptyState.Visibility = _tools.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
         ToolsGrid.Visibility = _tools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -105,7 +123,7 @@ public sealed partial class FavoritesPage : Page
         }
     }
 
-    private void LoadHistory()
+    private async Task LoadHistoryAsync()
     {
         _historyTools.Clear();
 
@@ -116,20 +134,33 @@ public sealed partial class FavoritesPage : Page
             return;
         }
 
-        var allTools = ToolCatalog.GetCategories()
-            .SelectMany(ToolCatalog.GetTools)
-            .ToList();
+        List<ToolItem> allTools;
+        try
+        {
+            allTools = await Task.Run(() => ToolCatalog.GetCategories()
+                .SelectMany(ToolCatalog.GetTools)
+                .ToList());
+        }
+        catch
+        {
+            HistorySection.Visibility = Visibility.Collapsed;
+            return;
+        }
 
+        var added = 0;
         foreach (var path in historyPaths)
         {
             var tool = allTools.FirstOrDefault(t => t.Path.Equals(path, StringComparison.OrdinalIgnoreCase));
             if (tool is not null)
+            {
                 _historyTools.Add(tool);
+                added++;
+            }
         }
 
-        HistorySection.Visibility = _historyTools.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+        HistorySection.Visibility = added > 0 ? Visibility.Visible : Visibility.Collapsed;
 
-        if (_historyTools.Count > 0)
+        if (added > 0)
         {
             _ = ToolIconService.LoadIconsAsync(_historyTools.ToList(), DispatcherQueue);
         }
@@ -250,7 +281,7 @@ public sealed partial class FavoritesPage : Page
             dialog.PrimaryButtonClick += (_, _) =>
             {
                 FavoritesService.RemoveAll();
-                LoadTools();
+                _ = LoadToolsAsync();
             };
         }
     }

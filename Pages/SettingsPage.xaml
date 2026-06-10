@@ -6,6 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="using:TubaWinUi3.Pages"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
     <Page.Resources>
@@ -563,8 +564,6 @@
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
                         <Grid ColumnSpacing="16">
@@ -700,200 +699,6 @@
                             </Border>
                         </Grid>
 
-                        <Border
-                            Grid.Row="2"
-                            x:Name="BackdropAcrylicDivider"
-                            Padding="0,1"
-                            Background="{ThemeResource DividerStrokeColorDefaultBrush}"
-                            Visibility="Collapsed" />
-
-                        <StackPanel
-                            Grid.Row="3"
-                            x:Name="BackdropAcrylicPanel"
-                            Spacing="14"
-                            Visibility="Collapsed">
-
-                            <Grid ColumnSpacing="16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <Border Style="{StaticResource IconBorderStyle}">
-                                    <FontIcon FontSize="18" Glyph="&#xE7F3;" />
-                                </Border>
-
-                                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" Text="着色颜色" />
-                                    <TextBlock
-                                        Opacity="0.68"
-                                        FontSize="13"
-                                        TextWrapping="Wrap"
-                                        Text="选择毛玻璃效果的着色颜色" />
-                                </StackPanel>
-
-                                <Button
-                                    x:Name="CustomColorButton"
-                                    Grid.Column="2"
-                                    VerticalAlignment="Center"
-                                    Padding="6"
-                                    MinWidth="36"
-                                    MinHeight="36"
-                                    Click="CustomColorButton_Click">
-                                    <Border
-                                        x:Name="CustomColorPreview"
-                                        Width="20"
-                                        Height="20"
-                                        CornerRadius="4"
-                                        Background="#FF202020" />
-                                </Button>
-                            </Grid>
-
-                            <Grid ColumnSpacing="8" HorizontalAlignment="Stretch">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-
-                                <Border
-                                    x:Name="PresetColor0"
-                                    Tag="#FF2D2D2D"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="#FF2D2D2D"
-                                    BorderThickness="2"
-                                    BorderBrush="Transparent"
-                                    Tapped="PresetColor_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited" />
-
-                                <Border
-                                    x:Name="PresetColor1"
-                                    Grid.Column="1"
-                                    Tag="#FF0063B1"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="#FF0063B1"
-                                    BorderThickness="2"
-                                    BorderBrush="Transparent"
-                                    Tapped="PresetColor_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited" />
-
-                                <Border
-                                    x:Name="PresetColor2"
-                                    Grid.Column="2"
-                                    Tag="#FF6B4FBB"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="#FF6B4FBB"
-                                    BorderThickness="2"
-                                    BorderBrush="Transparent"
-                                    Tapped="PresetColor_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited" />
-
-                                <Border
-                                    x:Name="PresetColor3"
-                                    Grid.Column="3"
-                                    Tag="#FF0E7A5B"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="#FF0E7A5B"
-                                    BorderThickness="2"
-                                    BorderBrush="Transparent"
-                                    Tapped="PresetColor_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited" />
-
-                                <Border
-                                    x:Name="PresetColor4"
-                                    Grid.Column="4"
-                                    Tag="#FFB4006D"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="#FFB4006D"
-                                    BorderThickness="2"
-                                    BorderBrush="Transparent"
-                                    Tapped="PresetColor_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited" />
-
-                                <Border
-                                    x:Name="PresetColor5"
-                                    Grid.Column="5"
-                                    Tag="#FFCA5010"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="#FFCA5010"
-                                    BorderThickness="2"
-                                    BorderBrush="Transparent"
-                                    Tapped="PresetColor_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited" />
-
-                                <Border
-                                    x:Name="PresetColor6"
-                                    Grid.Column="6"
-                                    Tag="#FFE84855"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="#FFE84855"
-                                    BorderThickness="2"
-                                    BorderBrush="Transparent"
-                                    Tapped="PresetColor_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited" />
-
-                                <Border
-                                    x:Name="PresetColor7"
-                                    Grid.Column="7"
-                                    Tag="#FFF3F3F3"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="#FFF3F3F3"
-                                    BorderThickness="2"
-                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                    Tapped="PresetColor_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited" />
-
-                                <Border
-                                    x:Name="PresetColorReset"
-                                    Grid.Column="8"
-                                    Width="32"
-                                    Height="32"
-                                    CornerRadius="6"
-                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                    Tapped="PresetColorReset_Tapped"
-                                    PointerEntered="PresetColor_PointerEntered"
-                                    PointerExited="PresetColor_PointerExited"
-                                    ToolTipService.ToolTip="重置为默认颜色">
-                                    <FontIcon
-                                        FontSize="12"
-                                        HorizontalAlignment="Center"
-                                        VerticalAlignment="Center"
-                                        Glyph="&#xE72C;" />
-                                </Border>
-                            </Grid>
-
-                        </StackPanel>
                     </Grid>
                 </Border>
 

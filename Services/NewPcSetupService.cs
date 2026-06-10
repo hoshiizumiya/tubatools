@@ -162,15 +162,25 @@ public static class NewPcSetupService
                         {
                             "SecurityHealth", "SysTrayApp", "HotKeysCmds", "Persistence",
                             "CTFMON", "cftmon.exe", "NvCplDaemon", "NvMediaCenter",
-                            "RTHDCPL", "Skytel", "Alcmtr", "AGRSMMSG"
+                            "RTHDCPL", "Skytel", "Alcmtr", "AGRSMMSG",
+                            "System", "SystemInitialization", "WindowsDefender",
+                            "OneDriveSetup", "DesktopCleanUP", "Load"
                         };
+
+                        var isSystem = systemNames.Contains(name) ||
+                            cmd.Contains(@"\Windows\System32\", StringComparison.OrdinalIgnoreCase) ||
+                            cmd.Contains(@"\Windows\SysWOW64\", StringComparison.OrdinalIgnoreCase) ||
+                            cmd.Contains("SecurityHealth", StringComparison.OrdinalIgnoreCase) ||
+                            cmd.Contains("Windows Defender", StringComparison.OrdinalIgnoreCase) ||
+                            cmd.Contains("msiexec", StringComparison.OrdinalIgnoreCase) ||
+                            name.Equals("System", StringComparison.OrdinalIgnoreCase);
 
                         items.Add(new StartupItem
                         {
                             Name = name,
                             Command = cmd,
                             Location = $"{hiveName}\\{keyPath}",
-                            WantDisable = !systemNames.Contains(name)
+                            WantDisable = false
                         });
                     }
                 }

@@ -706,19 +706,20 @@ public sealed class NewPcSetupTool : IBuiltinTool
             Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
         });
 
-        var wingetAvailable = WingetService.IsWingetAvailableAsync().GetAwaiter().GetResult();
-        if (!wingetAvailable)
+        var wingetError = new InfoBar
         {
-            panel.Children.Add(new InfoBar
-            {
-                Title = "winget 不可用",
-                Message = "未检测到 winget，软件安装功能不可用。请确认系统已安装 App Installer 并更新至最新版本。",
-                Severity = InfoBarSeverity.Error,
-                IsOpen = true,
-                IsClosable = false
-            });
-            return;
-        }
+            Title = "winget 不可用",
+            Message = "未检测到 winget，软件安装功能不可用。请确认系统已安装 App Installer 并更新至最新版本。",
+            Severity = InfoBarSeverity.Error,
+            IsOpen = false,
+            IsClosable = false
+        };
+        panel.Children.Add(wingetError);
+        _ = Task.Run(async () =>
+        {
+            var available = await WingetService.IsWingetAvailableAsync();
+            _ = state.Window.DispatcherQueue.TryEnqueue(() => { wingetError.IsOpen = !available; });
+        });
 
         panel.Children.Add(new TextBlock
         {
@@ -730,8 +731,11 @@ public sealed class NewPcSetupTool : IBuiltinTool
         var allPackages = new List<SetupPackage>();
         var seenIds = new HashSet<string>();
 
+        var packageListPanel = new StackPanel { Spacing = 4 };
+        state.PackageListPanel = packageListPanel;
+
         var commonPkgs = NewPcSetupService.GetCommonCatalog();
-        panel.Children.Add(MakeSectionHeader("\uE896", "常用软件", $"{commonPkgs.Count} 个"));
+        packageListPanel.Children.Add(MakeSectionHeader("\uE896", "常用软件", $"{commonPkgs.Count} 个"));
         var commonList = new StackPanel { Spacing = 4 };
         foreach (var p in commonPkgs)
         {
@@ -741,12 +745,12 @@ public sealed class NewPcSetupTool : IBuiltinTool
                 allPackages.Add(p);
             }
         }
-        panel.Children.Add(commonList);
+        packageListPanel.Children.Add(commonList);
 
         if (state.Role == SetupUserRole.Developer)
         {
             var devPkgs = NewPcSetupService.BuildDevPackageList(state.SelectedLanguages.ToArray());
-            panel.Children.Add(MakeSectionHeader("\uE943", "开发工具", $"{devPkgs.Count} 个"));
+            packageListPanel.Children.Add(MakeSectionHeader("\uE943", "开发工具", $"{devPkgs.Count} 个"));
             var devList = new StackPanel { Spacing = 4 };
             foreach (var p in devPkgs)
             {
@@ -756,20 +760,22 @@ public sealed class NewPcSetupTool : IBuiltinTool
                     allPackages.Add(p);
                 }
             }
-            panel.Children.Add(devList);
+            packageListPanel.Children.Add(devList);
         }
 
         var manualPkgs = NewPcSetupService.GetManualTools();
         if (manualPkgs.Count > 0)
         {
-            panel.Children.Add(MakeSectionHeader("\uE72E", "需手动下载", $"{manualPkgs.Count} 个"));
+            packageListPanel.Children.Add(MakeSectionHeader("\uE72E", "需手动下载", $"{manualPkgs.Count} 个"));
             var manualList = new StackPanel { Spacing = 4 };
             foreach (var p in manualPkgs)
             {
                 manualList.Children.Add(CreateManualToolRow(p));
             }
-            panel.Children.Add(manualList);
+            packageListPanel.Children.Add(manualList);
         }
+
+        panel.Children.Add(packageListPanel);
 
         state.AllPackages = allPackages;
 
@@ -798,7 +804,27 @@ public sealed class NewPcSetupTool : IBuiltinTool
 
     private void RefreshSoftwareStep(SetupWindowState state)
     {
-        NavigateTo(state, StepSoftware);
+        if (state.AllPackages is null || state.PackageListPanel is null) return;
+
+        var list = state.PackageListPanel;
+        list.Children.Clear();
+
+        var grouped = state.AllPackages.GroupBy(p => p.Category);
+        foreach (var group in grouped)
+        {
+            var label = group.Key;
+            var pkgGlyph = "\uE896";
+            list.Children.Add(MakeSectionHeader(pkgGlyph, label, $"{group.Count()} 个"));
+            var sub = new StackPanel { Spacing = 4 };
+            foreach (var p in group)
+            {
+                if (string.IsNullOrEmpty(p.ManualUrl))
+                    sub.Children.Add(CreatePackageRow(p, state));
+                else
+                    sub.Children.Add(CreateManualToolRow(p));
+            }
+            list.Children.Add(sub);
+        }
     }
 
     private Border CreatePackageRow(SetupPackage pkg, SetupWindowState state)
@@ -1517,6 +1543,7 @@ public sealed class NewPcSetupTool : IBuiltinTool
         public List<OptimizeItem> OptimizeItems = [];
         public List<SecurityItem> SecurityItems = [];
         public List<SetupPackage>? AllPackages;
+        public StackPanel? PackageListPanel;
         public bool SoftwareInstalling;
         public StackPanel? InstallProgressPanel;
         public TextBlock? InstallProgressText;

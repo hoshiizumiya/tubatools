@@ -289,6 +289,64 @@
                     </Grid>
                 </Border>
 
+                <Border x:Name="SettingsHardwareFitScreenCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE799;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="硬件信息一屏显示" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="自动缩放使所有硬件信息在一屏内显示，关闭后允许滚动浏览" />
+                        </StackPanel>
+
+                        <ToggleSwitch
+                            x:Name="HardwareFitScreenToggle"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Toggled="HardwareFitScreenToggle_Toggled" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsHardwareMultiDeviceNewLineCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE8FD;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="多设备换行显示" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="当存在多个显卡、硬盘等设备时，每个设备单独一行显示" />
+                        </StackPanel>
+
+                        <ToggleSwitch
+                            x:Name="HardwareMultiDeviceNewLineToggle"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Toggled="HardwareMultiDeviceNewLineToggle_Toggled" />
+                    </Grid>
+                </Border>
+
                 <Border x:Name="SettingsDefaultPageCard" Style="{StaticResource SettingsCardStyle}">
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions>

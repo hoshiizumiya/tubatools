@@ -37,11 +37,10 @@ public sealed partial class HardwarePage : Page
 
     private void OnSettingChanged(string key)
     {
-        if (key == "UseCpuzDataSource" || key == "CompactModeEnabled")
+        if (key == "UseCpuzDataSource" || key == "HardwareFitScreen" || key == "HardwareMultiDeviceNewLine")
         {
-            // 简洁模式切换时重置布局容器缓存，确保 UpdateLayoutStructure 能强制重建
-            if (key == "CompactModeEnabled")
-                _currentLayoutIsCompact = null;
+            if (key == "HardwareFitScreen")
+                _currentLayoutFitScreen = null;
             _ = LoadHardwareInfoAsync(forceRefresh: true);
         }
     }
@@ -630,32 +629,22 @@ public sealed partial class HardwarePage : Page
         return null;
     }
 
-    private bool? _currentLayoutIsCompact;
+    private bool? _currentLayoutFitScreen;
 
     private void UpdateLayoutStructure()
     {
-        var isCompact = AppSettings.GetBool("CompactModeEnabled", false);
-        if (_currentLayoutIsCompact == isCompact) return;
-        _currentLayoutIsCompact = isCompact;
+        var fitScreen = AppSettings.GetBool("HardwareFitScreen", true);
+        if (_currentLayoutFitScreen == fitScreen) return;
+        _currentLayoutFitScreen = fitScreen;
 
-        if (LayoutRoot.Parent is Panel parentPanel)
-        {
-            parentPanel.Children.Remove(LayoutRoot);
-        }
-        else if (LayoutRoot.Parent is Border parentBorder)
-        {
-            parentBorder.Child = null;
-        }
-        else if (LayoutRoot.Parent is ScrollViewer parentScroll)
-        {
-            parentScroll.Content = null;
-        }
-        else if (LayoutRoot.Parent is Viewbox parentViewbox)
-        {
+        if (LayoutRoot.Parent is Viewbox parentViewbox)
             parentViewbox.Child = null;
-        }
+        else if (LayoutRoot.Parent is ScrollViewer parentScroll)
+            parentScroll.Content = null;
 
-        if (isCompact)
+        RootHost.Child = null;
+
+        if (!fitScreen)
         {
             LayoutRoot.Width = double.NaN;
             LayoutRoot.MaxWidth = 1100;
@@ -664,10 +653,10 @@ public sealed partial class HardwarePage : Page
             var scroll = new ScrollViewer
             {
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                Content = LayoutRoot
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
             RootHost.Child = scroll;
+            scroll.Content = LayoutRoot;
         }
         else
         {
@@ -678,10 +667,10 @@ public sealed partial class HardwarePage : Page
             var viewbox = new Viewbox
             {
                 Stretch = Stretch.Uniform,
-                StretchDirection = StretchDirection.DownOnly,
-                Child = LayoutRoot
+                StretchDirection = StretchDirection.DownOnly
             };
             RootHost.Child = viewbox;
+            viewbox.Child = LayoutRoot;
         }
     }
 }

@@ -28,6 +28,8 @@ public sealed partial class SettingsPage : Page
     private bool _watermarkFontInitializing;
     private bool _defaultPageInitializing;
     private bool _brandLogoInitializing;
+    private bool _hardwareFitScreenInitializing;
+    private bool _hardwareMultiDeviceNewLineInitializing;
 
     private bool _cpuzBusy;
     private bool _backdropInitializing;
@@ -89,6 +91,8 @@ public sealed partial class SettingsPage : Page
         ["Theme"] = "SettingsThemeCard",
         ["CompactMode"] = "SettingsCompactModeCard",
         ["BrandLogo"] = "SettingsBrandLogoCard",
+        ["HardwareFitScreen"] = "SettingsHardwareFitScreenCard",
+        ["HardwareMultiDeviceNewLine"] = "SettingsHardwareMultiDeviceNewLineCard",
         ["DefaultPage"] = "SettingsDefaultPageCard",
         ["FastMode"] = "SettingsFastModeCard",
         ["Watermark"] = "SettingsWatermarkCard",
@@ -136,6 +140,8 @@ public sealed partial class SettingsPage : Page
         InitFastModeToggle();
         InitRememberWindowToggle();
         InitBrandLogoToggle();
+        InitHardwareFitScreenToggle();
+        InitHardwareMultiDeviceNewLineToggle();
         InitWatermarkSettings();
         LoadBackgroundSettings();
         InitBackdropSettings();
@@ -651,8 +657,6 @@ public sealed partial class SettingsPage : Page
     {
         if (_compactModeInitializing) return;
         CompactModeService.SetCompactModeEnabled(CompactModeToggle.IsOn);
-        // 简洁模式影响硬件信息的拼接分隔符，需令缓存失效
-        HardwareInfoService.InvalidateCache();
     }
 
     private void InitCompactModeToggle()
@@ -706,6 +710,33 @@ public sealed partial class SettingsPage : Page
         _brandLogoInitializing = true;
         BrandLogoToggle.IsOn = AppSettings.GetBool("ShowBrandLogo", true);
         _brandLogoInitializing = false;
+    }
+
+    private void HardwareFitScreenToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_hardwareFitScreenInitializing) return;
+        AppSettings.Set("HardwareFitScreen", HardwareFitScreenToggle.IsOn);
+    }
+
+    private void InitHardwareFitScreenToggle()
+    {
+        _hardwareFitScreenInitializing = true;
+        HardwareFitScreenToggle.IsOn = AppSettings.GetBool("HardwareFitScreen", true);
+        _hardwareFitScreenInitializing = false;
+    }
+
+    private void HardwareMultiDeviceNewLineToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_hardwareMultiDeviceNewLineInitializing) return;
+        AppSettings.Set("HardwareMultiDeviceNewLine", HardwareMultiDeviceNewLineToggle.IsOn);
+        HardwareInfoService.InvalidateCache();
+    }
+
+    private void InitHardwareMultiDeviceNewLineToggle()
+    {
+        _hardwareMultiDeviceNewLineInitializing = true;
+        HardwareMultiDeviceNewLineToggle.IsOn = AppSettings.GetBool("HardwareMultiDeviceNewLine", false);
+        _hardwareMultiDeviceNewLineInitializing = false;
     }
 
     private void InitWatermarkSettings()

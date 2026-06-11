@@ -68,7 +68,7 @@ namespace TubaWinUi3.Compatible.Services
 
         private static string GetSeparator()
         {
-            return AppSettings.GetBool("CompactModeEnabled", false) ? Environment.NewLine : " / ";
+            return AppSettings.GetBool("HardwareMultiDeviceNewLine", false) ? Environment.NewLine : " / ";
         }
 
         public static bool HasCache

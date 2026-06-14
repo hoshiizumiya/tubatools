@@ -27,8 +27,7 @@
       "description": "y-cruncher 圆周率计算烤机工具，支持多线程极致压力测试，可同时压测 CPU 和内存。",
       "publisher": "Alex Yee",
       "tags": [ "CPU", "内存", "烤机", "稳定性测试" ],
-      "launchTarget": "y-cruncher.exe",
-      "remoteUrl": "https://cdn.numberworld.org/y-cruncher-downloads/y-cruncher%20v0.8.7.9547b.zip"
+      "launchTarget": "y-cruncher.exe"
     },
     {
       "match": "C2CLatency",
@@ -62,8 +61,7 @@
       "match": "ThrottleStop",
       "description": "CPU 降频监控和功耗控制工具，可解除笔记本 CPU 功耗限制。",
       "publisher": "uWebb Software",
-      "tags": [ "CPU", "降频", "功耗控制" ],
-      "remoteUrl": "https://raw.gitcode.com/gcw_uDDNaqJw/tubatoolr/blobs/5011359714964d7473427b3fa1193c19bad77136/ThrottleStop_9.7.zip"
+      "tags": [ "CPU", "降频", "功耗控制" ]
     },
     {
       "match": "wPrime",
@@ -471,11 +469,10 @@
       "tags": [ "系统", "文件搜索" ]
     },
     {
-      "match": "Geek Uninstaller",
-      "description": "轻量级软件卸载工具，支持强制卸载和清理残留注册表。",
-      "publisher": "Geek Uninstaller",
-      "tags": [ "系统", "软件卸载" ],
-      "remoteUrl": "https://geekuninstaller.com/geek.zip"
+      "match": "HiBit Uninstaller",
+      "description": "强大的软件卸载工具，支持强制卸载、批量卸载和清理残留注册表。",
+      "publisher": "HiBitSoft",
+      "tags": [ "系统", "软件卸载" ]
  
     },
     {
@@ -625,6 +622,12 @@
         { "file": "BOOTICEx86_2016.06.17_v1.3.4.0.exe", "arch": "x86" },
         { "file": "BOOTICEx64_2016.06.17_v1.3.4.0.exe", "arch": "x64" }
       ]
+    },
+    {
+      "match": "FreeMove",
+      "description": "已安装程序移动工具，可将已安装的软件从 C 盘移动到其他分区而不破坏快捷方式和注册表链接。",
+      "publisher": "ImbaSoft",
+      "tags": [ "硬盘", "软件迁移", "分区" ]
     }
   ]
 }

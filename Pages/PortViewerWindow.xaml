@@ -43,11 +43,13 @@
                         <ColumnDefinition Width="Auto" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <AutoSuggestBox x:Name="SearchBox" PlaceholderText="搜索端口、进程名、PID..." MinWidth="240" QueryIcon="Find" TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" />
+                    <AutoSuggestBox x:Name="SearchBox" PlaceholderText="搜索端口、进程名、PID、tcp6、地址..." MinWidth="240" QueryIcon="Find" TextChanged="SearchBox_TextChanged" QuerySubmitted="SearchBox_QuerySubmitted" />
                     <ComboBox x:Name="ProtoCombo" Grid.Column="1" MinWidth="100" SelectedIndex="0" SelectionChanged="ProtoCombo_SelectionChanged">
                         <x:String>全部</x:String>
                         <x:String>TCP</x:String>
                         <x:String>UDP</x:String>
+                        <x:String>TCP6</x:String>
+                        <x:String>UDP6</x:String>
                     </ComboBox>
                     <Button x:Name="RefreshBtn" Grid.Column="2" Click="RefreshBtn_Click">
                         <StackPanel Orientation="Horizontal" Spacing="6">

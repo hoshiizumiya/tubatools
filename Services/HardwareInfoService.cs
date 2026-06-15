@@ -60,6 +60,92 @@ public static class HardwareInfoService
     private const uint DISPLAY_DEVICE_ATTACHED_TO_DESKTOP = 0x1;
     private const uint DISPLAY_DEVICE_PRIMARY_DEVICE = 0x4;
 
+    [DllImport("dxgi.dll", ExactSpelling = true)]
+    private static extern int CreateDXGIFactory1(ref Guid riid, out IntPtr ppFactory);
+
+    [DllImport("dxgi.dll", ExactSpelling = true)]
+    private static extern int CreateDXGIFactory(ref Guid riid, out IntPtr ppFactory);
+
+    private static readonly Guid IID_IDXGIFactory1 = new("770aae78-f26f-4dba-a829-253c83d1b387");
+    private static readonly Guid IID_IDXGIFactory = new("7b7166ec-21c7-44ae-b21a-c9ae321ae369");
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct LUID
+    {
+        public uint LowPart;
+        public int HighPart;
+    }
+
+    [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+    private struct DXGI_ADAPTER_DESC
+    {
+        [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 128)]
+        public string Description;
+        public uint VendorId;
+        public uint DeviceId;
+        public uint SubSysId;
+        public uint Revision;
+        public IntPtr DedicatedVideoMemory;
+        public IntPtr DedicatedSystemMemory;
+        public IntPtr SharedSystemMemory;
+        public LUID AdapterLuid;
+    }
+
+    private delegate int EnumAdapters1Delegate(IntPtr pFactory, uint adapterIndex, out IntPtr ppAdapter);
+    private delegate int GetDescDelegate(IntPtr pAdapter, out DXGI_ADAPTER_DESC pDesc);
+
+    private static unsafe (string name, ulong dedicatedVram)[] EnumerateDxgiAdapters()
+    {
+        var results = new List<(string, ulong)>();
+
+        IntPtr factoryPtr = IntPtr.Zero;
+        var iidFactory1 = IID_IDXGIFactory1;
+        int hr = CreateDXGIFactory1(ref iidFactory1, out factoryPtr);
+        if (hr < 0)
+        {
+            var iidFactory = IID_IDXGIFactory;
+            hr = CreateDXGIFactory(ref iidFactory, out factoryPtr);
+            if (hr < 0) return results.ToArray();
+        }
+
+        try
+        {
+            for (uint i = 0; ; i++)
+            {
+                IntPtr vtable = Marshal.ReadIntPtr(factoryPtr);
+                IntPtr methodPtr = Marshal.ReadIntPtr(vtable + 12 * IntPtr.Size);
+                var enumAdapters1 = Marshal.GetDelegateForFunctionPointer<EnumAdapters1Delegate>(methodPtr);
+
+                hr = enumAdapters1(factoryPtr, i, out IntPtr adapterPtr);
+                if (hr < 0) break;
+
+                try
+                {
+                    IntPtr adapterVtable = Marshal.ReadIntPtr(adapterPtr);
+                    IntPtr getDescPtr = Marshal.ReadIntPtr(adapterVtable + 8 * IntPtr.Size);
+                    var getDesc = Marshal.GetDelegateForFunctionPointer<GetDescDelegate>(getDescPtr);
+
+                    DXGI_ADAPTER_DESC desc = default;
+                    hr = getDesc(adapterPtr, out desc);
+                    if (hr >= 0)
+                    {
+                        results.Add((desc.Description, (ulong)(long)desc.DedicatedVideoMemory));
+                    }
+                }
+                finally
+                {
+                    Marshal.Release(adapterPtr);
+                }
+            }
+        }
+        finally
+        {
+            Marshal.Release(factoryPtr);
+        }
+
+        return results.ToArray();
+    }
+
     private static IReadOnlyList<HardwareInfoSection>? _cache;
     private static readonly object _lock = new();
 
@@ -1545,9 +1631,53 @@ public static class HardwareInfoService
         };
     }
 
+    private static bool TryMatchDxgiAdapter(string wmiName, (string name, ulong vram)[] dxgiAdapters, out int matchedIndex)
+    {
+        matchedIndex = -1;
+        if (string.IsNullOrWhiteSpace(wmiName) || dxgiAdapters.Length == 0)
+            return false;
+
+        for (int i = 0; i < dxgiAdapters.Length; i++)
+        {
+            var dxgiName = dxgiAdapters[i].name;
+            if (string.IsNullOrWhiteSpace(dxgiName)) continue;
+
+            if (wmiName.Contains(dxgiName, StringComparison.OrdinalIgnoreCase) ||
+                dxgiName.Contains(wmiName, StringComparison.OrdinalIgnoreCase))
+            {
+                matchedIndex = i;
+                return true;
+            }
+
+            var wmiTokens = wmiName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Where(t => t.Length > 2).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            var dxgiTokens = dxgiName.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .Where(t => t.Length > 2).ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (wmiTokens.Intersect(dxgiTokens).Count() >= 2)
+            {
+                matchedIndex = i;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static List<GpuDetail> BuildGpuDetails()
     {
         var gpus = new List<GpuDetail>();
+        (string name, ulong vram)[] dxgiAdapters;
+
+        try
+        {
+            dxgiAdapters = EnumerateDxgiAdapters();
+        }
+        catch
+        {
+            dxgiAdapters = Array.Empty<(string, ulong)>();
+        }
+
+        var usedDxgiIndices = new HashSet<int>();
 
         foreach (var item in Query("Win32_VideoController"))
         {
@@ -1557,15 +1687,26 @@ public static class HardwareInfoService
                 "Virtual GPU", "Virtual Adapter", "虚拟", "Remote Display Adapter"))
                 continue;
 
-            var adapterRam = ToLong(Get(item, "AdapterRAM"));
+            var wmiAdapterRam = ToLong(Get(item, "AdapterRAM"));
             var width = Get(item, "CurrentHorizontalResolution");
             var height = Get(item, "CurrentVerticalResolution");
             var refresh = Get(item, "CurrentRefreshRate");
 
+            string? vramText = null;
+            if (name != null && TryMatchDxgiAdapter(name, dxgiAdapters, out int dxgiIdx) && dxgiAdapters[dxgiIdx].vram > 0)
+            {
+                vramText = $"{dxgiAdapters[dxgiIdx].vram / 1024d / 1024d / 1024d:0.#} GB";
+                usedDxgiIndices.Add(dxgiIdx);
+            }
+            else if (wmiAdapterRam > 0)
+            {
+                vramText = $"{wmiAdapterRam / 1024d / 1024d / 1024d:0.#} GB";
+            }
+
             gpus.Add(new GpuDetail
             {
                 Name = name,
-                AdapterRAM = adapterRam > 0 ? $"{adapterRam / 1024d / 1024d / 1024d:0.#} GB" : null,
+                AdapterRAM = vramText,
                 DriverVersion = Get(item, "DriverVersion"),
                 DriverDate = Get(item, "DriverDate"),
                 VideoProcessor = Get(item, "VideoProcessor"),

@@ -67,7 +67,16 @@ public sealed partial class PortViewerWindow : Window
         var filtered = _allEntries.AsEnumerable();
 
         if (_protocolFilter != "全部")
-            filtered = filtered.Where(e => e.Protocol == _protocolFilter);
+        {
+            filtered = _protocolFilter switch
+            {
+                "TCP" => filtered.Where(e => e.Protocol == "TCP" && !e.IsIPv6),
+                "UDP" => filtered.Where(e => e.Protocol == "UDP" && !e.IsIPv6),
+                "TCP6" => filtered.Where(e => e.Protocol == "TCP" && e.IsIPv6),
+                "UDP6" => filtered.Where(e => e.Protocol == "UDP" && e.IsIPv6),
+                _ => filtered
+            };
+        }
 
         if (!string.IsNullOrWhiteSpace(_filter))
         {
@@ -77,6 +86,7 @@ public sealed partial class PortViewerWindow : Window
                 e.ProcessName.Contains(f, StringComparison.OrdinalIgnoreCase) ||
                 e.ProcessId.ToString().Contains(f) ||
                 e.LocalAddress.ToString().Contains(f, StringComparison.OrdinalIgnoreCase) ||
+                e.ProtocolLabel.Contains(f, StringComparison.OrdinalIgnoreCase) ||
                 e.State.ToString().Contains(f, StringComparison.OrdinalIgnoreCase));
         }
 
@@ -98,19 +108,36 @@ public sealed partial class PortViewerWindow : Window
 
     private Border CreateRow(PortEntry entry)
     {
+        // 协议徽章颜色：TCP 蓝、UDP 紫，IPv6 用青色强调区分
+        Color protoBg, protoFg;
+        if (entry.Protocol == "TCP")
+        {
+            protoBg = Color.FromArgb(40, 96, 165, 250);
+            protoFg = AccentBlue;
+        }
+        else
+        {
+            protoBg = Color.FromArgb(40, 167, 139, 250);
+            protoFg = AccentPurple;
+        }
+        if (entry.IsIPv6)
+        {
+            // IPv6 用青色覆盖，让 v4/v6 一眼可辨
+            protoBg = Color.FromArgb(45, 45, 212, 191);
+            protoFg = Color.FromArgb(255, 45, 212, 191);
+        }
+
         var protoBadge = new Border
         {
             Padding = new Thickness(8, 2, 8, 2),
             CornerRadius = new CornerRadius(4),
-            Background = new SolidColorBrush(entry.Protocol == "TCP"
-                ? Color.FromArgb(40, 96, 165, 250)
-                : Color.FromArgb(40, 167, 139, 250)),
+            Background = new SolidColorBrush(protoBg),
             Child = new TextBlock
             {
-                Text = entry.Protocol,
+                Text = entry.ProtocolLabel,   // TCP / TCP6 / UDP / UDP6
                 FontSize = 11,
                 FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
-                Foreground = new SolidColorBrush(entry.Protocol == "TCP" ? AccentBlue : AccentPurple)
+                Foreground = new SolidColorBrush(protoFg)
             }
         };
 
@@ -125,7 +152,7 @@ public sealed partial class PortViewerWindow : Window
 
         var addrText = new TextBlock
         {
-            Text = entry.LocalAddress.ToString(),
+            Text = FormatLocalAddress(entry),
             FontSize = 12,
             Foreground = new SolidColorBrush(ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center
@@ -199,6 +226,21 @@ public sealed partial class PortViewerWindow : Window
             BorderThickness = new Thickness(0, 0, 0, 1),
             Child = grid
         };
+    }
+
+    private static string FormatLocalAddress(PortEntry entry)
+    {
+        // 全部地址监听更友好地显示为 *:port 形式
+        var addr = entry.LocalAddress;
+        if (entry.IsIPv6)
+        {
+            if (addr.IsIPv4MappedToIPv6 || addr.ToString() == "::" || addr.ToString() == "::0")
+                return $"[::]:{entry.LocalPort}";
+            return $"[{addr}]:{entry.LocalPort}";
+        }
+        if (addr.ToString() == "0.0.0.0")
+            return $"*:{entry.LocalPort}";
+        return $"{addr}:{entry.LocalPort}";
     }
 
     private static Border MakeStateBadge(PortTcpState state)

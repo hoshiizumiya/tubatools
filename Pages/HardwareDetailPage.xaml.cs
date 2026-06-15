@@ -305,7 +305,7 @@ public sealed partial class HardwareDetailPage : Page
             if (items.Count > 0) items.Add(Item("", ""));
             items.Add(Item("名称", gpu.Name));
             if (!string.IsNullOrWhiteSpace(gpu.GpuCode)) items.Add(Item("GPU 代码", gpu.GpuCode));
-            if (!string.IsNullOrWhiteSpace(gpu.AdapterRAM)) items.Add(Item("显存 (WMI)", gpu.AdapterRAM));
+            if (!string.IsNullOrWhiteSpace(gpu.AdapterRAM)) items.Add(Item("显存", gpu.AdapterRAM));
             if (!string.IsNullOrWhiteSpace(gpu.MemorySize)) items.Add(Item("显存", gpu.MemorySize));
             if (!string.IsNullOrWhiteSpace(gpu.MemoryType)) items.Add(Item("显存类型", gpu.MemoryType));
             if (!string.IsNullOrWhiteSpace(gpu.MemoryBus)) items.Add(Item("显存位宽", gpu.MemoryBus));

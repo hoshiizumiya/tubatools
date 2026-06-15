@@ -15,7 +15,7 @@ public sealed class CpuRankingPage : Page
     private string _category = "desktop";
     private string _brand = "全部";
     private string _keyword = "";
-    private string _sortBy = "rating";
+    private string _sortBy = "multiCore";
     private bool _isRefreshing;
     private double _lastScrollOffset;
     private bool _navCollapsed;
@@ -127,7 +127,7 @@ public sealed class CpuRankingPage : Page
 
         _subtitleText = new TextBlock
         {
-            Text = $"数据来源 NanoReview · 更新于 {CpuRankingService.LastUpdated ?? "内置数据"} · 按 Cinebench 2024 排列",
+            Text = $"数据来源 TopCPU.net · 更新于 {CpuRankingService.LastUpdated ?? "内置数据"} · 按 Cinebench R23 多核排列",
             FontSize = 12,
             Foreground = new SolidColorBrush(ThemeColors.DimText),
             Margin = new Thickness(0, 4, 0, 0)
@@ -214,7 +214,7 @@ public sealed class CpuRankingPage : Page
             _infoBar.Severity = InfoBarSeverity.Success;
             _infoBar.IsOpen = true;
 
-            _subtitleText.Text = $"数据来源 NanoReview · 更新于 {CpuRankingService.LastUpdated} · 按 Cinebench 2024 排列";
+            _subtitleText.Text = $"数据来源 TopCPU.net · 更新于 {CpuRankingService.LastUpdated} · 按 Cinebench R23 多核排列";
             RefreshList();
         }
         else
@@ -262,17 +262,15 @@ public sealed class CpuRankingPage : Page
             SelectedIndex = 0,
             Header = null
         };
-        sortCombo.Items.Add("综合评分");
-        sortCombo.Items.Add("单核性能");
         sortCombo.Items.Add("多核性能");
+        sortCombo.Items.Add("单核性能");
         sortCombo.Items.Add("排名顺序");
         sortCombo.SelectionChanged += (s, e) =>
         {
             _sortBy = sortCombo.SelectedIndex switch
             {
-                0 => "rating",
+                0 => "multiCore",
                 1 => "singleCore",
-                2 => "multiCore",
                 _ => "rank"
             };
             RefreshList();
@@ -527,20 +525,16 @@ public sealed class CpuRankingPage : Page
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
 
         AddHeader(headerGrid, "#", 0);
         AddHeader(headerGrid, "CPU", 1);
         AddHeader(headerGrid, "品牌", 2);
-        AddHeader(headerGrid, "评分", 3);
-        AddHeader(headerGrid, "等级", 4);
-        AddHeader(headerGrid, "单核/多核", 5);
-        AddHeader(headerGrid, "核心数", 6);
-        AddHeader(headerGrid, "功耗", 7);
+        AddHeader(headerGrid, "多核", 3);
+        AddHeader(headerGrid, "单核", 4);
+        AddHeader(headerGrid, "核心数", 5);
 
         var headerBorder = new Border
         {
@@ -636,7 +630,6 @@ public sealed class CpuRankingPage : Page
         {
             "singleCore" => entries.OrderByDescending(e => e.SingleCore).ToList(),
             "multiCore" => entries.OrderByDescending(e => e.MultiCore).ToList(),
-            "rating" => entries.OrderByDescending(e => e.Rating).ToList(),
             _ => entries.OrderBy(e => e.Rank).ToList()
         };
 
@@ -720,15 +713,17 @@ public sealed class CpuRankingPage : Page
             Foreground = new SolidColorBrush(ThemeColors.PrimaryText), VerticalAlignment = VerticalAlignment.Center
         };
 
-        var processText = new TextBlock
-        {
-            Text = entry.Process, FontSize = 10, Foreground = new SolidColorBrush(ThemeColors.DimText),
-            VerticalAlignment = VerticalAlignment.Center
-        };
+        var coresSubText = !string.IsNullOrWhiteSpace(entry.Cores)
+            ? new TextBlock
+            {
+                Text = entry.Cores, FontSize = 10, Foreground = new SolidColorBrush(ThemeColors.DimText),
+                VerticalAlignment = VerticalAlignment.Center
+            }
+            : null;
 
         var namePanel = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
         namePanel.Children.Add(nameText);
-        namePanel.Children.Add(processText);
+        if (coresSubText is not null) namePanel.Children.Add(coresSubText);
 
         FrameworkElement brandContent;
         if (brandLogo is not null)
@@ -755,25 +750,28 @@ public sealed class CpuRankingPage : Page
             Child = brandContent
         };
 
-        var ratingBar = BuildRatingBar(entry.Rating);
+        var multiCoreColor = entry.MultiCore >= 30000 ? ThemeColors.AccentBlue
+            : entry.MultiCore >= 15000 ? Color.FromArgb(255, 96, 165, 250)
+            : entry.MultiCore >= 5000 ? ThemeColors.AccentOrange
+            : ThemeColors.DimText;
 
-        var gradeColor = entry.Grade switch
+        var multiCoreText = new TextBlock
         {
-            "A+" => ThemeColors.AccentBlue, "A" => Color.FromArgb(255, 96, 165, 250),
-            "B" => ThemeColors.AccentOrange, "C" => ThemeColors.AccentRed, _ => ThemeColors.DimText
+            Text = entry.MultiCore > 0 ? entry.MultiCore.ToString("N0") : "-",
+            FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(multiCoreColor), VerticalAlignment = VerticalAlignment.Center
         };
 
-        var gradeBadge = new Border
-        {
-            Padding = new Thickness(6, 3, 6, 3), CornerRadius = new CornerRadius(4),
-            Background = new SolidColorBrush(Color.FromArgb(30, gradeColor.R, gradeColor.G, gradeColor.B)),
-            Child = new TextBlock { Text = entry.Grade, FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(gradeColor), VerticalAlignment = VerticalAlignment.Center }
-        };
+        var singleCoreColor = entry.SingleCore >= 2000 ? ThemeColors.AccentBlue
+            : entry.SingleCore >= 1500 ? Color.FromArgb(255, 96, 165, 250)
+            : entry.SingleCore >= 1000 ? ThemeColors.AccentOrange
+            : ThemeColors.DimText;
 
-        var scoreText = new TextBlock
+        var singleCoreText = new TextBlock
         {
-            Text = $"{entry.SingleCore} / {entry.MultiCore}", FontSize = 12,
-            Foreground = new SolidColorBrush(ThemeColors.PrimaryText), VerticalAlignment = VerticalAlignment.Center
+            Text = entry.SingleCore > 0 ? entry.SingleCore.ToString("N0") : "-",
+            FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(singleCoreColor), VerticalAlignment = VerticalAlignment.Center
         };
 
         var coresText = new TextBlock
@@ -782,30 +780,20 @@ public sealed class CpuRankingPage : Page
             VerticalAlignment = VerticalAlignment.Center
         };
 
-        var tdpText = new TextBlock
-        {
-            Text = entry.Tdp, FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText),
-            VerticalAlignment = VerticalAlignment.Center
-        };
-
         var rowGrid = new Grid { ColumnSpacing = 10, VerticalAlignment = VerticalAlignment.Center };
         rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
         rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
+        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
+        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
+        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
 
         rowGrid.Children.Add(rankBadge); Grid.SetColumn(rankBadge, 0);
         rowGrid.Children.Add(namePanel); Grid.SetColumn(namePanel, 1);
         rowGrid.Children.Add(brandBadge); Grid.SetColumn(brandBadge, 2);
-        rowGrid.Children.Add(ratingBar); Grid.SetColumn(ratingBar, 3);
-        rowGrid.Children.Add(gradeBadge); Grid.SetColumn(gradeBadge, 4);
-        rowGrid.Children.Add(scoreText); Grid.SetColumn(scoreText, 5);
-        rowGrid.Children.Add(coresText); Grid.SetColumn(coresText, 6);
-        rowGrid.Children.Add(tdpText); Grid.SetColumn(tdpText, 7);
+        rowGrid.Children.Add(multiCoreText); Grid.SetColumn(multiCoreText, 3);
+        rowGrid.Children.Add(singleCoreText); Grid.SetColumn(singleCoreText, 4);
+        rowGrid.Children.Add(coresText); Grid.SetColumn(coresText, 5);
 
         return new Border
         {
@@ -817,40 +805,4 @@ public sealed class CpuRankingPage : Page
         };
     }
 
-    private static StackPanel BuildRatingBar(int rating)
-    {
-        var barWidth = 60;
-        var filledWidth = (int)(barWidth * rating / 100.0);
-
-        var barColor = rating >= 90 ? ThemeColors.AccentBlue
-            : rating >= 75 ? Color.FromArgb(255, 96, 165, 250)
-            : rating >= 60 ? ThemeColors.AccentOrange
-            : ThemeColors.AccentRed;
-
-        var filled = new Rectangle
-        {
-            Width = Math.Max(filledWidth, 2), Height = 6,
-            Fill = new SolidColorBrush(barColor), RadiusX = 3, RadiusY = 3,
-            HorizontalAlignment = HorizontalAlignment.Left
-        };
-
-        var track = new Border
-        {
-            Width = barWidth, Height = 6,
-            Background = new SolidColorBrush(Color.FromArgb(30, ThemeColors.DimText.R, ThemeColors.DimText.G, ThemeColors.DimText.B)),
-            CornerRadius = new CornerRadius(3), Child = filled
-        };
-
-        var ratingText = new TextBlock
-        {
-            Text = rating.ToString(), FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new SolidColorBrush(barColor), VerticalAlignment = VerticalAlignment.Center, Width = 18
-        };
-
-        var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
-        panel.Children.Add(ratingText);
-        panel.Children.Add(track);
-
-        return panel;
-    }
 }

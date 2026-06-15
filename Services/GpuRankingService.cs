@@ -12,7 +12,7 @@ public static class GpuRankingService
     private static readonly TimeSpan Cooldown = TimeSpan.FromHours(1);
     private static readonly HttpClient Http = new() { Timeout = TimeSpan.FromSeconds(30) };
 
-    private static readonly string[] RemoteUrls =
+    private static readonly string[] FallbackUrls =
     [
         "https://raw.tubawinui3.cn/luolangaga/tubatools/raw/branch/master/Metadata/gpu-ranking.json",
         "https://raw.githubusercontent.com/luolangaga/tubatools/master/Metadata/gpu-ranking.json"
@@ -24,6 +24,7 @@ public static class GpuRankingService
     public static bool CanRefresh => DateTime.Now - _lastRefreshTime >= Cooldown;
     public static DateTime LastRefreshTime => _lastRefreshTime;
     public static TimeSpan CooldownTime => Cooldown;
+    public static string BenchName { get; private set; } = "";
 
     public static void Load()
     {
@@ -63,10 +64,55 @@ public static class GpuRankingService
 
         try
         {
+            var desktopResult = await TopCpuScraperService.ScrapeGpuRankingsAsync("fp32", "desktop");
+            var laptopResult = await TopCpuScraperService.ScrapeGpuRankingsAsync("fp32", "laptop");
+
+            var desktopEntries = desktopResult.Entries;
+            var laptopEntries = laptopResult.Entries;
+
+            if (desktopEntries.Count == 0 && laptopEntries.Count == 0)
+            {
+                return await RefreshFromFallbackAsync();
+            }
+
+            _desktop = desktopEntries;
+            _laptop = laptopEntries;
+            _lastRefreshTime = DateTime.Now;
+            LastUpdated = desktopResult.LastUpdated;
+            BenchName = desktopResult.BenchName;
+
+            SaveCache();
+
+            return new GpuRefreshResult
+            {
+                Success = true,
+                Message = $"已从 TopCPU.net 刷新！桌面 {desktopEntries.Count} 款 / 笔记本 {laptopEntries.Count} 款",
+                DesktopCount = desktopEntries.Count,
+                LaptopCount = laptopEntries.Count
+            };
+        }
+        catch (HttpRequestException ex)
+        {
+            return await RefreshFromFallbackAsync($"TopCPU.net 请求失败：{ex.Message}");
+        }
+        catch (TaskCanceledException)
+        {
+            return await RefreshFromFallbackAsync("TopCPU.net 请求超时");
+        }
+        catch (Exception ex)
+        {
+            return await RefreshFromFallbackAsync($"TopCPU.net 刷新失败：{ex.Message}");
+        }
+    }
+
+    private static async Task<GpuRefreshResult> RefreshFromFallbackAsync(string? topCpuError = null)
+    {
+        try
+        {
             string? json = null;
             string? lastError = null;
 
-            foreach (var url in RemoteUrls)
+            foreach (var url in FallbackUrls)
             {
                 try
                 {
@@ -81,17 +127,26 @@ public static class GpuRankingService
 
             if (json is null)
             {
-                return new GpuRefreshResult { Success = false, Message = $"网络请求失败：{lastError}" };
+                return new GpuRefreshResult
+                {
+                    Success = false,
+                    Message = topCpuError is not null
+                        ? $"{topCpuError}，备用源也失败：{lastError}"
+                        : $"网络请求失败：{lastError}"
+                };
             }
 
-            var data = JsonSerializer.Deserialize<GpuRankingData>(json, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+            var data = JsonSerializer.Deserialize<GpuRankingData>(json,
+                new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
 
             if (data is null || (data.Desktop.Count == 0 && data.Laptop.Count == 0))
             {
                 return new GpuRefreshResult
                 {
                     Success = false,
-                    Message = "数据解析失败，JSON 格式可能已变更"
+                    Message = topCpuError is not null
+                        ? $"{topCpuError}，备用数据解析失败"
+                        : "数据解析失败，JSON 格式可能已变更"
                 };
             }
 
@@ -102,28 +157,28 @@ public static class GpuRankingService
             _laptop = data.Laptop;
             _lastRefreshTime = DateTime.Now;
             LastUpdated = data.LastUpdated;
+            BenchName = "";
 
             SaveCache();
 
+            var prefix = topCpuError is not null ? $"{topCpuError}，已从备用源刷新。 " : "";
             return new GpuRefreshResult
             {
                 Success = true,
-                Message = $"已刷新！桌面 {data.Desktop.Count} 款 / 笔记本 {data.Laptop.Count} 款",
+                Message = $"{prefix}桌面 {data.Desktop.Count} 款 / 笔记本 {data.Laptop.Count} 款",
                 DesktopCount = data.Desktop.Count,
                 LaptopCount = data.Laptop.Count
             };
         }
-        catch (HttpRequestException ex)
-        {
-            return new GpuRefreshResult { Success = false, Message = $"网络请求失败：{ex.Message}" };
-        }
-        catch (TaskCanceledException)
-        {
-            return new GpuRefreshResult { Success = false, Message = "请求超时，请稍后重试" };
-        }
         catch (Exception ex)
         {
-            return new GpuRefreshResult { Success = false, Message = $"刷新失败：{ex.Message}" };
+            return new GpuRefreshResult
+            {
+                Success = false,
+                Message = topCpuError is not null
+                    ? $"{topCpuError}，备用源也失败：{ex.Message}"
+                    : $"刷新失败：{ex.Message}"
+            };
         }
     }
 
@@ -149,7 +204,8 @@ public static class GpuRankingService
 
     private static void ParseAndSet(string json)
     {
-        var data = JsonSerializer.Deserialize<GpuRankingData>(json, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var data = JsonSerializer.Deserialize<GpuRankingData>(json,
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         if (data is null)
         {
             _desktop = [];
@@ -176,7 +232,7 @@ public static class GpuRankingService
             var data = new GpuRankingData
             {
                 LastUpdated = LastUpdated,
-                Source = RemoteUrls[0],
+                Source = "topcpu.net",
                 Desktop = _desktop ?? [],
                 Laptop = _laptop ?? []
             };

@@ -15,7 +15,7 @@ public sealed class GpuRankingPage : Page
     private string _category = "desktop";
     private string _brand = "全部";
     private string _keyword = "";
-    private string _sortBy = "rating";
+    private string _sortBy = "tflops";
     private bool _isRefreshing;
     private double _lastScrollOffset;
     private bool _navCollapsed;
@@ -137,7 +137,7 @@ public sealed class GpuRankingPage : Page
 
         _subtitleText = new TextBlock
         {
-            Text = $"数据来源 NanoReview · 更新于 {GpuRankingService.LastUpdated ?? "内置数据"} · 综合性能排列",
+            Text = $"数据来源 TopCPU.net · 更新于 {GpuRankingService.LastUpdated ?? "内置数据"} · FP32 浮点性能排列",
             FontSize = 12,
             Foreground = new SolidColorBrush(ThemeColors.DimText),
             Margin = new Thickness(0, 4, 0, 0)
@@ -224,7 +224,7 @@ public sealed class GpuRankingPage : Page
             _infoBar.Severity = InfoBarSeverity.Success;
             _infoBar.IsOpen = true;
 
-            _subtitleText.Text = $"数据来源 NanoReview · 更新于 {GpuRankingService.LastUpdated} · 综合性能排列";
+            _subtitleText.Text = $"数据来源 TopCPU.net · 更新于 {GpuRankingService.LastUpdated} · FP32 浮点性能排列";
             RefreshList();
         }
         else
@@ -272,17 +272,15 @@ public sealed class GpuRankingPage : Page
             SelectedIndex = 0,
             Header = null
         };
-        sortCombo.Items.Add("综合评分");
-        sortCombo.Items.Add("游戏性能");
-        sortCombo.Items.Add("渲染性能");
+        sortCombo.Items.Add("TFLOPS");
+        sortCombo.Items.Add("评分");
         sortCombo.Items.Add("排名顺序");
         sortCombo.SelectionChanged += (s, e) =>
         {
             _sortBy = sortCombo.SelectedIndex switch
             {
-                0 => "rating",
-                1 => "gaming",
-                2 => "render",
+                0 => "tflops",
+                1 => "rating",
                 _ => "rank"
             };
             RefreshList();
@@ -539,18 +537,14 @@ public sealed class GpuRankingPage : Page
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
         headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
-        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
 
         AddHeader(headerGrid, "#", 0);
         AddHeader(headerGrid, "GPU", 1);
         AddHeader(headerGrid, "品牌", 2);
-        AddHeader(headerGrid, "评分", 3);
-        AddHeader(headerGrid, "等级", 4);
-        AddHeader(headerGrid, "游戏/渲染", 5);
-        AddHeader(headerGrid, "TFLOPS", 6);
+        AddHeader(headerGrid, "TFLOPS", 3);
+        AddHeader(headerGrid, "显存", 4);
 
         var headerBorder = new Border
         {
@@ -644,8 +638,7 @@ public sealed class GpuRankingPage : Page
 
         entries = _sortBy switch
         {
-            "gaming" => entries.OrderByDescending(e => e.Gaming).ToList(),
-            "render" => entries.OrderByDescending(e => e.Render).ToList(),
+            "tflops" => entries.OrderByDescending(e => double.TryParse(e.Tflops, out var t) ? t : 0).ToList(),
             "rating" => entries.OrderByDescending(e => e.Rating).ToList(),
             _ => entries.OrderBy(e => e.Rank).ToList()
         };
@@ -726,6 +719,18 @@ public sealed class GpuRankingPage : Page
             Foreground = new SolidColorBrush(ThemeColors.PrimaryText), VerticalAlignment = VerticalAlignment.Center
         };
 
+        var vramSubText = !string.IsNullOrWhiteSpace(entry.TimeSpy)
+            ? new TextBlock
+            {
+                Text = entry.TimeSpy, FontSize = 10, Foreground = new SolidColorBrush(ThemeColors.DimText),
+                VerticalAlignment = VerticalAlignment.Center
+            }
+            : null;
+
+        var namePanel = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center };
+        namePanel.Children.Add(nameText);
+        if (vramSubText is not null) namePanel.Children.Add(vramSubText);
+
         FrameworkElement brandContent;
         if (brandLogo is not null)
         {
@@ -751,30 +756,22 @@ public sealed class GpuRankingPage : Page
             Child = brandContent
         };
 
-        var ratingBar = BuildRatingBar(entry.Rating);
-
-        var gradeColor = entry.Grade switch
-        {
-            "A+" => ThemeColors.AccentBlue, "A" => Color.FromArgb(255, 96, 165, 250),
-            "B" => ThemeColors.AccentOrange, "C" => ThemeColors.AccentRed, _ => ThemeColors.DimText
-        };
-
-        var gradeBadge = new Border
-        {
-            Padding = new Thickness(6, 3, 6, 3), CornerRadius = new CornerRadius(4),
-            Background = new SolidColorBrush(Color.FromArgb(30, gradeColor.R, gradeColor.G, gradeColor.B)),
-            Child = new TextBlock { Text = entry.Grade, FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(gradeColor), VerticalAlignment = VerticalAlignment.Center }
-        };
-
-        var scoreText = new TextBlock
-        {
-            Text = $"{entry.Gaming} / {entry.Render}", FontSize = 12,
-            Foreground = new SolidColorBrush(ThemeColors.PrimaryText), VerticalAlignment = VerticalAlignment.Center
-        };
+        var tflopsColor = entry.Rating >= 80 ? NvidiaGreen
+            : entry.Rating >= 50 ? ThemeColors.AccentBlue
+            : entry.Rating >= 20 ? ThemeColors.AccentOrange
+            : ThemeColors.DimText;
 
         var tflopsText = new TextBlock
         {
-            Text = entry.Tflops, FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText),
+            Text = !string.IsNullOrWhiteSpace(entry.Tflops) ? entry.Tflops : "-",
+            FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(tflopsColor), VerticalAlignment = VerticalAlignment.Center
+        };
+
+        var vramText = new TextBlock
+        {
+            Text = !string.IsNullOrWhiteSpace(entry.TimeSpy) ? entry.TimeSpy : "-",
+            FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText),
             VerticalAlignment = VerticalAlignment.Center
         };
 
@@ -782,18 +779,14 @@ public sealed class GpuRankingPage : Page
         rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(44) });
         rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(90) });
         rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
-        rowGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
 
         rowGrid.Children.Add(rankBadge); Grid.SetColumn(rankBadge, 0);
-        rowGrid.Children.Add(nameText); Grid.SetColumn(nameText, 1);
+        rowGrid.Children.Add(namePanel); Grid.SetColumn(namePanel, 1);
         rowGrid.Children.Add(brandBadge); Grid.SetColumn(brandBadge, 2);
-        rowGrid.Children.Add(ratingBar); Grid.SetColumn(ratingBar, 3);
-        rowGrid.Children.Add(gradeBadge); Grid.SetColumn(gradeBadge, 4);
-        rowGrid.Children.Add(scoreText); Grid.SetColumn(scoreText, 5);
-        rowGrid.Children.Add(tflopsText); Grid.SetColumn(tflopsText, 6);
+        rowGrid.Children.Add(tflopsText); Grid.SetColumn(tflopsText, 3);
+        rowGrid.Children.Add(vramText); Grid.SetColumn(vramText, 4);
 
         return new Border
         {
@@ -805,40 +798,4 @@ public sealed class GpuRankingPage : Page
         };
     }
 
-    private static StackPanel BuildRatingBar(int rating)
-    {
-        var barWidth = 60;
-        var filledWidth = (int)(barWidth * rating / 100.0);
-
-        var barColor = rating >= 90 ? ThemeColors.AccentBlue
-            : rating >= 75 ? Color.FromArgb(255, 96, 165, 250)
-            : rating >= 60 ? ThemeColors.AccentOrange
-            : ThemeColors.AccentRed;
-
-        var filled = new Rectangle
-        {
-            Width = Math.Max(filledWidth, 2), Height = 6,
-            Fill = new SolidColorBrush(barColor), RadiusX = 3, RadiusY = 3,
-            HorizontalAlignment = HorizontalAlignment.Left
-        };
-
-        var track = new Border
-        {
-            Width = barWidth, Height = 6,
-            Background = new SolidColorBrush(Color.FromArgb(30, ThemeColors.DimText.R, ThemeColors.DimText.G, ThemeColors.DimText.B)),
-            CornerRadius = new CornerRadius(3), Child = filled
-        };
-
-        var ratingText = new TextBlock
-        {
-            Text = rating.ToString(), FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.Bold,
-            Foreground = new SolidColorBrush(barColor), VerticalAlignment = VerticalAlignment.Center, Width = 18
-        };
-
-        var panel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, VerticalAlignment = VerticalAlignment.Center };
-        panel.Children.Add(ratingText);
-        panel.Children.Add(track);
-
-        return panel;
-    }
 }

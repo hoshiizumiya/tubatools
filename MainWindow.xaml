@@ -131,9 +131,9 @@
                         <FontIcon Glyph="&#xE90F;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem Content="硬件监控" Tag="monitor">
+                <NavigationViewItem Content="社区" Tag="community">
                     <NavigationViewItem.Icon>
-                        <FontIcon Glyph="&#xE9D9;" />
+                        <FontIcon Glyph="&#xE774;" />
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
             </NavigationView.MenuItems>

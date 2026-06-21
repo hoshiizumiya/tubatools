@@ -410,19 +410,19 @@ public static class HardwareInfoService
         cpuItem.BrandKey = DetectCpuBrand(cpuName);
         section.Items.Add(cpuItem);
         section.Items.Add(Item("内存", FormatMemory()));
-        var gpuName = JoinNames("Win32_VideoController", item =>
-            !ContainsAny(Get(item, "Name"), "Microsoft Basic Render", "Microsoft Remote Display", "DDA Wrapper",
-                "Idd Desk", "GameViewer Virtual Display", "Honor Virtual Display", "Virtual Display",
-                "Virtual GPU", "Virtual Adapter", "虚拟", "Remote Display Adapter"));
-        var gpuItem = Item("显卡", gpuName);
-        gpuItem.BrandKey = DetectGpuBrand(gpuName);
+        var gpuDisplay = BuildGpuDisplayText();
+        var gpuItem = Item("显卡", gpuDisplay);
+        gpuItem.BrandKey = DetectGpuBrand(gpuDisplay);
         section.Items.Add(gpuItem);
+        var npuName = DetectNpuName();
+        if (npuName != null)
+            section.Items.Add(Item("NPU", npuName));
         section.Items.Add(Item("显示器", FormatDisplays()));
         section.Items.Add(Item("硬盘", FormatDisks()));
         section.Items.Add(Item("声卡", JoinNames("Win32_SoundDevice", item =>
         {
             var name = Get(item, "Name");
-            return !ContainsAny(name, "Virtual", "虚拟", "Software", "Remote Audio", "Stereo Mix", "Wave", "VB-Audio", "VBAN", "Voicemeeter", "CABLE", "VAC");
+            return !ContainsAny(name, "Virtual", "虚拟", "Software", "Remote Audio", "Stereo Mix", "Wave", "VB-Audio", "VBAN", "Voicemeeter", "CABLE", "VAC", "Senary Audio", "Nahimic Easy Surround", "Nahimic mirroring", "USB 音频", "蓝牙音频", "蓝牙");
         })));
         section.Items.Add(Item("网卡", JoinNames("Win32_NetworkAdapter", item =>
             IsTrue(item, "PhysicalAdapter") &&
@@ -437,6 +437,49 @@ public static class HardwareInfoService
         if (name.Contains("AMD")) return "amd";
         if (name.Contains("APPLE") || name.Contains("M1") || name.Contains("M2") || name.Contains("M3") || name.Contains("M4")) return "apple";
         if (name.Contains("QUALCOMM") || name.Contains("SNAPDRAGON")) return "qualcomm";
+        return null;
+    }
+
+    private static string? BuildGpuDisplayText()
+    {
+        (string name, ulong vram)[] dxgiAdapters;
+        try { dxgiAdapters = EnumerateDxgiAdapters(); }
+        catch { dxgiAdapters = Array.Empty<(string, ulong)>(); }
+
+        var parts = new List<string>();
+        foreach (var item in Query("Win32_VideoController"))
+        {
+            var name = Get(item, "Name");
+            if (ContainsAny(name, "Microsoft Basic Render", "Microsoft Remote Display", "DDA Wrapper",
+                "Idd Desk", "GameViewer Virtual Display", "Honor Virtual Display", "Virtual Display",
+                "Virtual GPU", "Virtual Adapter", "虚拟", "Remote Display Adapter"))
+                continue;
+
+            var display = name;
+            var wmiAdapterRam = ToLong(Get(item, "AdapterRAM"));
+
+            if (name != null && TryMatchDxgiAdapter(name, dxgiAdapters, out int dxgiIdx) && dxgiAdapters[dxgiIdx].vram > 0)
+                display += $" ({dxgiAdapters[dxgiIdx].vram / 1024d / 1024d / 1024d:0.#} GB)";
+            else if (wmiAdapterRam > 0)
+                display += $" ({wmiAdapterRam / 1024d / 1024d / 1024d:0.#} GB)";
+
+            parts.Add(display!);
+        }
+
+        return parts.Count > 0 ? string.Join(GetSeparator(), parts) : null;
+    }
+
+    private static string? DetectNpuName()
+    {
+        foreach (var item in Query("Win32_PnPEntity"))
+        {
+            var pnpClass = Get(item, "PNPClass");
+            if (!string.Equals(pnpClass, "ComputeAccelerator", StringComparison.OrdinalIgnoreCase))
+                continue;
+            var name = Get(item, "Name");
+            if (!string.IsNullOrWhiteSpace(name))
+                return name;
+        }
         return null;
     }
 
@@ -1383,7 +1426,8 @@ public static class HardwareInfoService
             Disks = BuildDiskDetails(),
             Displays = BuildDisplayDetails(),
             SoundDevices = BuildSoundDetails(),
-            NetworkAdapters = BuildNetworkDetails()
+            NetworkAdapters = BuildNetworkDetails(),
+            Npu = BuildNpuDetail()
         };
 
         _detailCache = data;
@@ -1901,7 +1945,7 @@ public static class HardwareInfoService
         foreach (var item in Query("Win32_SoundDevice"))
         {
             var name = Get(item, "Name");
-            if (ContainsAny(name, "Virtual", "虚拟", "Software", "Remote Audio", "Stereo Mix", "Wave", "VB-Audio", "VBAN", "Voicemeeter", "CABLE", "VAC"))
+            if (ContainsAny(name, "Virtual", "虚拟", "Software", "Remote Audio", "Stereo Mix", "Wave", "VB-Audio", "VBAN", "Voicemeeter", "CABLE", "VAC", "Senary Audio", "Nahimic Easy Surround", "Nahimic mirroring", "USB 音频", "蓝牙音频", "蓝牙"))
                 continue;
 
             devices.Add(new SoundDetail
@@ -1945,6 +1989,30 @@ public static class HardwareInfoService
         if (bps >= 1_000_000) return $"{bps / 1_000_000d:0.#} Mbps";
         if (bps >= 1_000) return $"{bps / 1_000d:0.#} Kbps";
         return $"{bps} bps";
+    }
+
+    private static NpuDetail? BuildNpuDetail()
+    {
+        foreach (var item in Query("Win32_PnPEntity"))
+        {
+            var pnpClass = Get(item, "PNPClass");
+            if (!string.Equals(pnpClass, "ComputeAccelerator", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var name = Get(item, "Name");
+            if (string.IsNullOrWhiteSpace(name)) continue;
+
+            return new NpuDetail
+            {
+                Name = name,
+                Manufacturer = Get(item, "Manufacturer"),
+                DriverVersion = Get(item, "DriverVersion"),
+                DriverDate = Get(item, "DriverDate"),
+                DeviceId = Get(item, "DeviceId")
+            };
+        }
+
+        return null;
     }
 
     #endregion

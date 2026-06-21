@@ -10,6 +10,7 @@ public sealed class HardwareDetailData
     public List<DisplayDetail> Displays { get; init; } = [];
     public List<SoundDetail> SoundDevices { get; init; } = [];
     public List<NetworkDetail> NetworkAdapters { get; init; } = [];
+    public NpuDetail? Npu { get; init; }
 }
 
 public sealed class CpuDetail
@@ -126,4 +127,13 @@ public sealed class NetworkDetail
     public string? MacAddress { get; set; }
     public string? Speed { get; set; }
     public string? AdapterType { get; set; }
+}
+
+public sealed class NpuDetail
+{
+    public string? Name { get; set; }
+    public string? Manufacturer { get; set; }
+    public string? DriverVersion { get; set; }
+    public string? DriverDate { get; set; }
+    public string? DeviceId { get; set; }
 }

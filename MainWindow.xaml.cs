@@ -148,8 +148,8 @@ public sealed partial class MainWindow : Window
                 case "builtin":
                     NavFrame.Navigate(typeof(BuiltinToolsPage));
                     break;
-                case "monitor":
-                    NavFrame.Navigate(typeof(Pages.LiteMonitorPage), false);
+                case "community":
+                    NavFrame.Navigate(typeof(CommunityToolsPage));
                     break;
                 case string category:
                     NavFrame.Navigate(typeof(HomePage), category);
@@ -283,6 +283,12 @@ public sealed partial class MainWindow : Window
         PopulateCategories();
     }
 
+    public void NavigateToCommunity()
+    {
+        NavFrame.Navigate(typeof(CommunityToolsPage));
+        SyncNavSelection("community");
+    }
+
     private void PopulateSearchSuggestions()
     {
         var items = UnifiedSearchService.GetQuickPanelItems();
@@ -375,6 +381,10 @@ public sealed partial class MainWindow : Window
                     new SearchNavigationTarget { HighlightBuiltinId = result.MatchKey });
                 SyncNavSelection("builtin");
                 break;
+            case SearchItemKind.CommunityTool:
+                NavFrame.Navigate(typeof(CommunityToolsPage));
+                SyncNavSelection("community");
+                break;
             case SearchItemKind.Setting:
                 NavFrame.Navigate(typeof(SettingsPage),
                     new SearchNavigationTarget { HighlightSettingKey = result.MatchKey });
@@ -428,10 +438,6 @@ public sealed partial class MainWindow : Window
                 NavFrame.Navigate(typeof(HardwarePage));
                 SyncNavSelection("hardware");
                 break;
-            case "monitor":
-                NavigateToMonitor();
-                SyncNavSelection("monitor");
-                break;
             case "favorites":
                 NavFrame.Navigate(typeof(FavoritesPage));
                 SyncNavSelection("favorites");
@@ -440,14 +446,14 @@ public sealed partial class MainWindow : Window
                 NavFrame.Navigate(typeof(BuiltinToolsPage));
                 SyncNavSelection("builtin");
                 break;
+            case "community":
+                NavFrame.Navigate(typeof(CommunityToolsPage));
+                SyncNavSelection("community");
+                break;
             case "settings":
                 NavFrame.Navigate(typeof(SettingsPage));
                 break;
         }
     }
 
-    private void NavigateToMonitor()
-    {
-        NavFrame.Navigate(typeof(Pages.LiteMonitorPage), false);
-    }
 }

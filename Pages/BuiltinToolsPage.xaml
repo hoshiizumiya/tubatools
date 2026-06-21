@@ -90,6 +90,7 @@
                 x:Name="ToolsGrid"
                 IsItemClickEnabled="True"
                 ItemClick="ToolsGrid_ItemClick"
+                DoubleTapped="ToolsGrid_DoubleTapped"
                 ItemContainerStyle="{StaticResource BuiltinCardStyle}"
                 SelectionMode="None"
                 SizeChanged="ToolsGrid_SizeChanged">
@@ -180,6 +181,17 @@
                     </DataTemplate>
                 </GridView.ItemTemplate>
             </GridView>
+
+            <TeachingTip
+                x:Name="ToolDetailTip"
+                CloseButtonContent="关闭"
+                PreferredPlacement="Right">
+                <StackPanel MaxWidth="420" Spacing="8">
+                    <TextBlock x:Name="DetailDescriptionText" TextWrapping="Wrap" />
+                    <TextBlock x:Name="DetailCategoryText" Opacity="0.72" TextWrapping="Wrap" />
+                    <TextBlock x:Name="DetailKindText" Opacity="0.72" TextWrapping="Wrap" />
+                </StackPanel>
+            </TeachingTip>
 
             <InfoBar
                 x:Name="StatusBar"

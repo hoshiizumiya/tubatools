@@ -3,7 +3,6 @@ using System.Net;
 using System.Net.NetworkInformation;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
-using System.Text.Json;
 using Windows.UI;
 
 namespace TubaWinUi3.Services;
@@ -41,6 +40,23 @@ public sealed class AdapterStats
     public long SpeedUpload { get; init; }
 }
 
+public sealed class AutoScheduleResult
+{
+    public string Summary { get; init; } = "";
+    public List<AdapterScheduleEntry> Entries { get; init; } = [];
+}
+
+public sealed record AdapterScheduleEntry
+{
+    public int Index { get; init; }
+    public string Name { get; init; } = "";
+    public int Metric { get; init; }
+    public double LoadPercent { get; init; }
+    public long DownloadSpeed { get; init; }
+    public long UploadSpeed { get; init; }
+    public long LinkSpeed { get; init; }
+}
+
 public static class NetworkAdapterProxyService
 {
     private const int AF_INET = 2;
@@ -53,12 +69,20 @@ public static class NetworkAdapterProxyService
     [DllImport("ws2_32.dll")]
     private static extern ushort ntohs(uint netshort);
 
-    private static readonly string _policiesPath = Path.Combine(ConfigManager.GetDataDir(), "network_policies.json");
     private static List<AdapterStats> _prevStats = [];
     private static List<AdapterStats> _currentStats = [];
     private static CancellationTokenSource? _monitorCts;
 
+    private static CancellationTokenSource? _autoScheduleCts;
+    private static bool _autoScheduling;
+    private static int _autoScheduleIntervalMs = 5000;
+    private static AutoScheduleResult? _lastScheduleResult;
+
     public static event Action<List<AdapterStats>>? StatsUpdated;
+    public static event Action<AutoScheduleResult>? ScheduleUpdated;
+
+    public static bool IsAutoScheduling => _autoScheduling;
+    public static AutoScheduleResult? LastScheduleResult => _lastScheduleResult;
 
     #region Adapter Enumeration
 
@@ -209,60 +233,171 @@ public static class NetworkAdapterProxyService
 
     #endregion
 
-    #region Smart Routing
+    #region Auto Scheduling
 
-    public static void OptimizeRouting()
+    public static void StartAutoScheduling(int intervalMs = 5000)
     {
-        var adapters = GetAdapters();
-        var internetAdapters = adapters.Where(a => a.HasInternet).ToList();
-        if (internetAdapters.Count == 0) return;
+        StopAutoScheduling();
+        _autoScheduling = true;
+        _autoScheduleIntervalMs = intervalMs;
+        _autoScheduleCts = new CancellationTokenSource();
+        var token = _autoScheduleCts.Token;
 
-        var wifi = internetAdapters.FirstOrDefault(a => a.IsWifi);
-        var wired = internetAdapters.FirstOrDefault(a => !a.IsWifi);
-
-        if (wired != null && wifi != null)
+        _ = Task.Run(async () =>
         {
-            SetInterfaceMetric(wired.Index, 10);
-            SetInterfaceMetric(wifi.Index, 50);
-            return;
+            while (!token.IsCancellationRequested)
+            {
+                try
+                {
+                    await Task.Delay(intervalMs, token);
+                    var result = ComputeAndApplySchedule();
+                    if (result != null)
+                    {
+                        _lastScheduleResult = result;
+                        ScheduleUpdated?.Invoke(result);
+                    }
+                }
+                catch (OperationCanceledException) { break; }
+                catch { }
+            }
+        }, token);
+    }
+
+    public static void StopAutoScheduling()
+    {
+        _autoScheduling = false;
+        _autoScheduleCts?.Cancel();
+        _autoScheduleCts?.Dispose();
+        _autoScheduleCts = null;
+    }
+
+    private static AutoScheduleResult? ComputeAndApplySchedule()
+    {
+        var adapters = GetAdapters().Where(a => a.HasInternet).ToList();
+        if (adapters.Count == 0) return null;
+
+        if (adapters.Count == 1)
+        {
+            var a = adapters[0];
+            SetInterfaceMetric(a.Index, 10);
+            var st = GetStatsForAdapter(a.Index);
+            var load = a.Speed > 0 ? (double)(st?.SpeedDownload ?? 0) * 8 / a.Speed * 100 : 0;
+            return new AutoScheduleResult
+            {
+                Summary = $"单网络模式 · {a.Name}",
+                Entries =
+                [
+                    new AdapterScheduleEntry
+                    {
+                        Index = a.Index, Name = a.Name, Metric = 10,
+                        LoadPercent = Math.Round(load, 1),
+                        DownloadSpeed = st?.SpeedDownload ?? 0,
+                        UploadSpeed = st?.SpeedUpload ?? 0,
+                        LinkSpeed = a.Speed
+                    }
+                ]
+            };
         }
 
-        var best = internetAdapters.FirstOrDefault(a => a.Speed == internetAdapters.Max(x => x.Speed)) ?? internetAdapters[0];
-        SetInterfaceMetric(best.Index, 10);
-    }
-
-    public static void BalanceRouting()
-    {
-        var adapters = GetAdapters();
-        var internetAdapters = adapters.Where(a => a.HasInternet).ToList();
-        if (internetAdapters.Count < 2) return;
-
-        int metric = 10;
-        foreach (var adapter in internetAdapters)
+        var entries = new List<AdapterScheduleEntry>();
+        foreach (var a in adapters)
         {
-            SetInterfaceMetric(adapter.Index, metric);
-            metric += 5;
+            var st = GetStatsForAdapter(a.Index);
+            var dlSpeed = st?.SpeedDownload ?? 0;
+            var ulSpeed = st?.SpeedUpload ?? 0;
+            var totalBps = (dlSpeed + ulSpeed) * 8;
+            var load = a.Speed > 0 ? (double)totalBps / a.Speed * 100 : 0;
+
+            entries.Add(new AdapterScheduleEntry
+            {
+                Index = a.Index,
+                Name = a.Name,
+                LoadPercent = Math.Round(load, 1),
+                DownloadSpeed = dlSpeed,
+                UploadSpeed = ulSpeed,
+                LinkSpeed = a.Speed
+            });
         }
-    }
 
-    public static void PrioritizeWifi()
-    {
-        var adapters = GetAdapters();
-        var wifi = adapters.FirstOrDefault(a => a.IsWifi && a.HasInternet);
-        var wired = adapters.FirstOrDefault(a => !a.IsWifi && a.HasInternet);
+        var totalLoad = entries.Sum(e => e.LoadPercent);
+        var avgLoad = totalLoad / entries.Count;
 
-        if (wifi != null) SetInterfaceMetric(wifi.Index, 10);
-        if (wired != null) SetInterfaceMetric(wired.Index, 50);
-    }
+        foreach (var e in entries)
+        {
+            var ratio = avgLoad > 0.1 ? e.LoadPercent / avgLoad : 1.0;
+            int metric;
 
-    public static void PrioritizeWired()
-    {
-        var adapters = GetAdapters();
-        var wifi = adapters.FirstOrDefault(a => a.IsWifi && a.HasInternet);
-        var wired = adapters.FirstOrDefault(a => !a.IsWifi && a.HasInternet);
+            if (ratio < 0.3)
+            {
+                metric = 5;
+            }
+            else if (ratio < 0.7)
+            {
+                metric = 10;
+            }
+            else if (ratio < 1.3)
+            {
+                metric = 15;
+            }
+            else if (ratio < 2.0)
+            {
+                metric = 25;
+            }
+            else if (ratio < 3.5)
+            {
+                metric = 40;
+            }
+            else
+            {
+                metric = 55;
+            }
 
-        if (wired != null) SetInterfaceMetric(wired.Index, 10);
-        if (wifi != null) SetInterfaceMetric(wifi.Index, 50);
+            var entry = entries.First(x => x.Index == e.Index);
+            entries[entries.IndexOf(entry)] = new AdapterScheduleEntry
+            {
+                Index = e.Index,
+                Name = e.Name,
+                Metric = metric,
+                LoadPercent = e.LoadPercent,
+                DownloadSpeed = e.DownloadSpeed,
+                UploadSpeed = e.UploadSpeed,
+                LinkSpeed = e.LinkSpeed
+            };
+        }
+
+        var minMetric = entries.Min(e => e.Metric);
+        if (entries.Count(e => e.Metric == minMetric) > 1)
+        {
+            var bestIdx = entries
+                .OrderBy(e => e.Metric)
+                .ThenByDescending(e => e.LinkSpeed)
+                .First().Index;
+            var updated = new List<AdapterScheduleEntry>();
+            foreach (var e in entries)
+            {
+                if (e.Index == bestIdx && e.Metric == minMetric)
+                    updated.Add(e with { Metric = e.Metric - 1 });
+                else
+                    updated.Add(e);
+            }
+            entries = updated;
+        }
+
+        foreach (var e in entries)
+        {
+            SetInterfaceMetric(e.Index, Math.Max(1, e.Metric));
+        }
+
+        var parts = entries
+            .OrderBy(e => e.Metric)
+            .Select(e => $"{e.Name} {FormatSpeedFriendly(e.DownloadSpeed)}↓ (负载 {e.LoadPercent:0.0}%)");
+        var summary = $"自动均衡 · {string.Join(" | ", parts)}";
+
+        return new AutoScheduleResult
+        {
+            Summary = summary,
+            Entries = entries
+        };
     }
 
     public static void ResetRouting()
@@ -272,6 +407,7 @@ public static class NetworkAdapterProxyService
         {
             SetInterfaceMetric(adapter.Index, 0);
         }
+        _lastScheduleResult = null;
     }
 
     #endregion

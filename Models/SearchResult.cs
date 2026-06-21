@@ -23,6 +23,7 @@ public sealed class SearchResult
         SearchItemKind.Setting => "设置",
         SearchItemKind.CustomTool => "自定义",
         SearchItemKind.QuickAction => "快捷",
+        SearchItemKind.CommunityTool => "社区",
         _ => ""
     };
 
@@ -35,7 +36,8 @@ public enum SearchItemKind
     BuiltinTool,
     Setting,
     CustomTool,
-    QuickAction
+    QuickAction,
+    CommunityTool
 }
 
 public sealed class SearchNavigationTarget

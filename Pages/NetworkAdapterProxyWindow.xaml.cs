@@ -20,6 +20,7 @@ public sealed partial class NetworkAdapterProxyWindow : Window
         public Border? LeftBar;
         public FontIcon? Icon;
         public Border? IconBg;
+        public TextBlock? SpeedLabel;
     }
 
     private sealed class SpeedRefs
@@ -37,18 +38,21 @@ public sealed partial class NetworkAdapterProxyWindow : Window
 
     private List<AdapterInfo> _adapters = [];
     private DispatcherTimer? _refreshTimer;
-    private DispatcherTimer? _connTimer;
     private readonly Dictionary<int, SpeedRefs> _speedRefs = new();
     private readonly Dictionary<int, AdapterCardRefs> _cardRefs = new();
     private bool _isVisible = true;
     private bool _cardsBuilt;
+    private bool _monitoring = true;
+    private bool _autoScheduling = true;
+    private bool _initialized;
+    private NetworkConnectionsWindow? _connectionsWindow;
 
     public NetworkAdapterProxyWindow()
     {
         InitializeComponent();
 
         AppWindow.Title = "网络调度器";
-        AppWindow.Resize(new SizeInt32(740, 720));
+        AppWindow.Resize(new SizeInt32(680, 560));
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
 
         var presenter = AppWindow.Presenter as OverlappedPresenter;
@@ -62,6 +66,7 @@ public sealed partial class NetworkAdapterProxyWindow : Window
             root.RequestedTheme = ThemeService.CurrentElementTheme;
 
         NetworkAdapterProxyService.StatsUpdated += OnStatsUpdated;
+        NetworkAdapterProxyService.ScheduleUpdated += OnScheduleUpdated;
         AppWindow.Changed += OnAppWindowChanged;
 
         _ = InitializeAsync();
@@ -74,17 +79,115 @@ public sealed partial class NetworkAdapterProxyWindow : Window
         if (visible && !_isVisible)
         {
             _isVisible = true;
-            _refreshTimer?.Start();
-            _connTimer?.Start();
-            NetworkAdapterProxyService.StartMonitoring(2000);
+            if (_monitoring)
+            {
+                _refreshTimer?.Start();
+                NetworkAdapterProxyService.StartMonitoring(2000);
+            }
+            if (_autoScheduling)
+                NetworkAdapterProxyService.StartAutoScheduling(5000);
         }
         else if (!visible && _isVisible)
         {
             _isVisible = false;
             _refreshTimer?.Stop();
-            _connTimer?.Stop();
             NetworkAdapterProxyService.StopMonitoring();
+            NetworkAdapterProxyService.StopAutoScheduling();
         }
+    }
+
+    private void MonitorToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (!_initialized) return;
+        _monitoring = MonitorToggle.IsOn;
+        if (_monitoring)
+        {
+            NetworkAdapterProxyService.StartMonitoring(2000);
+            _refreshTimer?.Start();
+        }
+        else
+        {
+            NetworkAdapterProxyService.StopMonitoring();
+            _refreshTimer?.Stop();
+        }
+    }
+
+    private void AutoScheduleToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (!_initialized) return;
+        _autoScheduling = AutoScheduleToggle.IsOn;
+        if (_autoScheduling)
+        {
+            NetworkAdapterProxyService.StartAutoScheduling(5000);
+            ScheduleStatusText.Text = "每 5 秒根据实时负载自动调整路由优先级";
+        }
+        else
+        {
+            NetworkAdapterProxyService.StopAutoScheduling();
+            ScheduleStatusText.Text = "自动调度已关闭，路由优先级保持不变";
+            ScheduleEntriesPanel.Children.Clear();
+            ScheduleSummaryText.Text = "";
+        }
+    }
+
+    private void OnScheduleUpdated(AutoScheduleResult result)
+    {
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_initialized) RenderSchedule(result);
+        });
+    }
+
+    private void RenderSchedule(AutoScheduleResult result)
+    {
+        ScheduleEntriesPanel.Children.Clear();
+
+        foreach (var entry in result.Entries.OrderByDescending(e => e.LoadPercent))
+        {
+            var accent = entry.LoadPercent > 70 ? AccentRed
+                       : entry.LoadPercent > 40 ? AccentOrange
+                       : AccentGreen;
+
+            var row = new Grid { ColumnSpacing = 10 };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+
+            var nameText = new TextBlock
+            {
+                Text = entry.Name, FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                Foreground = new SolidColorBrush(ThemeColors.PrimaryText),
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            var loadBadge = new Border
+            {
+                Padding = new Thickness(6, 2, 6, 2), CornerRadius = new CornerRadius(4),
+                Background = new SolidColorBrush(Color.FromArgb(25, accent.R, accent.G, accent.B)),
+                Child = new TextBlock
+                {
+                    Text = $"{entry.LoadPercent:0.0}%", FontSize = 11,
+                    Foreground = new SolidColorBrush(accent),
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                }
+            };
+
+            var bar = new ProgressBar
+            {
+                Value = Math.Min(100, entry.LoadPercent),
+                Foreground = new SolidColorBrush(accent),
+                Background = new SolidColorBrush(Color.FromArgb(20, accent.R, accent.G, accent.B)),
+                Height = 4
+            };
+
+            row.Children.Add(nameText);
+            row.Children.Add(loadBadge); Grid.SetColumn(loadBadge, 1);
+            row.Children.Add(bar); Grid.SetColumn(bar, 2);
+
+            ScheduleEntriesPanel.Children.Add(row);
+        }
+
+        ScheduleSummaryText.Text = result.Summary;
     }
 
     private async Task InitializeAsync()
@@ -111,16 +214,47 @@ public sealed partial class NetworkAdapterProxyWindow : Window
 
         NetworkAdapterProxyService.StartMonitoring(2000);
 
-        _connTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(5) };
-        _connTimer.Tick += async (_, _) =>
-        {
-            var conns = await Task.Run(() => NetworkAdapterProxyService.GetActiveConnections());
-            RenderConnections(conns);
-        };
-        _connTimer.Start();
+        if (_autoScheduling)
+            NetworkAdapterProxyService.StartAutoScheduling(5000);
 
-        _ = Task.Run(() => NetworkAdapterProxyService.GetActiveConnections())
-            .ContinueWith(t => { if (t.Result != null) DispatcherQueue.TryEnqueue(() => RenderConnections(t.Result)); });
+        _initialized = true;
+
+        _ = LoadConnectionSummaryAsync();
+    }
+
+    private async Task LoadConnectionSummaryAsync()
+    {
+        ConnLoadingBar.Visibility = Visibility.Visible;
+        var conns = await Task.Run(() => NetworkAdapterProxyService.GetActiveConnections());
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            ConnLoadingBar.Visibility = Visibility.Collapsed;
+            if (conns.Count == 0)
+            {
+                ConnSummaryText.Text = "暂无已建立的 TCP 连接";
+            }
+            else
+            {
+                var wifiCount = conns.Count(c => c.AdapterType == "Wi-Fi");
+                var wiredCount = conns.Count(c => c.AdapterType == "有线");
+                var otherCount = conns.Count - wifiCount - wiredCount;
+                var parts = new List<string>();
+                if (wifiCount > 0) parts.Add($"Wi-Fi {wifiCount} 条");
+                if (wiredCount > 0) parts.Add($"有线 {wiredCount} 条");
+                if (otherCount > 0) parts.Add($"其他 {otherCount} 条");
+                ConnSummaryText.Text = $"共 {conns.Count} 条 TCP 连接 · {string.Join("，", parts)}";
+            }
+        });
+    }
+
+    private void ViewConnectionsBtn_Click(object sender, RoutedEventArgs e)
+    {
+        if (_connectionsWindow != null)
+        {
+            try { _connectionsWindow.Activate(); return; } catch { _connectionsWindow = null; }
+        }
+        _connectionsWindow = new NetworkConnectionsWindow();
+        _connectionsWindow.Activate();
     }
 
     private void OnStatsUpdated(List<AdapterStats> stats)
@@ -185,6 +319,8 @@ public sealed partial class NetworkAdapterProxyWindow : Window
                 refs.Icon.Foreground = new SolidColorBrush(isUp ? accent : ThemeColors.DimText);
             if (refs.IconBg != null)
                 refs.IconBg.Background = new SolidColorBrush(Color.FromArgb((byte)(isUp ? 30 : 15), accent.R, accent.G, accent.B));
+            if (refs.SpeedLabel != null)
+                refs.SpeedLabel.Text = a.Speed > 0 ? NetworkAdapterProxyService.FormatSpeed(a.Speed / 8) : "";
         }
     }
 
@@ -197,20 +333,20 @@ public sealed partial class NetworkAdapterProxyWindow : Window
         var icon = new FontIcon
         {
             Glyph = a.IsWifi ? "\uEC85" : "\uE8BD",
-            FontSize = 24,
+            FontSize = 20,
             Foreground = new SolidColorBrush(isUp ? accent : ThemeColors.DimText)
         };
 
         var iconBg = new Border
         {
-            Width = 48, Height = 48, CornerRadius = new CornerRadius(10),
+            Width = 40, Height = 40, CornerRadius = new CornerRadius(10),
             Background = new SolidColorBrush(Color.FromArgb((byte)(isUp ? 30 : 15), accent.R, accent.G, accent.B)),
             Child = icon
         };
 
         var name = new TextBlock
         {
-            Text = a.Name, FontSize = 16, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Text = a.Name, FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
         };
 
@@ -219,57 +355,57 @@ public sealed partial class NetworkAdapterProxyWindow : Window
 
         var statusTextBlock = new TextBlock
         {
-            Text = statusText, FontSize = 11,
+            Text = statusText, FontSize = 10,
             FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
             Foreground = new SolidColorBrush(statusColor)
         };
 
         var statusBadge = new Border
         {
-            Padding = new Thickness(8, 2, 8, 2), CornerRadius = new CornerRadius(4),
+            Padding = new Thickness(6, 1, 6, 1), CornerRadius = new CornerRadius(4),
             Background = new SolidColorBrush(Color.FromArgb(30, statusColor.R, statusColor.G, statusColor.B)),
             Child = statusTextBlock
         };
 
-        var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        var header = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
         header.Children.Add(name);
         header.Children.Add(statusBadge);
 
         var ip = new TextBlock
         {
             Text = a.Addresses.Count > 0 ? string.Join(", ", a.Addresses.Select(x => x.ToString())) : "无 IP",
-            FontSize = 12, FontFamily = new FontFamily("Consolas"),
+            FontSize = 11, FontFamily = new FontFamily("Consolas"),
             Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var gw = new TextBlock
         {
             Text = a.Gateways.Count > 0 ? $"网关 {a.Gateways[0]}" : "无网关",
-            FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText)
+            FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
-        var speed = new TextBlock
+        var speedLabel = new TextBlock
         {
             Text = a.Speed > 0 ? NetworkAdapterProxyService.FormatSpeed(a.Speed / 8) : "",
-            FontSize = 11, Opacity = 0.6,
+            FontSize = 10, Opacity = 0.5,
             Foreground = new SolidColorBrush(ThemeColors.DimText)
         };
 
         var leftBar = new Border
         {
-            Width = 4, CornerRadius = new CornerRadius(2),
+            Width = 3, CornerRadius = new CornerRadius(2),
             Background = new SolidColorBrush(isUp ? accent : Color.FromArgb(255, 120, 120, 120))
         };
 
-        var info = new StackPanel { Spacing = 3 };
+        var info = new StackPanel { Spacing = 2 };
         info.Children.Add(header);
         info.Children.Add(ip);
         info.Children.Add(gw);
-        if (a.Speed > 0) info.Children.Add(speed);
+        if (a.Speed > 0) info.Children.Add(speedLabel);
 
-        var body = new Grid { ColumnSpacing = 12 };
+        var body = new Grid { ColumnSpacing = 10 };
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(48) });
+        body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
         body.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
         body.Children.Add(leftBar); Grid.SetColumn(leftBar, 0);
@@ -278,7 +414,8 @@ public sealed partial class NetworkAdapterProxyWindow : Window
 
         var card = new Border
         {
-            Padding = new Thickness(16, 14, 16, 14), CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(12, 10, 12, 10), CornerRadius = new CornerRadius(8),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
             BorderThickness = new Thickness(1),
             BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
             Child = body
@@ -288,7 +425,7 @@ public sealed partial class NetworkAdapterProxyWindow : Window
         {
             IpText = ip, GwText = gw, StatusText = statusTextBlock,
             StatusBadge = statusBadge, LeftBar = leftBar,
-            Icon = icon, IconBg = iconBg
+            Icon = icon, IconBg = iconBg, SpeedLabel = speedLabel
         };
 
         return (card, refs);
@@ -309,22 +446,22 @@ public sealed partial class NetworkAdapterProxyWindow : Window
             var a = _adapters[i];
             var accent = a.AccentColor;
 
-            var dlText = new TextBlock { Text = "0 B/s", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(AccentBlue) };
-            var ulText = new TextBlock { Text = "0 B/s", FontSize = 14, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(AccentOrange) };
-            var dlBar = new ProgressBar { Height = 4, Foreground = new SolidColorBrush(AccentBlue), Background = new SolidColorBrush(Color.FromArgb(30, AccentBlue.R, AccentBlue.G, AccentBlue.B)) };
-            var ulBar = new ProgressBar { Height = 4, Foreground = new SolidColorBrush(AccentOrange), Background = new SolidColorBrush(Color.FromArgb(30, AccentOrange.R, AccentOrange.G, AccentOrange.B)) };
+            var dlText = new TextBlock { Text = "0 B/s", FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(AccentBlue) };
+            var ulText = new TextBlock { Text = "0 B/s", FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(AccentOrange) };
+            var dlBar = new ProgressBar { Height = 3, Foreground = new SolidColorBrush(AccentBlue), Background = new SolidColorBrush(Color.FromArgb(20, AccentBlue.R, AccentBlue.G, AccentBlue.B)) };
+            var ulBar = new ProgressBar { Height = 3, Foreground = new SolidColorBrush(AccentOrange), Background = new SolidColorBrush(Color.FromArgb(20, AccentOrange.R, AccentOrange.G, AccentOrange.B)) };
 
             _speedRefs[a.Index] = new SpeedRefs { DlText = dlText, UlText = ulText, DlBar = dlBar, UlBar = ulBar };
 
-            var panel = new StackPanel { Spacing = 6 };
-            var header = new TextBlock { Text = a.Name, FontSize = 13, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(accent) };
+            var panel = new StackPanel { Spacing = 4 };
+            var header = new TextBlock { Text = a.Name, FontSize = 12, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(accent) };
 
             var dlRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            dlRow.Children.Add(new TextBlock { Text = "↓", FontSize = 13, Opacity = 0.6 });
+            dlRow.Children.Add(new TextBlock { Text = "↓", FontSize = 12, Opacity = 0.5 });
             dlRow.Children.Add(dlText);
 
             var ulRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            ulRow.Children.Add(new TextBlock { Text = "↑", FontSize = 13, Opacity = 0.6 });
+            ulRow.Children.Add(new TextBlock { Text = "↑", FontSize = 12, Opacity = 0.5 });
             ulRow.Children.Add(ulText);
 
             panel.Children.Add(header);
@@ -359,103 +496,6 @@ public sealed partial class NetworkAdapterProxyWindow : Window
 
     #endregion
 
-    #region Active Connections
-
-    private void RenderConnections(List<ConnectionEntry> connections)
-    {
-        var scroll = FindScrollViewer(ConnectionList);
-        var scrollOffset = scroll?.VerticalOffset ?? 0;
-
-        ConnectionList.Items.Clear();
-
-        if (connections.Count == 0)
-        {
-            ConnectionList.Items.Add(new TextBlock { Text = "暂无已建立的 TCP 连接", Opacity = 0.5, FontSize = 12 });
-            return;
-        }
-
-        foreach (var c in connections)
-        {
-            var row = new Grid { Padding = new Thickness(4, 2, 4, 2), ColumnSpacing = 8 };
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
-            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
-
-            var typeColor = c.AdapterType == "Wi-Fi" ? AccentBlue : AccentGreen;
-
-            var proc = new TextBlock { Text = c.ProcessName, FontSize = 12, FontFamily = new FontFamily("Consolas") };
-            var typeTag = new Border
-            {
-                Padding = new Thickness(6, 1, 6, 1), CornerRadius = new CornerRadius(3),
-                Background = new SolidColorBrush(Color.FromArgb(25, typeColor.R, typeColor.G, typeColor.B)),
-                Child = new TextBlock { Text = c.AdapterType, FontSize = 11, Foreground = new SolidColorBrush(typeColor) }
-            };
-            var addr = new TextBlock { Text = c.RemoteAddress, FontSize = 12, FontFamily = new FontFamily("Consolas"), Foreground = new SolidColorBrush(ThemeColors.DimText) };
-            var port = new TextBlock { Text = c.RemotePort.ToString(), FontSize = 12, FontFamily = new FontFamily("Consolas"), Foreground = new SolidColorBrush(ThemeColors.DimText) };
-            var adapter = new TextBlock { Text = c.AdapterName, FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.DimText) };
-
-            row.Children.Add(proc); Grid.SetColumn(proc, 0);
-            row.Children.Add(typeTag); Grid.SetColumn(typeTag, 1);
-            row.Children.Add(addr); Grid.SetColumn(addr, 2);
-            row.Children.Add(port); Grid.SetColumn(port, 3);
-            row.Children.Add(adapter); Grid.SetColumn(adapter, 4);
-
-            ConnectionList.Items.Add(row);
-        }
-
-        if (scroll != null)
-            scroll.ScrollToVerticalOffset(scrollOffset);
-    }
-
-    private static ScrollViewer? FindScrollViewer(DependencyObject parent)
-    {
-        if (parent is ScrollViewer sv) return sv;
-        for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
-        {
-            var result = FindScrollViewer(VisualTreeHelper.GetChild(parent, i));
-            if (result != null) return result;
-        }
-        return null;
-    }
-
-    #endregion
-
-    #region Smart Routing Buttons
-
-    private async void OptimizeBtn_Click(object sender, RoutedEventArgs e)
-    {
-        OptimizeBtn.IsEnabled = false;
-        await Task.Run(() => NetworkAdapterProxyService.OptimizeRouting());
-        OptimizeBtn.IsEnabled = true;
-        ShowToast("已应用最优加速：有线优先，Wi-Fi 备用", InfoBarSeverity.Success);
-    }
-
-    private async void BalanceBtn_Click(object sender, RoutedEventArgs e)
-    {
-        BalanceBtn.IsEnabled = false;
-        await Task.Run(() => NetworkAdapterProxyService.BalanceRouting());
-        BalanceBtn.IsEnabled = true;
-        ShowToast("已应用均衡分流：多网络共同分担流量", InfoBarSeverity.Success);
-    }
-
-    private async void PrioWifiBtn_Click(object sender, RoutedEventArgs e)
-    {
-        PrioWifiBtn.IsEnabled = false;
-        await Task.Run(() => NetworkAdapterProxyService.PrioritizeWifi());
-        PrioWifiBtn.IsEnabled = true;
-        ShowToast("已设置 Wi-Fi 优先", InfoBarSeverity.Success);
-    }
-
-    private async void PrioWiredBtn_Click(object sender, RoutedEventArgs e)
-    {
-        PrioWiredBtn.IsEnabled = false;
-        await Task.Run(() => NetworkAdapterProxyService.PrioritizeWired());
-        PrioWiredBtn.IsEnabled = true;
-        ShowToast("已设置有线优先", InfoBarSeverity.Success);
-    }
-
     private async void ResetBtn_Click(object sender, RoutedEventArgs e)
     {
         ResetBtn.IsEnabled = false;
@@ -463,8 +503,6 @@ public sealed partial class NetworkAdapterProxyWindow : Window
         ResetBtn.IsEnabled = true;
         ShowToast("已恢复默认路由", InfoBarSeverity.Success);
     }
-
-    #endregion
 
     private void ShowToast(string msg, InfoBarSeverity sev)
     {
@@ -475,9 +513,11 @@ public sealed partial class NetworkAdapterProxyWindow : Window
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
+        NetworkAdapterProxyService.StopAutoScheduling();
         NetworkAdapterProxyService.StopMonitoring();
         _refreshTimer?.Stop();
-        _connTimer?.Stop();
+        NetworkAdapterProxyService.StatsUpdated -= OnStatsUpdated;
+        NetworkAdapterProxyService.ScheduleUpdated -= OnScheduleUpdated;
         AppWindow.Changed -= OnAppWindowChanged;
         Close();
     }

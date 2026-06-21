@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using System.Collections.ObjectModel;
 using TubaWinUi3.Models;
 using TubaWinUi3.Services;
@@ -159,8 +160,37 @@ public sealed partial class BuiltinToolsPage : Page
     {
         if (e.ClickedItem is BuiltinToolViewModel vm)
         {
-            _ = ExecuteToolAsync(vm);
+            ShowToolDetail(vm);
         }
+    }
+
+    private void ToolsGrid_DoubleTapped(object sender, DoubleTappedRoutedEventArgs e)
+    {
+        var vm = FindAncestorDataContext<BuiltinToolViewModel>(e.OriginalSource as FrameworkElement);
+        if (vm is not null)
+            _ = ExecuteToolAsync(vm);
+    }
+
+    private static T? FindAncestorDataContext<T>(FrameworkElement? element) where T : class
+    {
+        while (element is not null)
+        {
+            if (element.DataContext is T t) return t;
+            element = Microsoft.UI.Xaml.Media.VisualTreeHelper.GetParent(element) as FrameworkElement;
+        }
+        return null;
+    }
+
+    private void ShowToolDetail(BuiltinToolViewModel vm)
+    {
+        ToolDetailTip.Title = vm.Name;
+        ToolDetailTip.Subtitle = vm.Category;
+        DetailDescriptionText.Text = string.IsNullOrWhiteSpace(vm.Description)
+            ? "暂无介绍。"
+            : vm.Description;
+        DetailCategoryText.Text = $"分类：{vm.Category}";
+        DetailKindText.Text = $"类型：{vm.KindText}";
+        ToolDetailTip.IsOpen = true;
     }
 
     private void RunButton_Click(object sender, RoutedEventArgs e)

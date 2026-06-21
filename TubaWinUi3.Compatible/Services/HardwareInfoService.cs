@@ -165,12 +165,15 @@ namespace TubaWinUi3.Compatible.Services
             var gpuItem = Item("显卡", gpuName);
             gpuItem.BrandKey = DetectGpuBrand(gpuName);
             section.Items.Add(gpuItem);
+            var npuName = DetectNpuName();
+            if (npuName != null)
+                section.Items.Add(Item("NPU", npuName));
             section.Items.Add(Item("显示器", FormatDisplays()));
             section.Items.Add(Item("硬盘", FormatDisks()));
             section.Items.Add(Item("声卡", JoinNames("Win32_SoundDevice", item =>
             {
                 var name = Get(item, "Name");
-                return !ContainsAny(name, "Virtual", "虚拟", "Software", "Remote Audio", "Stereo Mix", "Wave", "VB-Audio", "VBAN", "Voicemeeter", "CABLE", "VAC");
+                return !ContainsAny(name, "Virtual", "虚拟", "Software", "Remote Audio", "Stereo Mix", "Wave", "VB-Audio", "VBAN", "Voicemeeter", "CABLE", "VAC", "Senary Audio", "Nahimic Easy Surround", "Nahimic mirroring", "USB 音频", "蓝牙音频", "蓝牙");
             })));
             section.Items.Add(Item("网卡", JoinNames("Win32_NetworkAdapter", item =>
                 IsTrue(item, "PhysicalAdapter") &&
@@ -185,6 +188,20 @@ namespace TubaWinUi3.Compatible.Services
             if (name.Contains("AMD")) return "amd";
             if (name.Contains("APPLE") || name.Contains("M1") || name.Contains("M2") || name.Contains("M3") || name.Contains("M4")) return "apple";
             if (name.Contains("QUALCOMM") || name.Contains("SNAPDRAGON")) return "qualcomm";
+            return null;
+        }
+
+        private static string DetectNpuName()
+        {
+            foreach (var item in Query("Win32_PnPEntity"))
+            {
+                var pnpClass = Get(item, "PNPClass");
+                if (!string.Equals(pnpClass, "ComputeAccelerator", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                var name = Get(item, "Name");
+                if (!string.IsNullOrWhiteSpace(name))
+                    return name;
+            }
             return null;
         }
 

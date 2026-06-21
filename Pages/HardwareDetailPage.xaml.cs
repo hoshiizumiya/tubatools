@@ -120,6 +120,14 @@ public sealed partial class HardwareDetailPage : Page
         if (gpuItems.Count > 0)
             sections.Add(new DetailSection("显卡", gpuItems, gpuItems.Count));
 
+        // NPU
+        if (data.Npu != null)
+        {
+            var npuItems = BuildNpuItems(data.Npu);
+            if (npuItems.Count > 0)
+                sections.Add(new DetailSection("NPU", npuItems, npuItems.Count));
+        }
+
         // Disks
         var diskItems = BuildDiskItems(data.Disks);
         if (diskItems.Count > 0)
@@ -315,6 +323,16 @@ public sealed partial class HardwareDetailPage : Page
             if (!string.IsNullOrWhiteSpace(gpu.CurrentResolution)) items.Add(Item("当前分辨率", gpu.CurrentResolution));
             if (!string.IsNullOrWhiteSpace(gpu.CurrentRefreshRate)) items.Add(Item("刷新率", gpu.CurrentRefreshRate));
         }
+        return items;
+    }
+
+    private static List<HardwareInfoItem> BuildNpuItems(NpuDetail npu)
+    {
+        var items = new List<HardwareInfoItem>();
+        if (!string.IsNullOrWhiteSpace(npu.Name)) items.Add(Item("名称", npu.Name));
+        if (!string.IsNullOrWhiteSpace(npu.Manufacturer)) items.Add(Item("制造商", npu.Manufacturer));
+        if (!string.IsNullOrWhiteSpace(npu.DriverVersion)) items.Add(Item("驱动版本", npu.DriverVersion));
+        if (!string.IsNullOrWhiteSpace(npu.DriverDate)) items.Add(Item("驱动日期", npu.DriverDate));
         return items;
     }
 

@@ -976,6 +976,96 @@
 
                 <TextBlock
                     Style="{StaticResource SectionHeaderStyle}"
+                    Text="社区工具" />
+
+                <Border x:Name="SettingsCommunityCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE9D5;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="GitHub 账号" />
+                            <TextBlock
+                                x:Name="GitHubLoginStatusText"
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="未登录" />
+                        </StackPanel>
+
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <PersonPicture
+                                x:Name="GitHubAvatar"
+                                Width="32"
+                                Height="32"
+                                Visibility="Collapsed" />
+                            <Button
+                                x:Name="GitHubLoginButton"
+                                Padding="14,6"
+                                Click="GitHubLoginButton_Click">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="12" Glyph="&#xE77B;" />
+                                    <TextBlock Text="登录" />
+                                </StackPanel>
+                            </Button>
+                            <Button
+                                x:Name="GitHubLogoutButton"
+                                Padding="14,6"
+                                Click="GitHubLogoutButton_Click"
+                                Visibility="Collapsed">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="12" Glyph="&#xE8AB;" />
+                                    <TextBlock Text="登出" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsCommunitySubmitCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE710;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="提交社区工具" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="将工具提交到社区仓库，审核通过后所有人可见" />
+                        </StackPanel>
+
+                        <Button
+                            x:Name="CommunitySubmitButton"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Padding="14,6"
+                            Click="CommunitySubmitButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="12" Glyph="&#xE710;" />
+                                <TextBlock Text="提交工具" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <TextBlock
+                    Style="{StaticResource SectionHeaderStyle}"
                     Text="工具来源" />
 
                 <Border Style="{StaticResource SettingsCardStyle}">

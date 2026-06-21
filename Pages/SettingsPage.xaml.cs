@@ -42,7 +42,7 @@ public sealed partial class SettingsPage : Page
         ("favorites", "常用"),
         ("hardware", "硬件信息"),
         ("builtin", "内置工具"),
-        ("monitor", "硬件监控"),
+        ("community", "社区工具"),
     ];
 
     [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -103,6 +103,7 @@ public sealed partial class SettingsPage : Page
         ["ToolsBundle"] = "SettingsToolsBundleCard",
         ["ConfigManager"] = "SettingsConfigManagerCard",
         ["CustomToolManager"] = "SettingsCustomToolCard",
+        ["CommunityTool"] = "SettingsCommunityCard",
         ["MonitorDriver"] = "SettingsMonitorDriverCard",
         ["ExportApp"] = "SettingsExportAppCard",
     };
@@ -147,6 +148,7 @@ public sealed partial class SettingsPage : Page
         InitBackdropSettings();
         InitCpuzDataSourceStatus();
         InitUpdateSection();
+        InitGitHubLoginStatus();
     }
 
     private async Task HighlightSettingAsync(string settingKey)
@@ -1219,6 +1221,59 @@ private void InitDefaultPageComboBox()
         if (sender is Border border)
         {
             border.Opacity = 1.0;
+        }
+    }
+
+    private async void InitGitHubLoginStatus()
+    {
+        try
+        {
+            if (GitHubAuthService.IsLoggedIn)
+            {
+                var user = await GitHubAuthService.GetCurrentUserAsync();
+                if (user is not null)
+                {
+                    GitHubLoginStatusText.Text = $"已登录：{user.Name ?? user.Login}";
+                    GitHubLoginButton.Visibility = Visibility.Collapsed;
+                    GitHubLogoutButton.Visibility = Visibility.Visible;
+                    GitHubAvatar.Visibility = Visibility.Visible;
+
+                    if (!string.IsNullOrWhiteSpace(user.AvatarUrl))
+                    {
+                        GitHubAvatar.ProfilePicture = new BitmapImage(new Uri(user.AvatarUrl));
+                    }
+                    return;
+                }
+            }
+
+            GitHubLoginStatusText.Text = "未登录";
+            GitHubLoginButton.Visibility = Visibility.Visible;
+            GitHubLogoutButton.Visibility = Visibility.Collapsed;
+            GitHubAvatar.Visibility = Visibility.Collapsed;
+        }
+        catch
+        {
+            GitHubLoginStatusText.Text = "未登录";
+        }
+    }
+
+    private async void GitHubLoginButton_Click(object sender, RoutedEventArgs e)
+    {
+        var token = await GitHubAuthService.StartDeviceFlowAsync(XamlRoot);
+        InitGitHubLoginStatus();
+    }
+
+    private void GitHubLogoutButton_Click(object sender, RoutedEventArgs e)
+    {
+        GitHubAuthService.Logout();
+        InitGitHubLoginStatus();
+    }
+
+    private async void CommunitySubmitButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (App.MainWindow is MainWindow mainWindow)
+        {
+            mainWindow.NavigateToCommunity();
         }
     }
 

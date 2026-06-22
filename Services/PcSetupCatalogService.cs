@@ -80,7 +80,7 @@ public static class PcSetupCatalogService
         return actions;
     }
 
-    public static async Task CheckInstalledStatusAsync(List<CatalogCategory> categories)
+    public static async Task CheckInstalledStatusAsync(List<CatalogCategory> categories, IProgress<(int Done, int Total, string Name)>? progress = null)
     {
         var allPkgs = new List<CatalogPackage>();
         foreach (var cat in categories)
@@ -89,13 +89,25 @@ public static class PcSetupCatalogService
             foreach (var sub in cat.SubCategories)
                 allPkgs.AddRange(sub.Packages);
         }
-        var tasks = allPkgs.Select(async pkg =>
+
+        var completed = 0;
+        var total = allPkgs.Count;
+
+        const int batchSize = 4;
+        for (var i = 0; i < allPkgs.Count; i += batchSize)
         {
-            pkg.State = WingetInstallState.Checking;
-            var installed = await WingetService.IsInstalledAsync(pkg.Id);
-            pkg.State = installed ? WingetInstallState.Installed : WingetInstallState.NotInstalled;
-        });
-        await Task.WhenAll(tasks);
+            var batch = allPkgs.Skip(i).Take(batchSize).ToList();
+            var tasks = batch.Select(async pkg =>
+            {
+                pkg.State = WingetInstallState.Checking;
+                var installed = await WingetService.IsInstalledAsync(pkg.Id);
+                pkg.State = installed ? WingetInstallState.Installed : WingetInstallState.NotInstalled;
+            });
+            await Task.WhenAll(tasks);
+
+            completed += batch.Count;
+            progress?.Report((completed, total, batch[^1].Name));
+        }
     }
 
     public static string GeneratePowerShellScript(List<PcSetupAction> actions, string? customScript = null, string customPosition = "before-install")

@@ -305,16 +305,35 @@ public sealed partial class PcSetupPage : Page
 
     private async Task CheckInstalledStatus()
     {
-        LoadingPanel.Visibility = Visibility.Visible;
+        var allPkgs = GetAllPackages();
+        if (allPkgs.Count == 0) return;
+
+        LoadingOverlay.Visibility = Visibility.Visible;
+        LoadingProgress.Value = 0;
+        LoadingProgress.Maximum = allPkgs.Count;
+        LoadingTitle.Text = "正在检测已安装软件...";
+        LoadingDetail.Text = $"0 / {allPkgs.Count}";
+        LoadingRing.IsActive = true;
+
+        var progress = new Progress<(int Done, int Total, string Name)>(p =>
+        {
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                LoadingProgress.Value = p.Done;
+                LoadingDetail.Text = $"{p.Done} / {p.Total}  {p.Name}";
+            });
+        });
+
         try
         {
-            await PcSetupCatalogService.CheckInstalledStatusAsync(_categories);
+            await PcSetupCatalogService.CheckInstalledStatusAsync(_categories, progress);
             BuildPackageList();
             RefreshStats();
         }
         finally
         {
-            LoadingPanel.Visibility = Visibility.Collapsed;
+            LoadingOverlay.Visibility = Visibility.Collapsed;
+            LoadingRing.IsActive = false;
         }
     }
 

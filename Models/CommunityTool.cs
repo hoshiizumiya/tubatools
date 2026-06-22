@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
+using TubaWinUi3.Services;
 using Windows.UI;
 
 namespace TubaWinUi3.Models;
@@ -77,6 +78,17 @@ public sealed class CommunityTool : INotifyPropertyChanged
         get => _iconPath;
         set { _iconPath = value; OnPropertyChanged(nameof(IconPath)); }
     }
+
+    private bool _isAuthor;
+    public bool IsAuthor
+    {
+        get => _isAuthor;
+        set { _isAuthor = value; OnPropertyChanged(nameof(IsAuthor)); OnPropertyChanged(nameof(CanDelete)); OnPropertyChanged(nameof(DeleteButtonVisibility)); }
+    }
+
+    public bool CanDelete => IsAuthor && GitHubAuthService.IsLoggedIn;
+
+    public Visibility DeleteButtonVisibility => CanDelete ? Visibility.Visible : Visibility.Collapsed;
 
     public string? IconGlyph
     {

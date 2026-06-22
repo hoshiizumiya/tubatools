@@ -68,6 +68,7 @@ public sealed partial class CommunityToolsPage : Page
             {
                 tool.InstallStatus = CommunityToolService.CheckInstallStatus(tool);
                 tool.LocalPath = CommunityToolService.GetLocalPath(tool);
+                tool.IsAuthor = await CheckIsAuthorAsync(tool);
             }
 
             UpdateCategoryFilter();
@@ -238,6 +239,228 @@ public sealed partial class CommunityToolsPage : Page
         await InstallToolAsync(tool);
     }
 
+    private async void DeleteButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn) return;
+        if (btn.DataContext is not CommunityTool tool) return;
+
+        await DeleteToolAsync(tool);
+    }
+
+    private static async Task<bool> CheckIsAuthorAsync(CommunityTool tool)
+    {
+        if (string.IsNullOrWhiteSpace(tool.Author)) return false;
+        if (!GitHubAuthService.IsLoggedIn) return false;
+        try
+        {
+            var user = await GitHubAuthService.GetCurrentUserAsync();
+            return user is not null && string.Equals(user.Login, tool.Author, StringComparison.OrdinalIgnoreCase);
+        }
+        catch { return false; }
+    }
+
+    private async Task DeleteToolAsync(CommunityTool tool)
+    {
+        var loggedIn = await GitHubAuthService.EnsureAuthenticatedAsync(XamlRoot);
+        if (!loggedIn) return;
+
+        var user = await GitHubAuthService.GetCurrentUserAsync();
+        if (user is null || !string.Equals(user.Login, tool.Author, StringComparison.OrdinalIgnoreCase))
+        {
+            await ShowMessageAsync("无法删除", "只能删除自己。");
+            return;
+        }
+
+        var confirmDialog = new ContentDialog
+        {
+            Title = $"删除工具「{tool.Name}」",
+            PrimaryButtonText = "确认删除",
+            CloseButtonText = "取消",
+            DefaultButton = ContentDialogButton.Close,
+            XamlRoot = XamlRoot,
+            RequestedTheme = ThemeService.CurrentElementTheme
+        };
+        confirmDialog.Resources["ContentDialogMaxWidth"] = 480;
+
+        var confirmStack = new StackPanel { Spacing = 12 };
+
+        var warningBorder = new Border
+        {
+            Padding = new Thickness(12, 8, 12, 8),
+            Background = new SolidColorBrush(Color.FromArgb(25, 255, 68, 68)),
+            BorderBrush = new SolidColorBrush(Color.FromArgb(60, 255, 68, 68)),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(6),
+            Child = new StackPanel
+            {
+                Spacing = 4,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        Text = $"确定要删除「{tool.Name}」吗？",
+                        FontSize = 14,
+                        FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+                    },
+                    new TextBlock
+                    {
+                        Text = "此操作将创建一个删除 Pull Request，审核通过后工具将从社区中移除。已安装的用户不受影响。",
+                        FontSize = 13,
+                        Opacity = 0.8,
+                        TextWrapping = TextWrapping.Wrap
+                    }
+                }
+            }
+        };
+        confirmStack.Children.Add(warningBorder);
+
+        confirmDialog.Content = confirmStack;
+
+        var result = await confirmDialog.ShowAsync();
+        if (result != ContentDialogResult.Primary) return;
+
+        var progressDialog = new ContentDialog
+        {
+            Title = $"正在删除「{tool.Name}」",
+            CloseButtonText = "取消",
+            XamlRoot = XamlRoot,
+            RequestedTheme = ThemeService.CurrentElementTheme
+        };
+        progressDialog.Resources["ContentDialogMaxWidth"] = 480;
+
+        var progressText = new TextBlock
+        {
+            Text = "准备中...",
+            FontSize = 13,
+            TextWrapping = TextWrapping.Wrap
+        };
+        var progressBar = new ProgressBar { IsIndeterminate = true };
+
+        progressDialog.Content = new StackPanel
+        {
+            Spacing = 8,
+            Children = { progressText, progressBar }
+        };
+
+        var progressCts = new CancellationTokenSource();
+        var deleteTcs = new TaskCompletionSource<string?>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        progressDialog.CloseButtonClick += (s, e) =>
+        {
+            progressCts.Cancel();
+            deleteTcs.TrySetResult(null);
+        };
+
+        var progress = new Progress<string>(msg =>
+        {
+            DispatcherQueue.TryEnqueue(() => { progressText.Text = msg; });
+        });
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var prUrl = await CommunityToolService.DeletePluginAsync(tool, progress, progressCts.Token);
+                deleteTcs.TrySetResult(prUrl);
+            }
+            catch (OperationCanceledException)
+            {
+                deleteTcs.TrySetResult(null);
+            }
+            catch (Exception ex)
+            {
+                deleteTcs.TrySetException(ex);
+            }
+        }, progressCts.Token);
+
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                var prUrl = await deleteTcs.Task;
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    progressDialog.Hide();
+
+                    if (prUrl is not null)
+                    {
+                        _ = ShowDeleteResultAsync(prUrl);
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    progressDialog.Hide();
+                    _ = ShowDeleteErrorAsync(ex);
+                });
+            }
+        });
+
+        await progressDialog.ShowAsync();
+    }
+
+    private async Task ShowDeleteResultAsync(string prUrl)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "删除请求已提交",
+            CloseButtonText = "确定",
+            XamlRoot = XamlRoot,
+            RequestedTheme = ThemeService.CurrentElementTheme
+        };
+        dialog.Resources["ContentDialogMaxWidth"] = 480;
+
+        var stack = new StackPanel { Spacing = 12 };
+
+        stack.Children.Add(new TextBlock
+        {
+            Text = "删除 Pull Request 已创建，审核通过后工具将从社区中移除。",
+            TextWrapping = TextWrapping.Wrap
+        });
+
+        try
+        {
+            stack.Children.Add(new HyperlinkButton
+            {
+                Content = "查看 Pull Request",
+                NavigateUri = new Uri(prUrl)
+            });
+        }
+        catch { }
+
+        dialog.Content = stack;
+        await dialog.ShowAsync();
+
+        CommunityToolService.InvalidateCache();
+        await LoadToolsAsync();
+    }
+
+    private async Task ShowDeleteErrorAsync(Exception ex)
+    {
+        var dialog = new ContentDialog
+        {
+            Title = "删除失败",
+            CloseButtonText = "确定",
+            XamlRoot = XamlRoot,
+            RequestedTheme = ThemeService.CurrentElementTheme
+        };
+        dialog.Resources["ContentDialogMaxWidth"] = 560;
+        dialog.Content = new ScrollViewer
+        {
+            MaxHeight = 300,
+            Content = new TextBlock
+            {
+                Text = ex.InnerException?.Message ?? ex.Message,
+                TextWrapping = TextWrapping.Wrap,
+                FontSize = 13,
+                IsTextSelectionEnabled = true
+            }
+        };
+        await dialog.ShowAsync();
+    }
+
     private async Task InstallToolAsync(CommunityTool tool)
     {
         if (string.IsNullOrWhiteSpace(tool.DownloadUrl) && string.IsNullOrWhiteSpace(tool.File))
@@ -347,6 +570,7 @@ public sealed partial class CommunityToolsPage : Page
             Title = tool.Name,
             CloseButtonText = "关闭",
             PrimaryButtonText = tool.InstallStatus == CommunityToolInstallStatus.Installed ? "打开" : (tool.CanInstall ? tool.LaunchButtonText : "关闭"),
+            SecondaryButtonText = tool.CanDelete ? "删除" : null,
             XamlRoot = XamlRoot,
             RequestedTheme = ThemeService.CurrentElementTheme
         };
@@ -446,6 +670,10 @@ public sealed partial class CommunityToolsPage : Page
                 CommunityToolService.LaunchPlugin(tool);
             else if (tool.CanInstall)
                 await InstallToolAsync(tool);
+        }
+        else if (result == ContentDialogResult.Secondary)
+        {
+            await DeleteToolAsync(tool);
         }
     }
 

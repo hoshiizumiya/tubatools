@@ -94,9 +94,9 @@ public static class HardwareInfoService
     private delegate int EnumAdapters1Delegate(IntPtr pFactory, uint adapterIndex, out IntPtr ppAdapter);
     private delegate int GetDescDelegate(IntPtr pAdapter, out DXGI_ADAPTER_DESC pDesc);
 
-    private static unsafe (string name, ulong dedicatedVram)[] EnumerateDxgiAdapters()
+    private static unsafe (string name, ulong dedicatedVram, ulong sharedVram)[] EnumerateDxgiAdapters()
     {
-        var results = new List<(string, ulong)>();
+        var results = new List<(string, ulong, ulong)>();
 
         IntPtr factoryPtr = IntPtr.Zero;
         var iidFactory1 = IID_IDXGIFactory1;
@@ -129,7 +129,7 @@ public static class HardwareInfoService
                     hr = getDesc(adapterPtr, out desc);
                     if (hr >= 0)
                     {
-                        results.Add((desc.Description, (ulong)(long)desc.DedicatedVideoMemory));
+                        results.Add((desc.Description, (ulong)(long)desc.DedicatedVideoMemory, (ulong)(long)desc.SharedSystemMemory));
                     }
                 }
                 finally
@@ -442,9 +442,9 @@ public static class HardwareInfoService
 
     private static string? BuildGpuDisplayText()
     {
-        (string name, ulong vram)[] dxgiAdapters;
+        (string name, ulong dedicatedVram, ulong sharedVram)[] dxgiAdapters;
         try { dxgiAdapters = EnumerateDxgiAdapters(); }
-        catch { dxgiAdapters = Array.Empty<(string, ulong)>(); }
+        catch { dxgiAdapters = Array.Empty<(string, ulong, ulong)>(); }
 
         var parts = new List<string>();
         foreach (var item in Query("Win32_VideoController"))
@@ -456,12 +456,16 @@ public static class HardwareInfoService
                 continue;
 
             var display = name;
-            var wmiAdapterRam = ToLong(Get(item, "AdapterRAM"));
 
-            if (name != null && TryMatchDxgiAdapter(name, dxgiAdapters, out int dxgiIdx) && dxgiAdapters[dxgiIdx].vram > 0)
-                display += $" ({dxgiAdapters[dxgiIdx].vram / 1024d / 1024d / 1024d:0.#} GB)";
-            else if (wmiAdapterRam > 0)
-                display += $" ({wmiAdapterRam / 1024d / 1024d / 1024d:0.#} GB)";
+            if (name != null && TryMatchDxgiAdapter(name, dxgiAdapters, out int dxgiIdx))
+            {
+                var dedicated = dxgiAdapters[dxgiIdx].dedicatedVram;
+                var shared = dxgiAdapters[dxgiIdx].sharedVram;
+                if (dedicated > 0)
+                    display += $" ({dedicated / 1024d / 1024d / 1024d:0.#} GB)";
+                else if (shared > 0)
+                    display += $" (共享 {shared / 1024d / 1024d / 1024d:0.#} GB)";
+            }
 
             parts.Add(display!);
         }
@@ -1675,7 +1679,7 @@ public static class HardwareInfoService
         };
     }
 
-    private static bool TryMatchDxgiAdapter(string wmiName, (string name, ulong vram)[] dxgiAdapters, out int matchedIndex)
+    private static bool TryMatchDxgiAdapter(string wmiName, (string name, ulong dedicatedVram, ulong sharedVram)[] dxgiAdapters, out int matchedIndex)
     {
         matchedIndex = -1;
         if (string.IsNullOrWhiteSpace(wmiName) || dxgiAdapters.Length == 0)
@@ -1710,7 +1714,7 @@ public static class HardwareInfoService
     private static List<GpuDetail> BuildGpuDetails()
     {
         var gpus = new List<GpuDetail>();
-        (string name, ulong vram)[] dxgiAdapters;
+        (string name, ulong dedicatedVram, ulong sharedVram)[] dxgiAdapters;
 
         try
         {
@@ -1718,7 +1722,7 @@ public static class HardwareInfoService
         }
         catch
         {
-            dxgiAdapters = Array.Empty<(string, ulong)>();
+            dxgiAdapters = Array.Empty<(string, ulong, ulong)>();
         }
 
         var usedDxgiIndices = new HashSet<int>();
@@ -1731,20 +1735,20 @@ public static class HardwareInfoService
                 "Virtual GPU", "Virtual Adapter", "虚拟", "Remote Display Adapter"))
                 continue;
 
-            var wmiAdapterRam = ToLong(Get(item, "AdapterRAM"));
             var width = Get(item, "CurrentHorizontalResolution");
             var height = Get(item, "CurrentVerticalResolution");
             var refresh = Get(item, "CurrentRefreshRate");
 
             string? vramText = null;
-            if (name != null && TryMatchDxgiAdapter(name, dxgiAdapters, out int dxgiIdx) && dxgiAdapters[dxgiIdx].vram > 0)
+            if (name != null && TryMatchDxgiAdapter(name, dxgiAdapters, out int dxgiIdx))
             {
-                vramText = $"{dxgiAdapters[dxgiIdx].vram / 1024d / 1024d / 1024d:0.#} GB";
+                var dedicated = dxgiAdapters[dxgiIdx].dedicatedVram;
+                var shared = dxgiAdapters[dxgiIdx].sharedVram;
+                if (dedicated > 0)
+                    vramText = $"{dedicated / 1024d / 1024d / 1024d:0.#} GB";
+                else if (shared > 0)
+                    vramText = $"共享 {shared / 1024d / 1024d / 1024d:0.#} GB";
                 usedDxgiIndices.Add(dxgiIdx);
-            }
-            else if (wmiAdapterRam > 0)
-            {
-                vramText = $"{wmiAdapterRam / 1024d / 1024d / 1024d:0.#} GB";
             }
 
             gpus.Add(new GpuDetail

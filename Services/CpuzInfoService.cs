@@ -70,13 +70,15 @@ public static class CpuzInfoService
         var cpuzDir = Path.Combine(toolsRoot, "处理器工具", "CPUZ");
         if (!Directory.Exists(cpuzDir)) return null;
 
-        if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+        // Use OSArchitecture (not ProcessArchitecture) so an x86/x64 build of this app
+        // running on ARM64 Windows still picks the native ARM64 CPU-Z.
+        if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
         {
             var arm64 = Path.Combine(cpuzDir, "cpuz_arm64.exe");
             if (File.Exists(arm64)) return arm64;
         }
 
-        if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+        if (RuntimeInformation.OSArchitecture == Architecture.X86)
         {
             var x32 = Path.Combine(cpuzDir, "cpuz_x32.exe");
             if (File.Exists(x32)) return x32;

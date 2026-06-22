@@ -471,6 +471,179 @@ public static class CommunityToolService
         return prUrl;
     }
 
+    public static async Task<string> DeletePluginAsync(CommunityTool tool, IProgress<string>? progress, CancellationToken ct = default)
+    {
+        var token = GitHubAuthService.GetToken();
+        if (string.IsNullOrWhiteSpace(token))
+            throw new InvalidOperationException("请先登录 GitHub");
+
+        var user = await GitHubAuthService.GetCurrentUserAsync(ct);
+        if (user is null)
+            throw new InvalidOperationException("无法获取用户信息");
+
+        if (string.IsNullOrWhiteSpace(tool.Author) ||
+            !string.Equals(tool.Author, user.Login, StringComparison.OrdinalIgnoreCase))
+            throw new InvalidOperationException("只能删除自己提交的工具");
+
+        if (string.IsNullOrWhiteSpace(tool.RepoPath))
+            throw new InvalidOperationException("无法定位工具在仓库中的路径");
+
+        progress?.Report("正在 Fork 仓库...");
+
+        var forkOwner = await EnsureForkAsync(token, ct);
+
+        progress?.Report("正在同步 Fork...");
+
+        await SyncForkWithUpstreamAsync(forkOwner, token, ct);
+
+        progress?.Report("正在创建分支...");
+
+        var branchName = $"delete/{tool.Id}";
+        var mainSha = await GetRefShaAsync(forkOwner, UpstreamRepo, "heads/main", token, ct);
+        if (mainSha is null)
+            throw new InvalidOperationException("无法获取主分支信息");
+
+        var branchExists = await CheckRefExistsAsync(forkOwner, UpstreamRepo, $"heads/{branchName}", token, ct);
+        if (branchExists)
+            branchName = $"delete/{tool.Id}-{DateTimeOffset.UtcNow.ToUnixTimeSeconds()}";
+
+        await CreateRefAsync(forkOwner, UpstreamRepo, $"refs/heads/{branchName}", mainSha, token, ct);
+
+        progress?.Report("正在删除文件...");
+
+        var filesToDelete = await ListDirectoryFilesAsync(forkOwner, UpstreamRepo, tool.RepoPath, branchName, token, ct);
+        foreach (var filePath in filesToDelete)
+        {
+            await DeleteFileAsync(forkOwner, UpstreamRepo, filePath, branchName, $"chore: remove {Path.GetFileName(filePath)}", token, ct);
+        }
+
+        progress?.Report("正在创建 Pull Request...");
+
+        var prUrl = await CreateDeletePullRequestAsync(
+            branchName, forkOwner, tool.Id, tool.Name, tool.Category, user.Login, token, ct);
+
+        progress?.Report("删除请求已提交！");
+
+        InvalidateCache();
+        return prUrl;
+    }
+
+    private static async Task SyncForkWithUpstreamAsync(string forkOwner, string token, CancellationToken ct)
+    {
+        using var client = GitHubAuthService.CreateAuthenticatedClient();
+
+        var upstreamMainSha = await GetRefShaAsync(UpstreamOwner, UpstreamRepo, "heads/main", token, ct);
+        if (upstreamMainSha is null) return;
+
+        var body = JsonSerializer.Serialize(new { sha = upstreamMainSha, force = true });
+        var content = new StringContent(body, Encoding.UTF8, "application/json");
+
+        try
+        {
+            await client.PatchAsync(
+                $"https://api.github.com/repos/{forkOwner}/{UpstreamRepo}/git/refs/heads/main", content, ct);
+        }
+        catch { }
+    }
+
+    private static async Task<List<string>> ListDirectoryFilesAsync(string owner, string repo, string dirPath, string branch, string token, CancellationToken ct)
+    {
+        var files = new List<string>();
+        using var client = GitHubAuthService.CreateAuthenticatedClient();
+
+        try
+        {
+            var json = await client.GetStringAsync(
+                $"https://api.github.com/repos/{owner}/{repo}/contents/{dirPath}?ref={branch}", ct);
+            var doc = JsonDocument.Parse(json);
+
+            if (doc.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in doc.RootElement.EnumerateArray())
+                {
+                    var type = item.GetProperty("type").GetString() ?? "";
+                    var path = item.GetProperty("path").GetString() ?? "";
+
+                    if (type == "file")
+                    {
+                        files.Add(path);
+                    }
+                    else if (type == "dir")
+                    {
+                        var subFiles = await ListDirectoryFilesAsync(owner, repo, path, branch, token, ct);
+                        files.AddRange(subFiles);
+                    }
+                }
+            }
+        }
+        catch { }
+
+        return files;
+    }
+
+    private static async Task DeleteFileAsync(string owner, string repo, string filePath, string branch, string commitMessage, string token, CancellationToken ct)
+    {
+        using var client = GitHubAuthService.CreateAuthenticatedClient();
+
+        var getResp = await client.GetAsync(
+            $"https://api.github.com/repos/{owner}/{repo}/contents/{filePath}?ref={branch}", ct);
+        if (!getResp.IsSuccessStatusCode) return;
+
+        var getJson = await getResp.Content.ReadAsStringAsync(ct);
+        var getDoc = JsonDocument.Parse(getJson);
+        var sha = getDoc.RootElement.GetProperty("sha").GetString();
+
+        var body = JsonSerializer.Serialize(new
+        {
+            message = commitMessage,
+            sha,
+            branch
+        });
+        var request = new HttpRequestMessage(HttpMethod.Delete,
+            $"https://api.github.com/repos/{owner}/{repo}/contents/{filePath}")
+        {
+            Content = new StringContent(body, Encoding.UTF8, "application/json")
+        };
+        var resp = await client.SendAsync(request, ct);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            var err = await resp.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException($"删除文件 {filePath} 失败：{(int)resp.StatusCode}\n{err}");
+        }
+    }
+
+    private static async Task<string> CreateDeletePullRequestAsync(
+        string branch, string forkOwner, string toolId, string toolName,
+        string category, string author, string token, CancellationToken ct)
+    {
+        using var client = GitHubAuthService.CreateAuthenticatedClient();
+        var body = JsonSerializer.Serialize(new
+        {
+            title = $"[删除工具] {toolName}",
+            head = $"{forkOwner}:{branch}",
+            @base = "main",
+            body = $"## 删除社区工具\n\n" +
+                   $"- **名称**：{toolName}\n" +
+                   $"- **分类**：{category}\n" +
+                   $"- **请求者**：@{author}\n\n" +
+                   $"工具提交者请求删除此工具。"
+        });
+        var httpContent = new StringContent(body, Encoding.UTF8, "application/json");
+        var resp = await client.PostAsync(
+            $"https://api.github.com/repos/{UpstreamOwner}/{UpstreamRepo}/pulls", httpContent, ct);
+
+        if (!resp.IsSuccessStatusCode)
+        {
+            var err = await resp.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException($"创建删除 PR 失败：{(int)resp.StatusCode}\n{err}");
+        }
+
+        var respJson = await resp.Content.ReadAsStringAsync(ct);
+        var doc = JsonDocument.Parse(respJson);
+        return doc.RootElement.GetProperty("html_url").GetString() ?? "";
+    }
+
     public static string GenerateToolId(string name)
     {
         var id = name.ToLowerInvariant();

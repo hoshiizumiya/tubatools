@@ -453,8 +453,44 @@ public static class ToolCatalog
         "x86", "_x86", "32", "_32", "w32", "_Win32"
     ];
 
-    private static bool IsArm64OS => RuntimeInformation.ProcessArchitecture == Architecture.Arm64;
-    private static bool IsX64OS => Environment.Is64BitOperatingSystem && !IsArm64OS;
+    /// <summary>
+    /// Architecture of the host OS (not the running process). Using <c>OSArchitecture</c>
+    /// instead of <c>ProcessArchitecture</c> ensures correct detection even when the app
+    /// runs as x86/x64 under WOW64 or ARM64 emulation.
+    /// </summary>
+    private static Architecture OSArch => RuntimeInformation.OSArchitecture;
+
+    /// <summary>
+    /// Priority-ordered architecture names preferred on the current OS.
+    /// ARM64 OS runs ARM64 natively and x64/x86 via emulation.
+    /// x64 OS runs x64 natively and x86 via WOW64.
+    /// x86 OS only runs x86.
+    /// </summary>
+    public static IReadOnlyList<string> PreferredArchPriority => OSArch switch
+    {
+        Architecture.Arm64 => ["ARM64", "x64", "x86"],
+        Architecture.X64 => ["x64", "x86"],
+        Architecture.X86 => ["x86"],
+        _ => ["x64", "x86"]
+    };
+
+    /// <summary>
+    /// Picks the <see cref="ArchOption"/> that best matches the current OS architecture.
+    /// Falls back to <paramref name="fallback"/> (or the first option) when no known-arch
+    /// option is compatible, so a tool with only an unknown/empty arch still resolves.
+    /// </summary>
+    public static ArchOption? PickPreferredArchOption(IReadOnlyList<ArchOption> options, ArchOption? fallback = null)
+    {
+        if (options.Count == 0) return fallback;
+
+        foreach (var arch in PreferredArchPriority)
+        {
+            var match = options.FirstOrDefault(o => o.Arch.Equals(arch, StringComparison.OrdinalIgnoreCase));
+            if (match is not null) return match;
+        }
+
+        return fallback ?? options[0];
+    }
 
     private static string? DetectArch(string name)
     {
@@ -594,43 +630,20 @@ public static class ToolCatalog
 
     private static string PickPreferredArch(List<string> candidates)
     {
-        if (IsArm64OS)
+        foreach (var arch in PreferredArchPriority)
         {
-            var arm64 = candidates.FirstOrDefault(f =>
+            var patterns = arch switch
+            {
+                "ARM64" => ArchArm64Patterns,
+                "x64" => ArchX64Patterns,
+                _ => Arch32Patterns
+            };
+            var match = candidates.FirstOrDefault(f =>
             {
                 var name = Path.GetFileNameWithoutExtension(f);
-                return ArchArm64Patterns.Any(p => name.EndsWith(p, StringComparison.OrdinalIgnoreCase));
+                return patterns.Any(p => name.EndsWith(p, StringComparison.OrdinalIgnoreCase));
             });
-            if (arm64 is not null)
-                return arm64;
-
-            var x64 = candidates.FirstOrDefault(f =>
-            {
-                var name = Path.GetFileNameWithoutExtension(f);
-                return ArchX64Patterns.Any(p => name.EndsWith(p, StringComparison.OrdinalIgnoreCase));
-            });
-            if (x64 is not null)
-                return x64;
-        }
-        else if (IsX64OS)
-        {
-            var x64 = candidates.FirstOrDefault(f =>
-            {
-                var name = Path.GetFileNameWithoutExtension(f);
-                return ArchX64Patterns.Any(p => name.EndsWith(p, StringComparison.OrdinalIgnoreCase));
-            });
-            if (x64 is not null)
-                return x64;
-        }
-        else
-        {
-            var x86 = candidates.FirstOrDefault(f =>
-            {
-                var name = Path.GetFileNameWithoutExtension(f);
-                return Arch32Patterns.Any(p => name.EndsWith(p, StringComparison.OrdinalIgnoreCase));
-            });
-            if (x86 is not null)
-                return x86;
+            if (match is not null) return match;
         }
 
         return candidates[0];

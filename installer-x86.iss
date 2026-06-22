@@ -58,6 +58,29 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}
 Type: filesandordirs; Name: "{app}"
 
 [Code]
+function InitializeSetup: Boolean;
+var
+  PrevPath: String;
+begin
+  Result := True;
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
+    'InstallLocation', PrevPath) or
+     RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
+    'InstallLocation', PrevPath) then
+  begin
+    if PrevPath <> '' then
+      WizardDirValue := PrevPath;
+  end
+  else if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
+    'Inno Setup: App Path', PrevPath) or
+          RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
+    'Inno Setup: App Path', PrevPath) then
+  begin
+    if PrevPath <> '' then
+      WizardDirValue := PrevPath;
+  end;
+end;
+
 function IsVCRedistInstalled: Boolean;
 var
   Installed: Cardinal;

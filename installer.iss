@@ -72,6 +72,25 @@ begin
   Result := Is64BitInstallMode and (ProcessorArchitecture = paARM64);
 end;
 
+function InitializeSetup: Boolean;
+var
+  PrevPath: String;
+begin
+  Result := True;
+  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-2025}_is1',
+    'InstallLocation', PrevPath) then
+  begin
+    if PrevPath <> '' then
+      WizardDirValue := PrevPath;
+  end
+  else if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-2025}_is1',
+    'Inno Setup: App Path', PrevPath) then
+  begin
+    if PrevPath <> '' then
+      WizardDirValue := PrevPath;
+  end;
+end;
+
 function IsVCRedistInstalled: Boolean;
 var
   Installed: Cardinal;

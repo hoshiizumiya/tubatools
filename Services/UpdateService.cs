@@ -83,6 +83,7 @@ public static class UpdateService
 
     private static async Task<string?> FetchReleaseJsonAsync(CancellationToken ct)
     {
+        string? gitCodeJson = null;
         try
         {
             using var gitCodeClient = new HttpClient { Timeout = TimeSpan.FromSeconds(15) };
@@ -90,9 +91,12 @@ public static class UpdateService
             var gitCodeUrl = $"{GitCodeReleaseApiBase}/latest";
             var gitCodeResponse = await gitCodeClient.GetAsync(gitCodeUrl, ct);
             if (gitCodeResponse.IsSuccessStatusCode)
-                return await gitCodeResponse.Content.ReadAsStringAsync(ct);
+                gitCodeJson = await gitCodeResponse.Content.ReadAsStringAsync(ct);
         }
         catch { }
+
+        if (gitCodeJson is not null && ParseUpdateJson(gitCodeJson) is not null)
+            return gitCodeJson;
 
         try
         {
@@ -113,7 +117,7 @@ public static class UpdateService
         }
         catch { }
 
-        return null;
+        return gitCodeJson;
     }
 
     public static async Task<Dictionary<string, string>?> FetchGitCodeAssetsAsync(string tagName, CancellationToken ct = default)
@@ -175,6 +179,10 @@ public static class UpdateService
                     var originalUrl = asset.GetProperty("browser_download_url").GetString() ?? "";
                     var size = asset.TryGetProperty("size", out var sizeEl) ? sizeEl.GetInt64() : 0;
                     var contentType = asset.TryGetProperty("content_type", out var ctEl) ? ctEl.GetString() : null;
+                    var assetType = asset.TryGetProperty("type", out var typeEl) ? typeEl.GetString() : null;
+
+                    if (string.Equals(assetType, "source", StringComparison.OrdinalIgnoreCase))
+                        continue;
 
                     if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ||
                         name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
@@ -193,12 +201,19 @@ public static class UpdateService
                 }
             }
 
+            var htmlUrl = root.TryGetProperty("html_url", out var htmlEl) ? htmlEl.GetString() ?? "" : "";
+            var publishedAt = root.TryGetProperty("published_at", out var pubEl)
+                ? pubEl.GetDateTimeOffset()
+                : root.TryGetProperty("created_at", out var createdEl)
+                    ? createdEl.GetDateTimeOffset()
+                    : DateTimeOffset.UtcNow;
+
             return new UpdateInfo
             {
                 Version = versionStr,
-                HtmlUrl = root.GetProperty("html_url").GetString() ?? "",
+                HtmlUrl = htmlUrl,
                 Body = root.TryGetProperty("body", out var body) ? body.GetString() : null,
-                PublishedAt = root.GetProperty("published_at").GetDateTimeOffset(),
+                PublishedAt = publishedAt,
                 Assets = assets,
                 IsPrerelease = root.TryGetProperty("prerelease", out var pre) && pre.GetBoolean()
             };

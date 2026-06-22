@@ -58,26 +58,29 @@ Filename: "{app}\{#MyAppExeName}"; Description: "{cm:LaunchProgram,{#MyAppName}}
 Type: filesandordirs; Name: "{app}"
 
 [Code]
-function InitializeSetup: Boolean;
 var
-  PrevPath: String;
+  CustomPrevPath: String;
+
+function InitializeSetup: Boolean;
 begin
   Result := True;
-  if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
-    'InstallLocation', PrevPath) or
-     RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
-    'InstallLocation', PrevPath) then
+  CustomPrevPath := '';
+  if not RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
+    'InstallLocation', CustomPrevPath) then
+    if not RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
+    'InstallLocation', CustomPrevPath) then
+      if not RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
+      'Inno Setup: App Path', CustomPrevPath) then
+        RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
+        'Inno Setup: App Path', CustomPrevPath);
+end;
+
+procedure CurWizardChanged(CurPageID: Integer);
+begin
+  if (CurPageID = wpSelectDir) and (CustomPrevPath <> '') then
   begin
-    if PrevPath <> '' then
-      WizardDirValue := PrevPath;
-  end
-  else if RegQueryStringValue(HKLM, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
-    'Inno Setup: App Path', PrevPath) or
-          RegQueryStringValue(HKLM32, 'SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\{DA3D64F4-winui3-Tuba-x86-2025}_is1',
-    'Inno Setup: App Path', PrevPath) then
-  begin
-    if PrevPath <> '' then
-      WizardDirValue := PrevPath;
+    WizardForm.DirEdit.Text := CustomPrevPath;
+    CustomPrevPath := '';
   end;
 end;
 

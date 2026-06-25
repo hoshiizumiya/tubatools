@@ -57,6 +57,15 @@ public sealed class BatteryAnalyzerPage : Page
 
     private InfoBar _infoBar = null!;
 
+    private SprReport? _sprReport;
+    private StackPanel _sprSection = null!;
+    private ProgressBar _sprLoading = null!;
+    private StackPanel _sprSummaryPanel = null!;
+    private StackPanel _sprBatteryPanel = null!;
+    private StackPanel _sprSessionPanel = null!;
+    private ComboBox _sprSessionFilter = null!;
+    private int _sprSessionFilterIndex;
+
     private static readonly Color AccentGreen = Color.FromArgb(255, 74, 222, 128);
     private static readonly Color AccentBlue = Color.FromArgb(255, 96, 165, 250);
     private static readonly Color AccentOrange = Color.FromArgb(255, 251, 191, 36);
@@ -93,6 +102,7 @@ public sealed class BatteryAnalyzerPage : Page
         mainStack.Children.Add(_infoBar);
         mainStack.Children.Add(BuildOverviewCards());
         mainStack.Children.Add(BuildTrendSection());
+        mainStack.Children.Add(BuildSprSection());
         mainStack.Children.Add(BuildProcessSection());
         mainStack.Children.Add(BuildDetailsSection());
 
@@ -450,6 +460,170 @@ public sealed class BatteryAnalyzerPage : Page
         return section;
     }
 
+    private StackPanel BuildSprSection()
+    {
+        var label = new TextBlock
+        {
+            Text = "系统电源报告 (SPR)",
+            FontSize = 16,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
+        };
+
+        var subtitle = new TextBlock
+        {
+            Text = "基于 powercfg /spr 生成，分析待机/休眠/关机状态下的电池消耗",
+            FontSize = 11,
+            Foreground = new SolidColorBrush(ThemeColors.DimText)
+        };
+
+        var viewHtmlBtn = new Button
+        {
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children =
+                {
+                    new FontIcon { Glyph = "\uE8A5", FontSize = 13 },
+                    new TextBlock { Text = "查看原始报告", FontSize = 13 }
+                }
+            },
+            Background = new SolidColorBrush(ThemeColors.SubtleBg),
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
+            Padding = new Thickness(14, 6, 14, 6),
+            CornerRadius = new CornerRadius(6),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        viewHtmlBtn.Click += async (_, _) =>
+        {
+            if (_sprReport != null && !string.IsNullOrEmpty(_sprReport.HtmlPath) && File.Exists(_sprReport.HtmlPath))
+            {
+                BrowserWindow.Open(_sprReport.HtmlPath, "系统电源报告");
+            }
+            else
+            {
+                var path = await BatteryAnalyzerService.ExportSprHtmlReportAsync();
+                if (!string.IsNullOrEmpty(path))
+                    BrowserWindow.Open(path, "系统电源报告");
+                else
+                {
+                    _infoBar.Title = "查看失败";
+                    _infoBar.Message = "无法生成系统电源报告，需要管理员权限。";
+                    _infoBar.Severity = InfoBarSeverity.Error;
+                    _infoBar.IsOpen = true;
+                }
+            }
+        };
+
+        var refreshSprBtn = new Button
+        {
+            Content = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children =
+                {
+                    new FontIcon { Glyph = "\uE72C", FontSize = 13 },
+                    new TextBlock { Text = "刷新SPR", FontSize = 13 }
+                }
+            },
+            Background = new SolidColorBrush(ThemeColors.SubtleBg),
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
+            Padding = new Thickness(14, 6, 14, 6),
+            CornerRadius = new CornerRadius(6),
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        refreshSprBtn.Click += async (_, _) => await LoadSprDataAsync();
+
+        var btnPanel = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
+        btnPanel.Children.Add(refreshSprBtn);
+        btnPanel.Children.Add(viewHtmlBtn);
+
+        var headerGrid = new Grid { ColumnSpacing = 12 };
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        var headerStack = new StackPanel { Spacing = 2 };
+        headerStack.Children.Add(label);
+        headerStack.Children.Add(subtitle);
+        headerGrid.Children.Add(headerStack);
+        headerGrid.Children.Add(btnPanel);
+        Grid.SetColumn(btnPanel, 1);
+
+        _sprLoading = new ProgressBar { IsIndeterminate = true, Visibility = Visibility.Collapsed };
+
+        _sprSummaryPanel = new StackPanel { Spacing = 10 };
+        _sprBatteryPanel = new StackPanel { Spacing = 8 };
+        _sprSessionPanel = new StackPanel { Spacing = 4 };
+
+        _sprSessionFilter = new ComboBox
+        {
+            MinWidth = 120,
+            SelectedIndex = 0,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+        _sprSessionFilter.Items.Add("全部会话");
+        _sprSessionFilter.Items.Add("活动 (电池)");
+        _sprSessionFilter.Items.Add("待机/睡眠");
+        _sprSessionFilter.Items.Add("休眠");
+        _sprSessionFilter.Items.Add("关机");
+        _sprSessionFilter.SelectionChanged += (_, _) =>
+        {
+            _sprSessionFilterIndex = _sprSessionFilter.SelectedIndex;
+            UpdateSprSessionUI();
+        };
+
+        var sessionHeaderGrid = new Grid { ColumnSpacing = 12 };
+        sessionHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        sessionHeaderGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        sessionHeaderGrid.Children.Add(new TextBlock
+        {
+            Text = "电源状态会话记录",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText),
+            VerticalAlignment = VerticalAlignment.Center
+        });
+        sessionHeaderGrid.Children.Add(_sprSessionFilter);
+        Grid.SetColumn(_sprSessionFilter, 1);
+
+        var sessionBorder = new Border
+        {
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(14),
+            Child = _sprSessionPanel
+        };
+
+        var contentStack = new StackPanel { Spacing = 12 };
+        contentStack.Children.Add(_sprSummaryPanel);
+        contentStack.Children.Add(_sprBatteryPanel);
+        contentStack.Children.Add(sessionHeaderGrid);
+        contentStack.Children.Add(sessionBorder);
+
+        var contentBorder = new Border
+        {
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Padding = new Thickness(14),
+            Child = contentStack,
+            Visibility = Visibility.Collapsed
+        };
+
+        _sprSection = new StackPanel { Spacing = 10 };
+        _sprSection.Children.Add(headerGrid);
+        _sprSection.Children.Add(_sprLoading);
+        _sprSection.Children.Add(contentBorder);
+
+        return _sprSection;
+    }
+
     private StackPanel BuildDetailsSection()
     {
         var label = new TextBlock
@@ -548,13 +722,15 @@ public sealed class BatteryAnalyzerPage : Page
 
         var batteryTask = BatteryReportService.GetBatteryInfoAsync();
         var trendTask = BatteryAnalyzerService.GetTrendAsync(_selectedDays);
+        var sprTask = BatteryAnalyzerService.GetSprReportAsync();
 
-        await Task.WhenAll(batteryTask, trendTask);
+        await Task.WhenAll(batteryTask, trendTask, sprTask);
 
         if (ct.IsCancellationRequested) return;
 
         _batteryInfo = batteryTask.Result;
         _trendData = trendTask.Result;
+        _sprReport = sprTask.Result;
 
         DownsampleTrend();
 
@@ -563,8 +739,324 @@ public sealed class BatteryAnalyzerPage : Page
 
         UpdateBatteryInfoUI();
         AnimateTrendChart();
+        UpdateSprUI();
 
         StartRealtimeTimer();
+    }
+
+    private async Task LoadSprDataAsync()
+    {
+        _sprLoading.Visibility = Visibility.Visible;
+        _sprLoading.IsIndeterminate = true;
+        try
+        {
+            _sprReport = await BatteryAnalyzerService.GetSprReportAsync();
+            UpdateSprUI();
+        }
+        catch { }
+        _sprLoading.Visibility = Visibility.Collapsed;
+        _sprLoading.IsIndeterminate = false;
+    }
+
+    private void UpdateSprUI()
+    {
+        var contentBorder = _sprSection.Children.OfType<Border>().FirstOrDefault();
+        if (contentBorder == null) return;
+
+        if (_sprReport == null)
+        {
+            contentBorder.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        contentBorder.Visibility = Visibility.Visible;
+        BuildSprSummaryUI();
+        BuildSprBatteryUI();
+        UpdateSprSessionUI();
+    }
+
+    private void BuildSprSummaryUI()
+    {
+        _sprSummaryPanel.Children.Clear();
+        var r = _sprReport!;
+
+        var grid = new Grid { ColumnSpacing = 10 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        var totalDrainWh = r.TotalDrainMwh / 1000.0;
+        var activeDrainWh = r.TotalActiveDrainMwh / 1000.0;
+        var standbyDrainWh = (r.TotalStandbyDrainMwh + r.TotalHibernateDrainMwh) / 1000.0;
+        var avgActiveW = r.AvgActiveDrainRateMw / 1000.0;
+
+        grid.Children.Add(MakeSprStatCard("电池总消耗", $"{totalDrainWh:F1} Wh", "\uE946", AccentPurple));
+        var activeCard = MakeSprStatCard("活动消耗", $"{activeDrainWh:F1} Wh", "\uE8C8", AccentRed);
+        grid.Children.Add(activeCard); Grid.SetColumn(activeCard, 1);
+        var standbyCard = MakeSprStatCard("待机/休眠消耗", $"{standbyDrainWh:F1} Wh", "\uE703", AccentOrange);
+        grid.Children.Add(standbyCard); Grid.SetColumn(standbyCard, 2);
+        var avgCard = MakeSprStatCard("活动平均功率", $"{avgActiveW:F1} W", "\uE945", AccentBlue);
+        grid.Children.Add(avgCard); Grid.SetColumn(avgCard, 3);
+
+        _sprSummaryPanel.Children.Add(grid);
+
+        if (r.AvgStandbyDrainPctPerHour > 0)
+        {
+            var standbyColor = r.AvgStandbyDrainPctPerHour < 1 ? AccentGreen
+                : r.AvgStandbyDrainPctPerHour < 3 ? AccentOrange : AccentRed;
+            var standbyHint = r.AvgStandbyDrainPctPerHour < 1 ? "待机耗电正常"
+                : r.AvgStandbyDrainPctPerHour < 3 ? "待机耗电偏高，可能有后台进程阻止睡眠"
+                : "待机耗电异常，建议检查后台应用和驱动";
+            _sprSummaryPanel.Children.Add(new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 8,
+                Children =
+                {
+                    new FontIcon { Glyph = r.AvgStandbyDrainPctPerHour < 1 ? "\uE73E" : "\uE7BA", FontSize = 14, Foreground = new SolidColorBrush(standbyColor), VerticalAlignment = VerticalAlignment.Center },
+                    new TextBlock
+                    {
+                        Text = $"待机每小时消耗 {r.AvgStandbyDrainPctPerHour:F2}% — {standbyHint}",
+                        FontSize = 12,
+                        Foreground = new SolidColorBrush(standbyColor),
+                        VerticalAlignment = VerticalAlignment.Center
+                    }
+                }
+            });
+        }
+
+        var activeTimeStr = FormatTimeSpan(r.TotalActiveTime);
+        var standbyTimeStr = FormatTimeSpan(r.TotalStandbyTime + r.TotalHibernateTime);
+
+        var infoGrid = new Grid { ColumnSpacing = 16, RowSpacing = 6 };
+        infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        infoGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        AddSprInfoRow(infoGrid, 0, "报告范围", $"{r.ReportDurationDays} 天", "扫描时间", r.ScanTimeLocal == default ? "未知" : r.ScanTimeLocal.ToString("yyyy/M/d HH:mm"));
+        AddSprInfoRow(infoGrid, 1, "电脑型号", $"{r.SystemManufacturer} {r.SystemProductName}", "BIOS", $"{r.BiosVersion} ({r.BiosDate})");
+        AddSprInfoRow(infoGrid, 2, "活动时间(电池)", activeTimeStr, "待机/休眠时间", standbyTimeStr);
+        _sprSummaryPanel.Children.Add(new Border
+        {
+            Background = new SolidColorBrush(ThemeColors.SubtleBg),
+            CornerRadius = new CornerRadius(6),
+            Padding = new Thickness(10),
+            Child = infoGrid
+        });
+    }
+
+    private void BuildSprBatteryUI()
+    {
+        _sprBatteryPanel.Children.Clear();
+        var r = _sprReport!;
+        if (r.Batteries.Count == 0) return;
+
+        _sprBatteryPanel.Children.Add(new TextBlock
+        {
+            Text = "电池信息 (SPR)",
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = new SolidColorBrush(ThemeColors.PrimaryText)
+        });
+
+        foreach (var bat in r.Batteries)
+        {
+            var healthColor = bat.CapacityRatio >= 80 ? AccentGreen : bat.CapacityRatio >= 60 ? AccentOrange : AccentRed;
+
+            var batGrid = new Grid { ColumnSpacing = 16, RowSpacing = 6 };
+            batGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            batGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            AddSprInfoRow(batGrid, 0, "名称", bat.Id, "制造商", bat.Manufacturer);
+            AddSprInfoRow(batGrid, 1, "序列号", bat.SerialNumber, "化学类型", bat.ChemistryZh);
+            AddSprInfoRow(batGrid, 2, "设计容量", bat.DesignCapacity > 0 ? $"{bat.DesignCapacity / 1000.0:F1} Wh ({bat.DesignCapacity} mWh)" : "未知",
+                "充满容量", bat.FullChargeCapacity > 0 ? $"{bat.FullChargeCapacity / 1000.0:F1} Wh ({bat.FullChargeCapacity} mWh)" : "未知");
+            AddSprInfoRow(batGrid, 3, "健康度", $"{bat.CapacityRatio}%", "循环次数", bat.CycleCount > 0 ? bat.CycleCount.ToString() : "未知");
+
+            _sprBatteryPanel.Children.Add(new Border
+            {
+                Background = new SolidColorBrush(ThemeColors.SubtleBg),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(10),
+                Child = batGrid
+            });
+        }
+    }
+
+    private void UpdateSprSessionUI()
+    {
+        _sprSessionPanel.Children.Clear();
+        if (_sprReport == null) return;
+
+        var sessions = _sprSessionFilterIndex switch
+        {
+            1 => _sprReport.Sessions.Where(s => s.Type == 0 && !s.OnAc).ToList(),
+            2 => _sprReport.Sessions.Where(s => s.Type is 1 or 2).ToList(),
+            3 => _sprReport.Sessions.Where(s => s.Type == 7).ToList(),
+            4 => _sprReport.Sessions.Where(s => s.Type == 5).ToList(),
+            _ => _sprReport.Sessions.ToList()
+        };
+
+        var sorted = sessions.OrderByDescending(s => s.EntryTimeLocal).Take(30).ToList();
+
+        if (sorted.Count == 0)
+        {
+            _sprSessionPanel.Children.Add(new TextBlock
+            {
+                Text = "无匹配会话记录",
+                FontSize = 12,
+                Foreground = new SolidColorBrush(ThemeColors.DimText),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 12, 0, 12)
+            });
+            return;
+        }
+
+        var headerRow = new Grid { ColumnSpacing = 8, Padding = new Thickness(4, 4, 4, 4) };
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+        headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+        foreach (var (h, col) in new[] { "#", "开始时间", "持续时长", "状态", "电源", "电量变化", "活动级别" }.Select((h, i) => (h, i)))
+        {
+            var tb = new TextBlock { Text = h, FontSize = 11, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold, Foreground = new SolidColorBrush(ThemeColors.DimText) };
+            headerRow.Children.Add(tb);
+            Grid.SetColumn(tb, col);
+        }
+        _sprSessionPanel.Children.Add(headerRow);
+
+        for (var i = 0; i < sorted.Count; i++)
+        {
+            var s = sorted[i];
+            var drainPct = s.HasBatteryData ? s.DrainPercent : 0;
+            var drainColor = s.OnAc ? AccentBlue
+                : !s.HasBatteryData ? ThemeColors.DimText
+                : drainPct > 10 ? AccentRed
+                : drainPct > 3 ? AccentOrange : AccentGreen;
+
+            var row = new Grid { ColumnSpacing = 8, Padding = new Thickness(4, 3, 4, 3) };
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(40) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(120) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(80) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(60) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(100) });
+            row.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var c0 = new TextBlock { Text = $"{i + 1}", FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText), VerticalAlignment = VerticalAlignment.Center };
+            row.Children.Add(c0); Grid.SetColumn(c0, 0);
+
+            var c1 = new TextBlock { Text = s.EntryTimeLocal.ToString("M/d HH:mm"), FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.PrimaryText), VerticalAlignment = VerticalAlignment.Center };
+            row.Children.Add(c1); Grid.SetColumn(c1, 1);
+
+            var c2 = new TextBlock { Text = s.DurationText, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.PrimaryText), VerticalAlignment = VerticalAlignment.Center };
+            row.Children.Add(c2); Grid.SetColumn(c2, 2);
+
+            var c3 = new TextBlock { Text = s.TypeNameZh, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.PrimaryText), VerticalAlignment = VerticalAlignment.Center };
+            row.Children.Add(c3); Grid.SetColumn(c3, 3);
+
+            var c4 = new TextBlock { Text = s.OnAc ? "交流" : "电池", FontSize = 11, Foreground = new SolidColorBrush(s.OnAc ? AccentBlue : AccentPurple), VerticalAlignment = VerticalAlignment.Center };
+            row.Children.Add(c4); Grid.SetColumn(c4, 4);
+
+            string drainText;
+            if (s.OnAc)
+            {
+                drainText = "--";
+            }
+            else if (!s.HasBatteryData)
+            {
+                drainText = "无数据";
+            }
+            else if (s.DrainPercent > 0)
+            {
+                var wh = s.DrainMwh / 1000.0;
+                drainText = wh >= 1 ? $"-{s.DrainPercent}% ({wh:F1}Wh)" : $"-{s.DrainPercent}%";
+            }
+            else if (s.DrainPercent < 0)
+            {
+                drainText = $"充电 +{-s.DrainPercent}%";
+            }
+            else
+            {
+                drainText = "0%";
+            }
+            var c5 = new TextBlock { Text = drainText, FontSize = 11, Foreground = new SolidColorBrush(drainColor), VerticalAlignment = VerticalAlignment.Center, FontWeight = Microsoft.UI.Text.FontWeights.SemiBold };
+            row.Children.Add(c5); Grid.SetColumn(c5, 5);
+
+            var c6 = new TextBlock { Text = s.ActivityLevelZh, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText), VerticalAlignment = VerticalAlignment.Center };
+            row.Children.Add(c6); Grid.SetColumn(c6, 6);
+
+            if (i % 2 == 1)
+            {
+                row.Background = new SolidColorBrush(ThemeColors.SubtleBg);
+            }
+
+            _sprSessionPanel.Children.Add(row);
+        }
+    }
+
+    private Border MakeSprStatCard(string label, string value, string glyph, Color accent)
+    {
+        var iconBorder = new Border
+        {
+            Width = 32, Height = 32,
+            Background = new SolidColorBrush(Color.FromArgb(26, accent.R, accent.G, accent.B)),
+            CornerRadius = new CornerRadius(6),
+            Child = new FontIcon { FontSize = 14, Foreground = new SolidColorBrush(accent), Glyph = glyph }
+        };
+        var labelBlock = new TextBlock { Text = label, FontSize = 10, Foreground = new SolidColorBrush(ThemeColors.DimText) };
+        var valueBlock = new TextBlock { Text = value, FontSize = 18, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = new SolidColorBrush(accent) };
+
+        var stack = new StackPanel { Spacing = 1 };
+        stack.Children.Add(labelBlock);
+        stack.Children.Add(valueBlock);
+
+        var innerGrid = new Grid { ColumnSpacing = 8 };
+        innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(32) });
+        innerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        innerGrid.Children.Add(iconBorder);
+        innerGrid.Children.Add(stack);
+        Grid.SetColumn(stack, 1);
+
+        return new Border
+        {
+            Padding = new Thickness(10),
+            Background = new SolidColorBrush(ThemeColors.CardBg),
+            BorderBrush = new SolidColorBrush(ThemeColors.BorderColor),
+            BorderThickness = new Thickness(1),
+            CornerRadius = new CornerRadius(8),
+            Child = innerGrid
+        };
+    }
+
+    private static void AddSprInfoRow(Grid grid, int row, string label1, string value1, string label2, string value2)
+    {
+        grid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+        var left = MakeSprInfoCell(label1, value1);
+        var right = MakeSprInfoCell(label2, value2);
+        grid.Children.Add(left); Grid.SetRow(left, row); Grid.SetColumn(left, 0);
+        grid.Children.Add(right); Grid.SetRow(right, row); Grid.SetColumn(right, 1);
+    }
+
+    private static Border MakeSprInfoCell(string label, string value)
+    {
+        return new Border
+        {
+            Padding = new Thickness(8, 5, 8, 5),
+            CornerRadius = new CornerRadius(4),
+            Child = new StackPanel
+            {
+                Orientation = Orientation.Horizontal,
+                Spacing = 6,
+                Children =
+                {
+                    new TextBlock { Text = label, FontSize = 11, Foreground = new SolidColorBrush(ThemeColors.DimText), VerticalAlignment = VerticalAlignment.Center },
+                    new TextBlock { Text = value, FontSize = 12, Foreground = new SolidColorBrush(ThemeColors.PrimaryText), VerticalAlignment = VerticalAlignment.Center, TextTrimming = TextTrimming.CharacterEllipsis }
+                }
+            }
+        };
     }
 
     private async Task ReloadTrendAsync()
@@ -1015,6 +1507,14 @@ public sealed class BatteryAnalyzerPage : Page
         double s = bytes; int i = 0;
         while (s >= 1024 && i < u.Length - 1) { s /= 1024; i++; }
         return $"{s:0.#}{u[i]}";
+    }
+
+    private static string FormatTimeSpan(TimeSpan ts)
+    {
+        if (ts.TotalDays >= 1) return $"{(int)ts.TotalDays}天 {ts.Hours}时{ts.Minutes}分";
+        if (ts.TotalHours >= 1) return $"{(int)ts.TotalHours}时{ts.Minutes}分";
+        if (ts.TotalMinutes >= 1) return $"{(int)ts.TotalMinutes}分";
+        return $"{ts.Seconds}秒";
     }
 
     private async Task ExportReportAsync()

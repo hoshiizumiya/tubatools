@@ -345,6 +345,7 @@ public sealed partial class HardwareDetailPage : Page
             items.Add(Item("型号", disk.Model));
             if (!string.IsNullOrWhiteSpace(disk.MediaType)) items.Add(Item("类型", disk.MediaType));
             if (!string.IsNullOrWhiteSpace(disk.Size)) items.Add(Item("容量", disk.Size));
+            if (disk.Temperature.HasValue) items.Add(Item("温度", $"{disk.Temperature.Value:0}°C"));
             if (!string.IsNullOrWhiteSpace(disk.InterfaceType)) items.Add(Item("接口", disk.InterfaceType));
             if (!string.IsNullOrWhiteSpace(disk.FirmwareRevision)) items.Add(Item("固件版本", disk.FirmwareRevision));
             if (!string.IsNullOrWhiteSpace(disk.SerialNumber)) items.Add(Item("序列号", disk.SerialNumber));

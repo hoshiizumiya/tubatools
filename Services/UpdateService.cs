@@ -424,4 +424,36 @@ public static class UpdateService
 
         return match;
     }
+
+    public static UpdateAsset? FindBestPortableAsset(List<UpdateAsset> assets)
+    {
+        var arch = CurrentArchitecture;
+
+        var match = assets.FirstOrDefault(a =>
+            a.Name.Contains(arch, StringComparison.OrdinalIgnoreCase) &&
+            a.Name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase));
+
+        if (match is not null) return match;
+
+        match = assets.FirstOrDefault(a =>
+            a.Name.Contains(arch, StringComparison.OrdinalIgnoreCase) &&
+            !a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+
+        if (match is not null) return match;
+
+        return FindBestAsset(assets);
+    }
+
+    public static UpdateAsset? FindBestInstallerAsset(List<UpdateAsset> assets)
+    {
+        var arch = CurrentArchitecture;
+
+        var match = assets.FirstOrDefault(a =>
+            a.Name.Contains(arch, StringComparison.OrdinalIgnoreCase) &&
+            a.Name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase));
+
+        if (match is not null) return match;
+
+        return FindBestAsset(assets);
+    }
 }

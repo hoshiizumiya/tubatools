@@ -92,6 +92,7 @@ public sealed class DiskDetail
     public string? InterfaceType { get; set; }
     public string? FirmwareRevision { get; set; }
     public string? SerialNumber { get; set; }
+    public float? Temperature { get; set; }
     public List<PartitionDetail> Partitions { get; init; } = [];
 }
 

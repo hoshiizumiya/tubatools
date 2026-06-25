@@ -288,6 +288,35 @@ public sealed class LiteMonitorService : IDisposable
         return 4;
     }
 
+    public static Dictionary<string, float> ReadDiskTemperatures()
+    {
+        var result = new Dictionary<string, float>(StringComparer.OrdinalIgnoreCase);
+        Instance.EnsureInit();
+        lock (s_lock)
+        {
+            if (s_computer == null) return result;
+            try
+            {
+                foreach (IHardware hw in s_computer.Hardware)
+                    hw.Update();
+                foreach (IHardware hw in s_computer.Hardware)
+                {
+                    if (hw.HardwareType != HardwareType.Storage) continue;
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (sensor.SensorType != SensorType.Temperature || !sensor.Value.HasValue) continue;
+                        if (Has(sensor.Name, "warning") || Has(sensor.Name, "critical")) continue;
+                        if (result.ContainsKey(hw.Name)) continue;
+                        result[hw.Name] = sensor.Value.Value;
+                        break;
+                    }
+                }
+            }
+            catch { }
+        }
+        return result;
+    }
+
     public void Dispose()
     {
         _fpsService?.Dispose();

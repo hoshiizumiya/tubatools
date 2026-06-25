@@ -1773,7 +1773,33 @@ public static class HardwareInfoService
             disks.Add(disk);
         }
 
+        EnrichDiskTemperatures(disks);
+
         return disks;
+    }
+
+    private static void EnrichDiskTemperatures(List<DiskDetail> disks)
+    {
+        if (disks.Count == 0) return;
+        try
+        {
+            var temps = LiteMonitorService.ReadDiskTemperatures();
+            if (temps.Count == 0) return;
+            foreach (var disk in disks)
+            {
+                if (string.IsNullOrWhiteSpace(disk.Model)) continue;
+                foreach (var kvp in temps)
+                {
+                    if (kvp.Key.Contains(disk.Model, StringComparison.OrdinalIgnoreCase)
+                        || disk.Model.Contains(kvp.Key, StringComparison.OrdinalIgnoreCase))
+                    {
+                        disk.Temperature = kvp.Value;
+                        break;
+                    }
+                }
+            }
+        }
+        catch { }
     }
 
     private static string? DetermineMediaType(string? mediaType, string? interfaceType)

@@ -77,42 +77,58 @@ public static class CommunityToolService
     private static async Task<List<CommunityTool>> GetPluginsFromGitCodeAsync(CancellationToken ct)
     {
         var tools = new List<CommunityTool>();
-
         using var client = CreateApiClient();
-        var json = await client.GetStringAsync($"{GitCodeApiBase}/git/trees/main?recursive=1", ct);
-        var doc = JsonDocument.Parse(json);
-        var tree = doc.RootElement.GetProperty("tree");
 
-        var pluginEntries = new List<(string Category, string ToolDir, string Sha)>();
-        var shaMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var categoriesJson = await client.GetStringAsync(
+            $"{GitCodeApiBase}/contents/{PluginsPath}", ct);
+        var catDoc = JsonDocument.Parse(categoriesJson);
 
-        foreach (var item in tree.EnumerateArray())
+        foreach (var catItem in catDoc.RootElement.EnumerateArray())
         {
-            var type = item.GetProperty("type").GetString() ?? "";
-            var path = item.GetProperty("path").GetString() ?? "";
-            var sha = item.TryGetProperty("sha", out var shaEl) ? shaEl.GetString() ?? "" : "";
+            if (catItem.GetProperty("type").GetString() != "dir") continue;
+            var category = catItem.GetProperty("name").GetString() ?? "";
+            if (string.IsNullOrWhiteSpace(category)) continue;
 
-            if (!string.IsNullOrWhiteSpace(sha) && !string.IsNullOrWhiteSpace(path))
-                shaMap[path] = sha;
+            var encCategory = Uri.EscapeDataString(category);
+            var toolListJson = await client.GetStringAsync(
+                $"{GitCodeApiBase}/contents/{PluginsPath}/{encCategory}", ct);
+            var toolDoc = JsonDocument.Parse(toolListJson);
 
-            if (type != "blob" || !path.EndsWith("plugin.json", StringComparison.OrdinalIgnoreCase)) continue;
-            if (!path.StartsWith(PluginsPath + "/", StringComparison.OrdinalIgnoreCase)) continue;
+            foreach (var toolItem in toolDoc.RootElement.EnumerateArray())
+            {
+                if (toolItem.GetProperty("type").GetString() != "dir") continue;
+                var toolDir = toolItem.GetProperty("name").GetString() ?? "";
+                if (string.IsNullOrWhiteSpace(toolDir)) continue;
 
-            var parts = path.Split('/');
-            if (parts.Length < 3) continue;
+                var encToolDir = Uri.EscapeDataString(toolDir);
+                var filesJson = await client.GetStringAsync(
+                    $"{GitCodeApiBase}/contents/{PluginsPath}/{encCategory}/{encToolDir}", ct);
+                var filesDoc = JsonDocument.Parse(filesJson);
 
-            var category = parts[1];
-            var toolDir = parts[2];
-            pluginEntries.Add((category, toolDir, sha));
-        }
+                var shaMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                string? pluginJsonSha = null;
 
-        foreach (var (category, toolDir, sha) in pluginEntries)
-        {
-            var pluginJson = await DownloadBlobAsync(sha, ct);
-            if (pluginJson is null) continue;
+                foreach (var fileItem in filesDoc.RootElement.EnumerateArray())
+                {
+                    var fileName = fileItem.GetProperty("name").GetString() ?? "";
+                    var fileSha = fileItem.TryGetProperty("sha", out var s) ? s.GetString() ?? "" : "";
+                    var filePath = fileItem.TryGetProperty("path", out var p) ? p.GetString() ?? "" : "";
 
-            var tool = ParsePluginJson(pluginJson, category, toolDir, shaMap);
-            if (tool is not null) tools.Add(tool);
+                    if (!string.IsNullOrWhiteSpace(fileSha) && !string.IsNullOrWhiteSpace(filePath))
+                        shaMap[filePath] = fileSha;
+
+                    if (fileName.Equals("plugin.json", StringComparison.OrdinalIgnoreCase))
+                        pluginJsonSha = fileSha;
+                }
+
+                if (pluginJsonSha is null) continue;
+
+                var pluginJson = await DownloadBlobAsync(pluginJsonSha, ct);
+                if (pluginJson is null) continue;
+
+                var tool = ParsePluginJson(pluginJson, category, toolDir, shaMap);
+                if (tool is not null) tools.Add(tool);
+            }
         }
 
         return tools;

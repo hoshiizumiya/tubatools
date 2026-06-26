@@ -260,13 +260,6 @@ public sealed partial class AiAssistantService
                 onToolRecommendations(recommendations);
             }
 
-            var parsedActions = ParseActions(content);
-            if (parsedActions.Count > 0)
-            {
-                onActions(parsedActions);
-                return;
-            }
-
             var toolLines = content.Split('\n')
                 .Where(l => l.TrimStart().StartsWith("[TOOL]", StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -321,6 +314,13 @@ public sealed partial class AiAssistantService
                     if (pendingActions.Count == 0) continue;
                 }
 
+                return;
+            }
+
+            var parsedActions = ParseActions(content);
+            if (parsedActions.Count > 0)
+            {
+                onActions(parsedActions);
                 return;
             }
 
@@ -383,13 +383,6 @@ public sealed partial class AiAssistantService
                 onToolRecommendations(recommendations);
             }
 
-            var parsedActions = ParseActions(content);
-            if (parsedActions.Count > 0)
-            {
-                onActions(parsedActions);
-                return;
-            }
-
             var toolLines = content.Split('\n')
                 .Where(l => l.TrimStart().StartsWith("[TOOL]", StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -444,6 +437,13 @@ public sealed partial class AiAssistantService
                     if (pendingActions.Count == 0) continue;
                 }
 
+                return;
+            }
+
+            var parsedActions = ParseActions(content);
+            if (parsedActions.Count > 0)
+            {
+                onActions(parsedActions);
                 return;
             }
 

@@ -1,0 +1,558 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="TubaWinUi3.Pages.CreditsSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:TubaWinUi3.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    NavigationCacheMode="Enabled"
+    mc:Ignorable="d">
+
+    <Page.Resources>
+        <Style x:Key="SettingsCardStyle" TargetType="Border">
+            <Setter Property="Padding" Value="16" />
+            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+            <Setter Property="BorderThickness" Value="1" />
+        </Style>
+        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="14" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Opacity" Value="0.62" />
+            <Setter Property="Margin" Value="0,24,0,6" />
+        </Style>
+        <Style x:Key="IconBorderStyle" TargetType="Border">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="36" />
+            <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
+            <Setter Property="CornerRadius" Value="6" />
+        </Style>
+
+        <Storyboard x:Name="DrawerOpenStoryboard">
+            <DoubleAnimation
+                Storyboard.TargetName="DrawerOverlayBackground"
+                Storyboard.TargetProperty="Opacity"
+                From="0"
+                To="1"
+                Duration="0:0:0.2" />
+            <DoubleAnimation
+                Storyboard.TargetName="DrawerPanelTransform"
+                Storyboard.TargetProperty="X"
+                From="420"
+                To="0"
+                Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <Storyboard x:Name="DrawerCloseStoryboard">
+            <DoubleAnimation
+                Storyboard.TargetName="DrawerOverlayBackground"
+                Storyboard.TargetProperty="Opacity"
+                From="1"
+                To="0"
+                Duration="0:0:0.15" />
+            <DoubleAnimation
+                Storyboard.TargetName="DrawerPanelTransform"
+                Storyboard.TargetProperty="X"
+                From="0"
+                To="420"
+                Duration="0:0:0.2">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseIn" />
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+    </Page.Resources>
+
+    <Grid Background="Transparent">
+        <ScrollViewer
+            HorizontalScrollMode="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <RelativePanel HorizontalAlignment="Stretch">
+            <StackPanel
+                RelativePanel.AlignHorizontalCenterWithPanel="True"
+                RelativePanel.AlignLeftWithPanel="True"
+                RelativePanel.AlignRightWithPanel="True"
+                MaxWidth="1000"
+                Padding="40,28,40,48"
+                Spacing="4">
+
+                <Button
+                    Margin="0,0,0,12"
+                    Padding="4"
+                    HorizontalAlignment="Left"
+                    VerticalAlignment="Center"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Click="GoBackButton_Click">
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <FontIcon FontSize="14" Glyph="&#xE72B;" />
+                        <TextBlock VerticalAlignment="Center" Text="返回" />
+                    </StackPanel>
+                </Button>
+
+                <TextBlock
+                    FontSize="28"
+                    FontWeight="SemiBold"
+                    Text="关于与鸣谢" />
+                <TextBlock
+                    Margin="0,4,0,20"
+                    FontSize="13"
+                    Opacity="0.62"
+                    Text="工具来源、作者信息和开源引用" />
+
+                <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="工具来源" />
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="18"
+                                Glyph="&#xE90F;" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="图吧工具箱" />
+                            <TextBlock
+                                FontSize="12"
+                                Opacity="0.64"
+                                Text="本软件所集成的全部硬件检测与测试工具，均来源于「图吧工具箱」项目。"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <HyperlinkButton
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            NavigateUri="https://www.tbtool.cn"
+                            Content="访问官网" />
+                    </Grid>
+                </Border>
+
+                <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="作者" />
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <PersonPicture
+                            x:Name="AuthorAvatar"
+                            Width="44"
+                            Height="44"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center" />
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="哈基毅" />
+                            <TextBlock FontSize="12" Opacity="0.64" Text="开发者 / Designer" />
+                        </StackPanel>
+                        <HyperlinkButton
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            NavigateUri="https://github.com/luolangaga">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="14" Glyph="&#xE9AF;" />
+                                <TextBlock Text="GitHub" />
+                            </StackPanel>
+                        </HyperlinkButton>
+                    </Grid>
+                </Border>
+
+                <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="链接" />
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="18"
+                                Glyph="&#xE774;" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="官方网站" />
+                            <TextBlock FontSize="12" Opacity="0.64" Text="tubawinui3.cn" />
+                        </StackPanel>
+                        <HyperlinkButton
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            NavigateUri="https://tubawinui3.cn"
+                            Content="访问官网" />
+                    </Grid>
+                </Border>
+
+                <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="开源引用" />
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="18"
+                                Glyph="&#xE943;" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="开源引用" />
+                            <TextBlock FontSize="12" Opacity="0.64" Text="查看本软件使用的所有开源项目" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Click="OpenSourceButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="14" Glyph="&#xE890;" />
+                                <TextBlock Text="查看全部" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <TextBlock Style="{StaticResource SectionHeaderStyle}" Text="开发者" />
+
+                <Border Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center"
+                                FontSize="18"
+                                Glyph="&#xE783;" />
+                        </Border>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="测试异常页面" />
+                            <TextBlock
+                                FontSize="12"
+                                Opacity="0.64"
+                                Text="手动抛出一个未处理异常，用于验证全局错误页面。"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Click="ThrowErrorButton_Click"
+                            Content="抛出异常" />
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </RelativePanel>
+        </ScrollViewer>
+
+        <Grid
+            x:Name="DrawerOverlay"
+            Visibility="Collapsed">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <Border
+                x:Name="DrawerOverlayBackground"
+                Grid.ColumnSpan="2"
+                Background="#99000000"
+                Opacity="0"
+                Tapped="DrawerOverlayBackground_Tapped" />
+
+            <Border
+                x:Name="DrawerPanel"
+                Grid.Column="1"
+                Width="420"
+                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1,0,0,0"
+                RenderTransformOrigin="0,0">
+                <Border.RenderTransform>
+                    <TranslateTransform x:Name="DrawerPanelTransform" X="420" />
+                </Border.RenderTransform>
+                <Grid RowSpacing="24">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+
+                    <Grid Padding="24,28,16,0" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            FontSize="20"
+                            FontWeight="SemiBold"
+                            Text="开源引用" />
+                        <Button
+                            x:Name="DrawerCloseButton"
+                            Grid.Column="1"
+                            Width="36"
+                            Height="36"
+                            Padding="0"
+                            Click="DrawerCloseButton_Click">
+                            <FontIcon FontSize="14" Glyph="&#xE711;" />
+                        </Button>
+                    </Grid>
+
+                    <ScrollViewer Grid.Row="1" Padding="24,0,24,28">
+                        <StackPanel Spacing="8">
+                            <Border
+                                Padding="14"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="40"
+                                        Height="40"
+                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="8">
+                                        <FontIcon FontSize="20" Glyph="&#xE946;" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" Text="Windows App SDK (WinUI 3)" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Opacity="0.64"
+                                            Text="Microsoft.WindowsAppSDK — 应用框架" />
+                                        <HyperlinkButton
+                                            Padding="0"
+                                            FontSize="12"
+                                            NavigateUri="https://github.com/microsoft/WindowsAppSDK"
+                                            Content="GitHub" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border
+                                Padding="14"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="40"
+                                        Height="40"
+                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="8">
+                                        <FontIcon FontSize="20" Glyph="&#xE946;" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" Text="Win2D" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Opacity="0.64"
+                                            Text="Microsoft.Graphics.Win2D — 2D 图形渲染库" />
+                                        <HyperlinkButton
+                                            Padding="0"
+                                            FontSize="12"
+                                            NavigateUri="https://github.com/microsoft/Win2D"
+                                            Content="GitHub" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border
+                                Padding="14"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="40"
+                                        Height="40"
+                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="8">
+                                        <FontIcon FontSize="20" Glyph="&#xE9D9;" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" Text="LibreHardwareMonitorLib" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Opacity="0.64"
+                                            Text="LibreHardwareMonitorLib — 硬件传感器监控库" />
+                                        <HyperlinkButton
+                                            Padding="0"
+                                            FontSize="12"
+                                            NavigateUri="https://github.com/LibreHardwareMonitor/LibreHardwareMonitor"
+                                            Content="GitHub" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border
+                                Padding="14"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="40"
+                                        Height="40"
+                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="8">
+                                        <FontIcon FontSize="20" Glyph="&#xE8B9;" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" Text="System.Drawing.Common" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Opacity="0.64"
+                                            Text="图标提取与图像处理" />
+                                        <HyperlinkButton
+                                            Padding="0"
+                                            FontSize="12"
+                                            NavigateUri="https://learn.microsoft.com/dotnet/core/compatibility/core-libraries/6.0/system-drawing-common-windows-only"
+                                            Content="Docs" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border
+                                Padding="14"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="40"
+                                        Height="40"
+                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="8">
+                                        <FontIcon FontSize="20" Glyph="&#xE977;" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" Text="System.Management" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Opacity="0.64"
+                                            Text="WMI 硬件信息查询" />
+                                        <HyperlinkButton
+                                            Padding="0"
+                                            FontSize="12"
+                                            NavigateUri="https://learn.microsoft.com/dotnet/api/system.management"
+                                            Content="Docs" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border
+                                Padding="14"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="40"
+                                        Height="40"
+                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="8">
+                                        <FontIcon FontSize="20" Glyph="&#xEBE8;" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" Text="System.Diagnostics.EventLog" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Opacity="0.64"
+                                            Text="系统事件日志读取 — 蓝屏分析" />
+                                        <HyperlinkButton
+                                            Padding="0"
+                                            FontSize="12"
+                                            NavigateUri="https://learn.microsoft.com/dotnet/api/system.diagnostics.eventlog"
+                                            Content="Docs" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+
+                            <Border
+                                Padding="14"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="8">
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <Border
+                                        Width="40"
+                                        Height="40"
+                                        Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                        CornerRadius="8">
+                                        <FontIcon FontSize="20" Glyph="&#xE946;" />
+                                    </Border>
+                                    <StackPanel Grid.Column="1" Spacing="2">
+                                        <TextBlock FontWeight="SemiBold" Text="Microsoft.Windows.SDK.BuildTools" />
+                                        <TextBlock
+                                            FontSize="12"
+                                            Opacity="0.64"
+                                            Text="WinApp 运行时支持" />
+                                        <HyperlinkButton
+                                            Padding="0"
+                                            FontSize="12"
+                                            NavigateUri="https://www.nuget.org/packages/Microsoft.Windows.SDK.BuildTools"
+                                            Content="NuGet" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

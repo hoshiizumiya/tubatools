@@ -47,7 +47,27 @@ public sealed class ConversationMeta
 public sealed partial class AiAssistantService
 {
     private static readonly string SystemPrompt = """
-你是"图吧助手"，一个 Windows 系统专家。你必须严格按照以下三个阶段工作，每次只做一个阶段的事。
+你是"图吧助手"，一个 Windows 系统专家，拥有联网搜索能力。你必须严格按照以下三个阶段工作，每次只做一个阶段的事。
+
+---
+
+## ⚠️ 最重要的规则：主动搜索
+
+你拥有联网搜索工具 web_search，这是你最大的优势。以下情况**必须**使用 web_search：
+- 用户询问任何硬件信息（CPU、GPU、内存、硬盘型号、性能、评测、对比、跑分）
+- 用户询问驱动、BIOS、固件更新
+- 用户询问软件版本、新功能、兼容性
+- 用户询问价格、购买建议、性价比
+- 用户询问技术新闻、行业动态
+- 用户的任何问题涉及到你的知识截止日期之后的信息
+- 你不确定某个具体参数或数据时
+
+搜索策略：
+- 搜索关键词用中文+英文混合效果最好，例如 "Intel Core Ultra 9 285K 评测 性能"
+- 如果第一次搜索结果不够，换一组关键词再搜一次
+- 可以同时调用多个工具（如先 get_hardware_info 再 web_search 同类产品对比）
+- 永远不要凭记忆回答硬件参数，必须搜索确认
+- 搜索结果只有摘要，如果需要详细信息（如完整评测、具体参数、价格），用 fetch_page 访问相关网页获取全文
 
 ---
 
@@ -59,6 +79,7 @@ public sealed partial class AiAssistantService
 - 只使用 [TOOL] 调用工具收集信息，不要输出分析或建议
 - 工具调用完毕后自动进入阶段二
 - 不要在收集信息时输出方案、推荐或建议
+- 涉及硬件/软件/驱动等最新信息时，**必须先搜索再回答**
 
 ---
 
@@ -111,6 +132,8 @@ public sealed partial class AiAssistantService
 
 ## 可用工具
 
+[TOOL] web_search | query=搜索关键词 — 🔴 联网搜索！获取最新硬件评测、驱动、新闻、价格等（最常用的工具，涉及任何最新信息时必须使用！）
+[TOOL] fetch_page | url=网页URL — 📄 访问网页内容！当搜索结果中的摘要信息不够详细时，用此工具获取完整网页文本（搜索后需要深入了解时使用）
 [TOOL] get_hardware_info    — 获取硬件信息
 [TOOL] get_system_info      — 获取系统基本信息
 [TOOL] list_programs        — 已安装软件列表
@@ -137,6 +160,8 @@ public sealed partial class AiAssistantService
 5. 用中文回复
 6. 方案要具体可执行，不要模糊的建议
 7. 不要在 [RECOMMEND_TOOL] 同一行写标题或列表符号
+8. 涉及硬件参数、性能对比、新品发布、驱动更新等，必须用 web_search 搜索，不要凭记忆回答
+9. 宁可多搜一次，也不要给出过时或错误的信息
 """;
 
     public static string BuildSystemContext()
@@ -715,6 +740,8 @@ public sealed partial class AiAssistantService
             "write_reg" => ExecuteWriteReg(args, ct),
             "run_command" => ExecuteRunCommand(ParseArg(args, "cmd"), ct),
             "list_services" => ExecuteListServices(args),
+            "web_search" => ExecuteWebSearch(args, ct),
+            "fetch_page" => ExecuteFetchPage(args, ct),
             _ => $"错误：未知工具 '{toolName}'"
         };
     }
@@ -1315,6 +1342,54 @@ public sealed partial class AiAssistantService
         }
 
         return sb.ToString();
+    }
+
+    private static string ExecuteFetchPage(string args, CancellationToken ct)
+    {
+        var url = ParseArg(args, "url");
+        if (string.IsNullOrWhiteSpace(url))
+            return "错误：缺少 url 参数，请提供要访问的网页 URL";
+
+        try
+        {
+            var page = WebSearchService.FetchWebPageAsync(url, ct).GetAwaiter().GetResult();
+            var sb = new StringBuilder();
+            sb.AppendLine($"页面标题：{page.Title}");
+            sb.AppendLine($"URL：{page.Url}");
+            sb.AppendLine($"内容格式：{page.ContentType}");
+            sb.AppendLine();
+            sb.AppendLine(page.Content);
+            return sb.ToString();
+        }
+        catch (OperationCanceledException)
+        {
+            return "页面获取已取消";
+        }
+        catch (Exception ex)
+        {
+            return $"获取页面失败：{ex.Message}";
+        }
+    }
+
+    private static string ExecuteWebSearch(string args, CancellationToken ct)
+    {
+        var query = ParseArg(args, "query");
+        if (string.IsNullOrWhiteSpace(query))
+            return "错误：缺少 query 参数，请提供搜索关键词";
+
+        try
+        {
+            var result = WebSearchService.SearchAsync(query, ct).GetAwaiter().GetResult();
+            return WebSearchService.FormatResult(result);
+        }
+        catch (OperationCanceledException)
+        {
+            return "搜索已取消";
+        }
+        catch (Exception ex)
+        {
+            return $"搜索失败：{ex.Message}";
+        }
     }
 
     private static (Microsoft.Win32.RegistryKey hive, string subPath) ParseRegKey(string keyPath)

@@ -1,0 +1,327 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="TubaWinUi3.Pages.HardwareAiSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:TubaWinUi3.Pages"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    NavigationCacheMode="Enabled"
+    mc:Ignorable="d">
+
+    <Grid Background="Transparent">
+        <ScrollViewer
+            HorizontalScrollMode="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <RelativePanel HorizontalAlignment="Stretch">
+            <StackPanel
+                RelativePanel.AlignHorizontalCenterWithPanel="True"
+                RelativePanel.AlignLeftWithPanel="True"
+                RelativePanel.AlignRightWithPanel="True"
+                MaxWidth="1000"
+                Padding="40,28,40,48"
+                Spacing="2">
+
+                <Button
+                    x:Name="BackButton"
+                    Click="BackButton_Click"
+                    Margin="0,0,0,8"
+                    Padding="4"
+                    Background="Transparent"
+                    BorderThickness="0">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontSize="14" Glyph="&#xE72B;" />
+                        <TextBlock FontSize="13" Text="返回" />
+                    </StackPanel>
+                </Button>
+
+                <TextBlock
+                    FontSize="28"
+                    FontWeight="SemiBold"
+                    Text="硬件与 AI" />
+                <TextBlock
+                    Opacity="0.72"
+                    Margin="0,0,0,16"
+                    Text="硬件显示选项、数据源和 AI 服务配置" />
+
+                <TextBlock
+                    Style="{StaticResource SectionHeaderStyle}"
+                    Text="硬件显示" />
+
+                <Border x:Name="SettingsHardwareFitScreenCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE799;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="硬件信息一屏显示" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="自动缩放使所有硬件信息在一屏内显示，关闭后允许滚动浏览" />
+                        </StackPanel>
+
+                        <ToggleSwitch
+                            x:Name="HardwareFitScreenToggle"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Toggled="HardwareFitScreenToggle_Toggled" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsHardwareMultiDeviceNewLineCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE8FD;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="多设备换行显示" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="当存在多个显卡、硬盘等设备时，每个设备单独一行显示" />
+                        </StackPanel>
+
+                        <ToggleSwitch
+                            x:Name="HardwareMultiDeviceNewLineToggle"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Toggled="HardwareMultiDeviceNewLineToggle_Toggled" />
+                    </Grid>
+                </Border>
+
+                <TextBlock
+                    Style="{StaticResource SectionHeaderStyle}"
+                    Text="数据源" />
+
+                <Border x:Name="SettingsCpuzDataSourceCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xEEA1;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="硬件信息数据源" />
+                            <TextBlock
+                                x:Name="CpuzDataSourceStatusText"
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="使用 CPU-Z 读取真实硬件信息，防止厂商伪造" />
+                        </StackPanel>
+
+                        <Button
+                            x:Name="CpuzDataSourceButton"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Padding="14,6"
+                            Click="CpuzDataSourceButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon x:Name="CpuzDataSourceIcon" FontSize="12" Glyph="&#xEEA1;" />
+                                <TextBlock x:Name="CpuzDataSourceButtonText" Text="切换" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <TextBlock
+                    Style="{StaticResource SectionHeaderStyle}"
+                    Text="AI 服务" />
+
+                <Border x:Name="SettingsAiEndpointCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid RowSpacing="12">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Style="{StaticResource IconBorderStyle}">
+                                <FontIcon FontSize="18" Glyph="&#xE945;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="AI 服务配置" />
+                                <TextBlock
+                                    x:Name="AiConfigStatusText"
+                                    Opacity="0.68"
+                                    FontSize="13"
+                                    TextWrapping="Wrap"
+                                    Text="配置 OpenAI 兼容 API，启用 AI 智能功能" />
+                            </StackPanel>
+                        </Grid>
+
+                        <Border
+                            Grid.Row="1"
+                            Padding="0,1"
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                        <Grid Grid.Row="2" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Style="{StaticResource IconBorderStyle}">
+                                <FontIcon FontSize="18" Glyph="&#xE774;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="API 地址" />
+                                <TextBlock
+                                    Opacity="0.68"
+                                    FontSize="13"
+                                    TextWrapping="Wrap"
+                                    Text="OpenAI 兼容 API 的 Base URL" />
+                            </StackPanel>
+
+                            <TextBox
+                                x:Name="AiEndpointTextBox"
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                MinWidth="280"
+                                MaxWidth="360"
+                                PlaceholderText="https://api.openai.com/v1"
+                                TextChanged="AiEndpointTextBox_TextChanged" />
+                        </Grid>
+
+                        <Grid Grid.Row="3" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Style="{StaticResource IconBorderStyle}">
+                                <FontIcon FontSize="18" Glyph="&#xE943;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="模型名" />
+                                <TextBlock
+                                    Opacity="0.68"
+                                    FontSize="13"
+                                    TextWrapping="Wrap"
+                                    Text="使用的模型标识符" />
+                            </StackPanel>
+
+                            <TextBox
+                                x:Name="AiModelTextBox"
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                MinWidth="280"
+                                MaxWidth="360"
+                                PlaceholderText="gpt-4o"
+                                TextChanged="AiModelTextBox_TextChanged" />
+                        </Grid>
+
+                        <Grid Grid.Row="4" ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Style="{StaticResource IconBorderStyle}">
+                                <FontIcon FontSize="18" Glyph="&#xE72E;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="API Key" />
+                                <TextBlock
+                                    Opacity="0.68"
+                                    FontSize="13"
+                                    TextWrapping="Wrap"
+                                    Text="API 密钥，将安全保存在本地" />
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                <PasswordBox
+                                    x:Name="AiApiKeyBox"
+                                    MinWidth="200"
+                                    MaxWidth="280"
+                                    PlaceholderText="sk-..."
+                                    PasswordChanged="AiApiKeyBox_PasswordChanged" />
+                                <Button
+                                    x:Name="AiTestButton"
+                                    Padding="14,6"
+                                    Click="AiTestButton_Click">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <FontIcon x:Name="AiTestIcon" FontSize="12" Glyph="&#xE73E;" />
+                                        <TextBlock x:Name="AiTestButtonText" Text="测试连接" />
+                                    </StackPanel>
+                                </Button>
+                            </StackPanel>
+                        </Grid>
+
+                        <Border
+                            Grid.Row="5"
+                            Padding="0,1"
+                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
+
+                        <Grid Grid.Row="5" ColumnSpacing="16" Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Style="{StaticResource IconBorderStyle}">
+                                <FontIcon FontSize="18" Glyph="&#xE721;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="搜索 API Key" />
+                                <TextBlock
+                                    Opacity="0.68"
+                                    FontSize="13"
+                                    TextWrapping="Wrap"
+                                    Text="uapis.cn 搜索 API 密钥（留空使用免费额度）" />
+                            </StackPanel>
+
+                            <PasswordBox
+                                x:Name="SearchApiKeyBox"
+                                Grid.Column="1"
+                                HorizontalAlignment="Right"
+                                MinWidth="280"
+                                MaxWidth="360"
+                                PlaceholderText="uapi-..."
+                                PasswordChanged="SearchApiKeyBox_PasswordChanged" />
+                        </Grid>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </RelativePanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

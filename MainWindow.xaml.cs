@@ -386,8 +386,17 @@ public sealed partial class MainWindow : Window
                 SyncNavSelection("community");
                 break;
             case SearchItemKind.Setting:
-                NavFrame.Navigate(typeof(SettingsPage),
-                    new SearchNavigationTarget { HighlightSettingKey = result.MatchKey });
+                var subPage = SettingsPage.ResolveSubPage(result.MatchKey);
+                if (subPage is not null)
+                {
+                    NavFrame.Navigate(subPage,
+                        new SearchNavigationTarget { HighlightSettingKey = result.MatchKey });
+                }
+                else
+                {
+                    NavFrame.Navigate(typeof(SettingsPage));
+                }
+                SyncNavSelection("settings");
                 break;
             case SearchItemKind.QuickAction:
                 HandleQuickAction(result.MatchKey);

@@ -1,0 +1,263 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="TubaWinUi3.Pages.GeneralSettingsPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    NavigationCacheMode="Enabled"
+    mc:Ignorable="d">
+
+    <Grid Background="Transparent">
+        <ScrollViewer
+            HorizontalScrollMode="Disabled"
+            VerticalScrollBarVisibility="Auto">
+            <RelativePanel HorizontalAlignment="Stretch">
+            <StackPanel
+                RelativePanel.AlignHorizontalCenterWithPanel="True"
+                RelativePanel.AlignLeftWithPanel="True"
+                RelativePanel.AlignRightWithPanel="True"
+                MaxWidth="1000"
+                Spacing="2"
+                Padding="40,28,40,48">
+
+                <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,0,0,4">
+                    <Button
+                        x:Name="BackButton"
+                        Width="36"
+                        Height="36"
+                        Padding="0"
+                        VerticalAlignment="Center"
+                        Click="BackButton_Click">
+                        <FontIcon FontSize="14" Glyph="&#xE72B;" />
+                    </Button>
+                    <TextBlock
+                        FontSize="28"
+                        FontWeight="SemiBold"
+                        Text="常规"
+                        VerticalAlignment="Center" />
+                </StackPanel>
+                <TextBlock
+                    Opacity="0.72"
+                    Margin="48,0,0,16"
+                    Text="主题、更新、启动页面等基础设置" />
+
+                <Border x:Name="SettingsUpdateCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE777;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="检查更新" />
+                            <TextBlock
+                                x:Name="UpdateStatusText"
+                                Opacity="0.68"
+                                FontSize="13"
+                                Text="点击检查是否有新版本" />
+                        </StackPanel>
+
+                        <Button
+                            x:Name="CheckUpdateButton"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Padding="14,6"
+                            Click="CheckUpdateButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="12" Glyph="&#xE777;" />
+                                <TextBlock Text="检查更新" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsToolsBundleCard" Style="{StaticResource SettingsCardStyle}" Visibility="Collapsed">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE896;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="工具包更新" />
+                            <TextBlock
+                                x:Name="ToolsBundleStatusText"
+                                Opacity="0.68"
+                                FontSize="13"
+                                Text="点击检查工具包是否有新版本" />
+                        </StackPanel>
+
+                        <Button
+                            x:Name="CheckToolsBundleButton"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Padding="14,6"
+                            Click="CheckToolsBundleButton_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="12" Glyph="&#xE896;" />
+                                <TextBlock Text="检查更新" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsThemeCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE771;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="应用主题" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                Text="选择浅色、深色或跟随系统" />
+                        </StackPanel>
+
+                        <ComboBox
+                            x:Name="ThemeComboBox"
+                            Grid.Column="2"
+                            MinWidth="120"
+                            SelectionChanged="ThemeComboBox_SelectionChanged" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsCompactModeCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE8FD;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="简洁列表模式" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="原版图吧工具箱的样式" />
+                        </StackPanel>
+
+                        <ToggleSwitch
+                            x:Name="CompactModeToggle"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Toggled="CompactModeToggle_Toggled" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsDefaultPageCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE80F;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="默认启动页面" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="选择应用启动后默认打开的页面" />
+                        </StackPanel>
+
+                        <ComboBox
+                            x:Name="DefaultPageComboBox"
+                            Grid.Column="2"
+                            MinWidth="120"
+                            SelectionChanged="DefaultPageComboBox_SelectionChanged" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsFastModeCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE945;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="快速模式" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="禁用所有动画，提升响应速度" />
+                        </StackPanel>
+
+                        <ToggleSwitch
+                            x:Name="FastModeToggle"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Toggled="FastModeToggle_Toggled" />
+                    </Grid>
+                </Border>
+
+                <Border x:Name="SettingsRememberWindowCard" Style="{StaticResource SettingsCardStyle}">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border Style="{StaticResource IconBorderStyle}">
+                            <FontIcon FontSize="18" Glyph="&#xE784;" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="记住窗口位置和大小" />
+                            <TextBlock
+                                Opacity="0.68"
+                                FontSize="13"
+                                TextWrapping="Wrap"
+                                Text="关闭后下次启动将居中显示，避免多显示器断开后窗口位置异常" />
+                        </StackPanel>
+
+                        <ToggleSwitch
+                            x:Name="RememberWindowToggle"
+                            Grid.Column="2"
+                            VerticalAlignment="Center"
+                            Toggled="RememberWindowToggle_Toggled" />
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </RelativePanel>
+        </ScrollViewer>
+    </Grid>
+</Page>

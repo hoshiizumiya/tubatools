@@ -9,66 +9,6 @@
     NavigationCacheMode="Enabled"
     mc:Ignorable="d">
 
-    <Page.Resources>
-        <Style x:Key="SettingsCardStyle" TargetType="Border">
-            <Setter Property="Padding" Value="16" />
-            <Setter Property="CornerRadius" Value="8" />
-            <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
-            <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
-            <Setter Property="BorderThickness" Value="1" />
-        </Style>
-        <Style x:Key="SectionHeaderStyle" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="14" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Opacity" Value="0.62" />
-            <Setter Property="Margin" Value="0,24,0,6" />
-        </Style>
-        <Style x:Key="IconBorderStyle" TargetType="Border">
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="36" />
-            <Setter Property="Background" Value="{ThemeResource SubtleFillColorSecondaryBrush}" />
-            <Setter Property="CornerRadius" Value="6" />
-        </Style>
-
-        <Storyboard x:Name="DrawerOpenStoryboard">
-            <DoubleAnimation
-                Storyboard.TargetName="DrawerOverlayBackground"
-                Storyboard.TargetProperty="Opacity"
-                From="0"
-                To="1"
-                Duration="0:0:0.2" />
-            <DoubleAnimation
-                Storyboard.TargetName="DrawerPanelTransform"
-                Storyboard.TargetProperty="X"
-                From="420"
-                To="0"
-                Duration="0:0:0.3">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-
-        <Storyboard x:Name="DrawerCloseStoryboard">
-            <DoubleAnimation
-                Storyboard.TargetName="DrawerOverlayBackground"
-                Storyboard.TargetProperty="Opacity"
-                From="1"
-                To="0"
-                Duration="0:0:0.15" />
-            <DoubleAnimation
-                Storyboard.TargetName="DrawerPanelTransform"
-                Storyboard.TargetProperty="X"
-                From="0"
-                To="420"
-                Duration="0:0:0.2">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseIn" />
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
-        </Storyboard>
-    </Page.Resources>
-
     <Grid Background="Transparent">
         <ScrollViewer
             HorizontalScrollMode="Disabled"
@@ -80,7 +20,7 @@
                     RelativePanel.AlignLeftWithPanel="True"
                     RelativePanel.AlignRightWithPanel="True"
                     MaxWidth="1000"
-                    Spacing="2"
+                    Spacing="4"
                     Padding="40,28,40,48">
                     <StackPanel.Transitions>
                         <TransitionCollection>
@@ -97,323 +37,7 @@
                         Margin="0,0,0,16"
                         Text="管理应用外观、更新及查看关于信息。" />
 
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="关于" />
-
-                <Border x:Name="SettingsAboutCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Image
-                            x:Name="SettingsGifImage"
-                            Width="56"
-                            Height="56"
-                            Stretch="UniformToFill" />
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock
-                                FontSize="18"
-                                FontWeight="SemiBold"
-                                Text="图吧工具箱" />
-                            <TextBlock Opacity="0.68" Text="基于 WinUI 3 构建的 PC 硬件工具集合" />
-                            <TextBlock
-                                x:Name="VersionText"
-                                Opacity="0.52"
-                                FontSize="12" />
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="常规" />
-
-                <Border x:Name="SettingsUpdateCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE777;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="检查更新" />
-                            <TextBlock
-                                x:Name="UpdateStatusText"
-                                Opacity="0.68"
-                                FontSize="13"
-                                Text="点击检查是否有新版本" />
-                        </StackPanel>
-
-                        <Button
-                            x:Name="CheckUpdateButton"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="CheckUpdateButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="12" Glyph="&#xE777;" />
-                                <TextBlock Text="检查更新" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsToolsBundleCard" Style="{StaticResource SettingsCardStyle}" Visibility="Collapsed">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE896;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="工具包更新" />
-                            <TextBlock
-                                x:Name="ToolsBundleStatusText"
-                                Opacity="0.68"
-                                FontSize="13"
-                                Text="点击检查工具包是否有新版本" />
-                        </StackPanel>
-
-                        <Button
-                            x:Name="CheckToolsBundleButton"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="CheckToolsBundleButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="12" Glyph="&#xE896;" />
-                                <TextBlock Text="检查更新" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
-
-<Border x:Name="SettingsThemeCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE771;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="应用主题" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                Text="选择浅色、深色或跟随系统" />
-                        </StackPanel>
-
-                        <ComboBox
-                            x:Name="ThemeComboBox"
-                            Grid.Column="2"
-                            MinWidth="120"
-                            SelectionChanged="ThemeComboBox_SelectionChanged" />
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsCompactModeCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE8FD;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="简洁列表模式" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="原版图吧工具箱的样式" />
-                        </StackPanel>
-
-                        <ToggleSwitch
-                            x:Name="CompactModeToggle"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Toggled="CompactModeToggle_Toggled" />
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsBrandLogoCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xEEA3;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="显示品牌 Logo" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="在硬件信息页面的处理器和显卡行前显示品牌图标" />
-                        </StackPanel>
-
-                        <ToggleSwitch
-                            x:Name="BrandLogoToggle"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Toggled="BrandLogoToggle_Toggled" />
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsHardwareFitScreenCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE799;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="硬件信息一屏显示" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="自动缩放使所有硬件信息在一屏内显示，关闭后允许滚动浏览" />
-                        </StackPanel>
-
-                        <ToggleSwitch
-                            x:Name="HardwareFitScreenToggle"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Toggled="HardwareFitScreenToggle_Toggled" />
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsHardwareMultiDeviceNewLineCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE8FD;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="多设备换行显示" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="当存在多个显卡、硬盘等设备时，每个设备单独一行显示" />
-                        </StackPanel>
-
-                        <ToggleSwitch
-                            x:Name="HardwareMultiDeviceNewLineToggle"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Toggled="HardwareMultiDeviceNewLineToggle_Toggled" />
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsDefaultPageCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE80F;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="默认启动页面" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="选择应用启动后默认打开的页面" />
-                        </StackPanel>
-
-                        <ComboBox
-                            x:Name="DefaultPageComboBox"
-                            Grid.Column="2"
-                            MinWidth="120"
-                            SelectionChanged="DefaultPageComboBox_SelectionChanged" />
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsFastModeCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE945;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="快速模式" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="禁用所有动画，提升响应速度" />
-                        </StackPanel>
-
-                        <ToggleSwitch
-                            x:Name="FastModeToggle"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Toggled="FastModeToggle_Toggled" />
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsWatermarkCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
+                    <Border Style="{StaticResource SettingsCardStyle}">
                         <Grid ColumnSpacing="16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -421,348 +45,29 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE8B9;" />
-                            </Border>
+                            <Image
+                                x:Name="SettingsGifImage"
+                                Width="56"
+                                Height="56"
+                                Stretch="UniformToFill" />
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="截图水印" />
                                 <TextBlock
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="硬件信息截图时在右下角添加水印" />
-                            </StackPanel>
-
-                            <ToggleSwitch
-                                x:Name="WatermarkToggle"
-                                Grid.Column="2"
-                                VerticalAlignment="Center"
-                                Toggled="WatermarkToggle_Toggled" />
-                        </Grid>
-
-                        <Border
-                            Grid.Row="1"
-                            x:Name="WatermarkDivider"
-                            Padding="0,1"
-                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
-
-                        <Grid Grid.Row="2" ColumnSpacing="16" x:Name="WatermarkDetailPanel">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE8D2;" />
-                            </Border>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="水印文字" />
+                                    FontSize="18"
+                                    FontWeight="SemiBold"
+                                    Text="图吧工具箱" />
+                                <TextBlock Opacity="0.68" Text="基于 WinUI 3 构建的 PC 硬件工具集合" />
                                 <TextBlock
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="自定义截图水印显示的文字" />
-                            </StackPanel>
-
-                            <TextBox
-                                x:Name="WatermarkTextBox"
-                                Grid.Column="2"
-                                MinWidth="160"
-                                MaxWidth="240"
-                                PlaceholderText="图吧工具箱"
-                                TextChanged="WatermarkTextBox_TextChanged" />
-                        </Grid>
-
-                        <Grid Grid.Row="3" ColumnSpacing="16" x:Name="WatermarkFontPanel">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE9F5;" />
-                            </Border>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="水印字体" />
-                                <TextBlock
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="自定义截图水印使用的字体" />
-                            </StackPanel>
-
-                            <ComboBox
-                                x:Name="WatermarkFontComboBox"
-                                Grid.Column="2"
-                                MinWidth="160"
-                                SelectionChanged="WatermarkFontComboBox_SelectionChanged" />
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsRememberWindowCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE784;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="记住窗口位置和大小" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="关闭后下次启动将居中显示，避免多显示器断开后窗口位置异常" />
-                        </StackPanel>
-
-                        <ToggleSwitch
-                            x:Name="RememberWindowToggle"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Toggled="RememberWindowToggle_Toggled" />
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="配置管理" />
-
-                <Border x:Name="SettingsConfigManagerCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE912;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="配置管理" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="管理配置文件的存储位置、导出和导入" />
-                        </StackPanel>
-
-                        <Button
-                            x:Name="ConfigManagerButton"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="ConfigManagerButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="12" Glyph="&#xE9D9;" />
-                                <TextBlock Text="管理" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="硬件监控" />
-
-                <Border x:Name="SettingsCpuzDataSourceCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xEEA1;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="硬件信息数据源" />
-                            <TextBlock
-                                x:Name="CpuzDataSourceStatusText"
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="使用 CPU-Z 读取真实硬件信息，防止厂商伪造" />
-                        </StackPanel>
-
-                        <Button
-                            x:Name="CpuzDataSourceButton"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="CpuzDataSourceButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon x:Name="CpuzDataSourceIcon" FontSize="12" Glyph="&#xEEA1;" />
-                                <TextBlock x:Name="CpuzDataSourceButtonText" Text="切换" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="AI 服务" />
-
-                <Border x:Name="SettingsAiEndpointCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
-                        <Grid ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE945;" />
-                            </Border>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="AI 服务配置" />
-                                <TextBlock
-                                    x:Name="AiConfigStatusText"
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="配置 OpenAI 兼容 API，启用 AI 智能功能" />
+                                    x:Name="VersionText"
+                                    Opacity="0.52"
+                                    FontSize="12" />
                             </StackPanel>
                         </Grid>
+                    </Border>
 
-                        <Border
-                            Grid.Row="1"
-                            Padding="0,1"
-                            Background="{ThemeResource DividerStrokeColorDefaultBrush}" />
-
-                        <Grid Grid.Row="2" ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE774;" />
-                            </Border>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="API 地址" />
-                                <TextBlock
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="OpenAI 兼容 API 的 Base URL" />
-                            </StackPanel>
-
-                            <TextBox
-                                x:Name="AiEndpointTextBox"
-                                Grid.Column="1"
-                                HorizontalAlignment="Right"
-                                MinWidth="280"
-                                MaxWidth="360"
-                                PlaceholderText="https://api.openai.com/v1"
-                                TextChanged="AiEndpointTextBox_TextChanged" />
-                        </Grid>
-
-                        <Grid Grid.Row="3" ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE943;" />
-                            </Border>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="模型名" />
-                                <TextBlock
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="使用的模型标识符" />
-                            </StackPanel>
-
-                            <TextBox
-                                x:Name="AiModelTextBox"
-                                Grid.Column="1"
-                                HorizontalAlignment="Right"
-                                MinWidth="280"
-                                MaxWidth="360"
-                                PlaceholderText="gpt-4o"
-                                TextChanged="AiModelTextBox_TextChanged" />
-                        </Grid>
-
-                        <Grid Grid.Row="4" ColumnSpacing="16">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="Auto" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE72E;" />
-                            </Border>
-
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="API Key" />
-                                <TextBlock
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="API 密钥，将安全保存在本地" />
-                            </StackPanel>
-
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <PasswordBox
-                                    x:Name="AiApiKeyBox"
-                                    MinWidth="200"
-                                    MaxWidth="280"
-                                    PlaceholderText="sk-..."
-                                    PasswordChanged="AiApiKeyBox_PasswordChanged" />
-                                <Button
-                                    x:Name="AiTestButton"
-                                    Padding="14,6"
-                                    Click="AiTestButton_Click">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <FontIcon x:Name="AiTestIcon" FontSize="12" Glyph="&#xE73E;" />
-                                        <TextBlock x:Name="AiTestButtonText" Text="测试连接" />
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
-                        </Grid>
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="外观" />
-
-<Border x:Name="SettingsBackdropCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid RowSpacing="14">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
+                    <Border
+                        Style="{StaticResource NavCardBorderStyle}"
+                        Tapped="NavGeneral_Tapped">
                         <Grid ColumnSpacing="16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -770,144 +75,22 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE7F3;" />
+                            <Border Style="{StaticResource NavCardIconBorderStyle}">
+                                <FontIcon FontSize="20" Glyph="&#xE80F;" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="窗口材质" />
-                                <TextBlock
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="选择窗口背景的视觉材质效果" />
+                                <TextBlock FontWeight="SemiBold" Text="常规" />
+                                <TextBlock Opacity="0.68" FontSize="13" Text="主题、更新、启动页面、快速模式" />
                             </StackPanel>
+
+                            <FontIcon Grid.Column="2" FontSize="14" Glyph="&#xE76C;" Opacity="0.5" VerticalAlignment="Center" />
                         </Grid>
+                    </Border>
 
-                        <Grid Grid.Row="1" ColumnSpacing="8" HorizontalAlignment="Stretch">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-
-                            <Border
-                                x:Name="BackdropMicaOption"
-                                Tag="Mica"
-                                CornerRadius="8"
-                                BorderThickness="2"
-                                BorderBrush="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                Padding="10,8"
-                                Tapped="BackdropOption_Tapped"
-                                PointerEntered="BackdropOption_PointerEntered"
-                                PointerExited="BackdropOption_PointerExited">
-                                <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                    <Border
-                                        Width="48"
-                                        Height="32"
-                                        CornerRadius="4"
-                                        Background="#1A000000">
-                                        <Border
-                                            CornerRadius="3"
-                                            Margin="3"
-                                            Background="#0CFFFFFF">
-                                            <Border
-                                                CornerRadius="2"
-                                                Margin="2"
-                                                Background="#08FFFFFF" />
-                                        </Border>
-                                    </Border>
-                                    <TextBlock
-                                        FontSize="11"
-                                        HorizontalAlignment="Center"
-                                        Text="Mica" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border
-                                x:Name="BackdropMicaAltOption"
-                                Grid.Column="1"
-                                Tag="MicaAlt"
-                                CornerRadius="8"
-                                BorderThickness="2"
-                                BorderBrush="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                Padding="10,8"
-                                Tapped="BackdropOption_Tapped"
-                                PointerEntered="BackdropOption_PointerEntered"
-                                PointerExited="BackdropOption_PointerExited">
-                                <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                    <Border
-                                        Width="48"
-                                        Height="32"
-                                        CornerRadius="4"
-                                        Background="#2A000000">
-                                        <Border
-                                            CornerRadius="3"
-                                            Margin="3"
-                                            Background="#14FFFFFF">
-                                            <Border
-                                                CornerRadius="2"
-                                                Margin="2"
-                                                Background="#0AFFFFFF" />
-                                        </Border>
-                                    </Border>
-                                    <TextBlock
-                                        FontSize="11"
-                                        HorizontalAlignment="Center"
-                                        Text="Mica Alt" />
-                                </StackPanel>
-                            </Border>
-
-                            <Border
-                                x:Name="BackdropAcrylicOption"
-                                Grid.Column="2"
-                                Tag="Acrylic"
-                                CornerRadius="8"
-                                BorderThickness="2"
-                                BorderBrush="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
-                                Padding="10,8"
-                                Tapped="BackdropOption_Tapped"
-                                PointerEntered="BackdropOption_PointerEntered"
-                                PointerExited="BackdropOption_PointerExited">
-                                <StackPanel HorizontalAlignment="Center" Spacing="4">
-                                    <Border
-                                        Width="48"
-                                        Height="32"
-                                        CornerRadius="4">
-                                        <Border.Background>
-                                            <AcrylicBrush
-                                                TintColor="#FF202020"
-                                                TintOpacity="0.8"
-                                                TintLuminosityOpacity="0.3" />
-                                        </Border.Background>
-                                        <Border
-                                            CornerRadius="3"
-                                            Margin="4"
-                                            Background="#18FFFFFF" />
-                                    </Border>
-                                    <TextBlock
-                                        FontSize="11"
-                                        HorizontalAlignment="Center"
-                                        Text="毛玻璃" />
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsBackgroundCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid RowSpacing="12">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                            <RowDefinition Height="Auto" />
-                        </Grid.RowDefinitions>
-
+                    <Border
+                        Style="{StaticResource NavCardBorderStyle}"
+                        Tapped="NavAppearance_Tapped">
                         <Grid ColumnSpacing="16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
@@ -915,762 +98,113 @@
                                 <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Border Style="{StaticResource IconBorderStyle}">
-                                <FontIcon FontSize="18" Glyph="&#xE91B;" />
+                            <Border Style="{StaticResource NavCardIconBorderStyle}">
+                                <FontIcon FontSize="20" Glyph="&#xE7F3;" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
 
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                                <TextBlock FontWeight="SemiBold" Text="背景图片" />
-                                <TextBlock
-                                    Opacity="0.68"
-                                    FontSize="13"
-                                    TextWrapping="Wrap"
-                                    Text="导入图片作为主页面背景" />
+                                <TextBlock FontWeight="SemiBold" Text="外观" />
+                                <TextBlock Opacity="0.68" FontSize="13" Text="窗口材质、背景图片、水印、品牌 Logo" />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                <Button
-                                    x:Name="ClearBgButton"
-                                    Padding="10,6"
-                                    Click="ClearBgButton_Click"
-                                    Visibility="Collapsed">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <FontIcon FontSize="12" Glyph="&#xE711;" />
-                                        <TextBlock Text="清除" />
-                                    </StackPanel>
-                                </Button>
-                                <Button
-                                    x:Name="ImportBgButton"
-                                    Padding="10,6"
-                                    Click="ImportBgButton_Click">
-                                    <StackPanel Orientation="Horizontal" Spacing="6">
-                                        <FontIcon FontSize="12" Glyph="&#xE898;" />
-                                        <TextBlock Text="导入图片" />
-                                    </StackPanel>
-                                </Button>
-                            </StackPanel>
+                            <FontIcon Grid.Column="2" FontSize="14" Glyph="&#xE76C;" Opacity="0.5" VerticalAlignment="Center" />
                         </Grid>
+                    </Border>
 
-                        <Border
-                            Grid.Row="1"
-                            x:Name="BgPreviewBorder"
-                            Padding="0,1"
-                            Background="{ThemeResource DividerStrokeColorDefaultBrush}"
-                            Visibility="Collapsed" />
-
-                        <Grid Grid.Row="2" ColumnSpacing="16" x:Name="BgPreviewPanel" Visibility="Collapsed">
+                    <Border
+                        Style="{StaticResource NavCardBorderStyle}"
+                        Tapped="NavHardwareAi_Tapped">
+                        <Grid ColumnSpacing="16">
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" />
                                 <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
-                            <Border
-                                Width="120"
-                                Height="68"
-                                CornerRadius="6"
-                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                                BorderThickness="1">
-                                <Image
-                                    x:Name="BgPreviewImage"
-                                    Stretch="UniformToFill" />
+                            <Border Style="{StaticResource NavCardIconBorderStyle}">
+                                <FontIcon FontSize="20" Glyph="&#xE772;" HorizontalAlignment="Center" VerticalAlignment="Center" />
                             </Border>
 
-                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="6">
-                                <TextBlock
-                                    x:Name="BgFileNameText"
-                                    FontSize="13"
-                                    TextTrimming="CharacterEllipsis"
-                                    MaxLines="1" />
-                                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                    <TextBlock FontSize="12" Opacity="0.68" VerticalAlignment="Center" Text="透明度" />
-                                    <Slider
-                                        x:Name="BgOpacitySlider"
-                                        Width="160"
-                                        ValueChanged="BgOpacitySlider_ValueChanged" />
-                                    <TextBlock
-                                        x:Name="BgOpacityText"
-                                        FontSize="12"
-                                        Opacity="0.68"
-                                        VerticalAlignment="Center"
-                                        Text="15%" />
-                                </StackPanel>
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="硬件与 AI" />
+                                <TextBlock Opacity="0.68" FontSize="13" Text="硬件显示选项、数据源、AI 服务配置" />
                             </StackPanel>
+
+                            <FontIcon Grid.Column="2" FontSize="14" Glyph="&#xE76C;" Opacity="0.5" VerticalAlignment="Center" />
                         </Grid>
+                    </Border>
 
-                        <Expander
-                            x:Name="BgHistoryExpander"
-                            Grid.Row="3"
-                            HorizontalAlignment="Stretch"
-                            HorizontalContentAlignment="Stretch"
-                            IsExpanded="False">
-                            <Expander.Header>
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <FontIcon FontSize="14" Glyph="&#xE8B9;" Opacity="0.68" />
-                                    <TextBlock Text="已导入的图片" />
-                                    <TextBlock
-                                        x:Name="BgHistoryCountText"
-                                        Opacity="0.52"
-                                        FontSize="12" />
-                                </StackPanel>
-                            </Expander.Header>
-                            <Expander.Content>
-                                <StackPanel Spacing="10" Padding="0,4,0,0">
-                                    <ScrollViewer
-                                        x:Name="BgListScrollViewer"
-                                        HorizontalScrollBarVisibility="Auto"
-                                        HorizontalScrollMode="Enabled"
-                                        VerticalScrollBarVisibility="Disabled"
-                                        VerticalScrollMode="Disabled">
-                                        <StackPanel
-                                            x:Name="BgListPanel"
-                                            Orientation="Horizontal"
-                                            Spacing="10" />
-                                    </ScrollViewer>
-                                    <TextBlock
-                                        x:Name="BgListEmptyText"
-                                        Opacity="0.52"
-                                        FontSize="13"
-                                        Text="还没有导入过图片"
-                                        Visibility="Collapsed" />
-                                </StackPanel>
-                            </Expander.Content>
-                        </Expander>
-                    </Grid>
-                </Border>
+                    <Border
+                        Style="{StaticResource NavCardBorderStyle}"
+                        Tapped="NavToolsCommunity_Tapped">
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="自定义工具" />
+                            <Border Style="{StaticResource NavCardIconBorderStyle}">
+                                <FontIcon FontSize="20" Glyph="&#xE8B7;" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
 
-                <Border x:Name="SettingsCustomToolCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE8B7;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="自定义工具管理" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="管理工具分类、导入自定义工具，支持拖拽排序" />
-                        </StackPanel>
-
-                        <Button
-                            x:Name="CustomToolManagerButton"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="CustomToolManagerButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="12" Glyph="&#xE9D9;" />
-                                <TextBlock Text="管理" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="工具与社区" />
+                                <TextBlock Opacity="0.68" FontSize="13" Text="配置管理、自定义工具、导出、GitHub" />
                             </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
 
-                <Border x:Name="SettingsExportAppCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                            <FontIcon Grid.Column="2" FontSize="14" Glyph="&#xE76C;" Opacity="0.5" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
 
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE896;" />
-                        </Border>
+                    <Border
+                        Style="{StaticResource NavCardBorderStyle}"
+                        Tapped="NavCredits_Tapped">
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="导出当前软件" />
-                            <TextBlock
-                                x:Name="ExportAppStatusText"
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="把当前程序目录、工具和元数据打包成可分发压缩包。" />
-                        </StackPanel>
+                            <Border Style="{StaticResource NavCardIconBorderStyle}">
+                                <FontIcon FontSize="20" Glyph="&#xE774;" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
 
-                        <Button
-                            x:Name="ExportAppButton"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="ExportAppButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="12" Glyph="&#xE896;" />
-                                <TextBlock Text="导出" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="关于与鸣谢" />
+                                <TextBlock Opacity="0.68" FontSize="13" Text="工具来源、作者、官网、开源引用" />
                             </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
 
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="社区工具" />
+                            <FontIcon Grid.Column="2" FontSize="14" Glyph="&#xE76C;" Opacity="0.5" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
 
-                <Border x:Name="SettingsCommunityCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
+                    <Border
+                        Style="{StaticResource NavCardBorderStyle}"
+                        Tapped="NavWhatsNew_Tapped">
+                        <Grid ColumnSpacing="16">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
 
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE9D5;" />
-                        </Border>
+                            <Border Style="{StaticResource NavCardIconBorderStyle}">
+                                <FontIcon FontSize="20" Glyph="&#xE8BD;" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
 
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="GitHub 账号" />
-                            <TextBlock
-                                x:Name="GitHubLoginStatusText"
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="未登录" />
-                        </StackPanel>
-
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                            <PersonPicture
-                                x:Name="GitHubAvatar"
-                                Width="32"
-                                Height="32"
-                                Visibility="Collapsed" />
-                            <Button
-                                x:Name="GitHubLoginButton"
-                                Padding="14,6"
-                                Click="GitHubLoginButton_Click">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <FontIcon FontSize="12" Glyph="&#xE77B;" />
-                                    <TextBlock Text="登录" />
-                                </StackPanel>
-                            </Button>
-                            <Button
-                                x:Name="GitHubLogoutButton"
-                                Padding="14,6"
-                                Click="GitHubLogoutButton_Click"
-                                Visibility="Collapsed">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <FontIcon FontSize="12" Glyph="&#xE8AB;" />
-                                    <TextBlock Text="登出" />
-                                </StackPanel>
-                            </Button>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-
-                <Border x:Name="SettingsCommunitySubmitCard" Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE710;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="提交社区工具" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="将工具提交到社区仓库，审核通过后所有人可见" />
-                        </StackPanel>
-
-                        <Button
-                            x:Name="CommunitySubmitButton"
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="CommunitySubmitButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="12" Glyph="&#xE710;" />
-                                <TextBlock Text="提交工具" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontWeight="SemiBold" Text="新增内容" />
+                                <TextBlock Opacity="0.68" FontSize="13" Text="查看各版本更新日志和新功能" />
                             </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
 
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="工具来源" />
+                            <FontIcon Grid.Column="2" FontSize="14" Glyph="&#xE76C;" Opacity="0.5" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
 
-                <Border Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE90F;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="图吧工具箱" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                TextWrapping="Wrap"
-                                Text="本软件所集成的全部硬件检测与测试工具，均来源于「图吧工具箱」项目。" />
-                        </StackPanel>
-
-                        <HyperlinkButton
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            NavigateUri="https://www.tbtool.cn"
-                            Content="访问官网" />
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="作者" />
-
-                <Border Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <PersonPicture
-                            x:Name="AuthorAvatar"
-                            Width="44"
-                            Height="44" />
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="哈基毅" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                Text="开发者 / Designer" />
-                        </StackPanel>
-
-                        <HyperlinkButton
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            NavigateUri="https://github.com/luolangaga">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="14" Glyph="&#xE8F1;" />
-                                <TextBlock Text="GitHub" />
-                            </StackPanel>
-                        </HyperlinkButton>
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="链接" />
-
-                <Border Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE774;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="官方网站" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                Text="tubawinui3.cn" />
-                        </StackPanel>
-
-                        <HyperlinkButton
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            NavigateUri="https://tubawinui3.cn"
-                            Content="访问官网" />
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="开源引用" />
-
-                <Border Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE943;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="开源引用" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                Text="查看本软件使用的所有开源项目" />
-                        </StackPanel>
-
-                        <Button
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="OpenSourceButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="12" Glyph="&#xE890;" />
-                                <TextBlock Text="查看全部" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
-
-                <TextBlock
-                    Style="{StaticResource SectionHeaderStyle}"
-                    Text="开发者" />
-
-                <Border Style="{StaticResource SettingsCardStyle}">
-                    <Grid ColumnSpacing="16">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
-                            <ColumnDefinition Width="*" />
-                            <ColumnDefinition Width="Auto" />
-                        </Grid.ColumnDefinitions>
-
-                        <Border Style="{StaticResource IconBorderStyle}">
-                            <FontIcon FontSize="18" Glyph="&#xE783;" />
-                        </Border>
-
-                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
-                            <TextBlock FontWeight="SemiBold" Text="测试异常页面" />
-                            <TextBlock
-                                Opacity="0.68"
-                                FontSize="13"
-                                Text="手动抛出一个未处理异常，用于验证全局错误页面。" />
-                        </StackPanel>
-
-                        <Button
-                            Grid.Column="2"
-                            VerticalAlignment="Center"
-                            Padding="14,6"
-                            Click="ThrowErrorButton_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <FontIcon FontSize="12" Glyph="&#xE783;" />
-                                <TextBlock Text="抛出异常" />
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </Border>
-
-            </StackPanel>
-        </RelativePanel>
-    </ScrollViewer>
-
-    <Grid
-        x:Name="DrawerOverlay"
-        Visibility="Collapsed">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-
-        <Border
-            x:Name="DrawerOverlayBackground"
-            Grid.ColumnSpan="2"
-            Background="#99000000"
-            Opacity="0"
-            Tapped="DrawerOverlayBackground_Tapped" />
-
-        <Border
-            x:Name="DrawerPanel"
-            Grid.Column="1"
-            Width="420"
-            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}"
-            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-            BorderThickness="1,0,0,0"
-            RenderTransformOrigin="0,0">
-            <Border.RenderTransform>
-                <TranslateTransform x:Name="DrawerPanelTransform" X="420" />
-            </Border.RenderTransform>
-            <Grid RowSpacing="24">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <Grid Padding="24,28,16,0" ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="Auto" />
-                    </Grid.ColumnDefinitions>
-                    <TextBlock
-                        FontSize="20"
-                        FontWeight="SemiBold"
-                        Text="开源引用" />
-                    <Button
-                        x:Name="DrawerCloseButton"
-                        Grid.Column="1"
-                        Width="36"
-                        Height="36"
-                        Padding="0"
-                        Click="DrawerCloseButton_Click">
-                        <FontIcon FontSize="14" Glyph="&#xE711;" />
-                    </Button>
-                </Grid>
-
-                <ScrollViewer Grid.Row="1" Padding="24,0,24,28">
-                    <StackPanel Spacing="8">
-                        <Border
-                            Padding="14"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border
-                                    Width="40"
-                                    Height="40"
-                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                    CornerRadius="8">
-                                    <FontIcon FontSize="20" Glyph="&#xE946;" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" Text="Windows App SDK (WinUI 3)" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Opacity="0.64"
-                                        Text="Microsoft.WindowsAppSDK — 应用框架" />
-                                    <HyperlinkButton
-                                        Padding="0"
-                                        FontSize="12"
-                                        NavigateUri="https://github.com/microsoft/WindowsAppSDK"
-                                        Content="GitHub" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border
-                            Padding="14"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border
-                                    Width="40"
-                                    Height="40"
-                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                    CornerRadius="8">
-                                    <FontIcon FontSize="20" Glyph="&#xE946;" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" Text="Win2D" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Opacity="0.64"
-                                        Text="Microsoft.Graphics.Win2D — 2D 图形渲染库" />
-                                    <HyperlinkButton
-                                        Padding="0"
-                                        FontSize="12"
-                                        NavigateUri="https://github.com/microsoft/Win2D"
-                                        Content="GitHub" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border
-                            Padding="14"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border
-                                    Width="40"
-                                    Height="40"
-                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                    CornerRadius="8">
-                                    <FontIcon FontSize="20" Glyph="&#xE9D9;" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" Text="LibreHardwareMonitorLib" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Opacity="0.64"
-                                        Text="LibreHardwareMonitorLib — 硬件传感器监控库" />
-                                    <HyperlinkButton
-                                        Padding="0"
-                                        FontSize="12"
-                                        NavigateUri="https://github.com/LibreHardwareMonitor/LibreHardwareMonitor"
-                                        Content="GitHub" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border
-                            Padding="14"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border
-                                    Width="40"
-                                    Height="40"
-                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                    CornerRadius="8">
-                                    <FontIcon FontSize="20" Glyph="&#xE8B9;" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" Text="System.Drawing.Common" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Opacity="0.64"
-                                        Text="图标提取与图像处理" />
-                                    <HyperlinkButton
-                                        Padding="0"
-                                        FontSize="12"
-                                        NavigateUri="https://learn.microsoft.com/dotnet/core/compatibility/core-libraries/6.0/system-drawing-common-windows-only"
-                                        Content="Docs" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border
-                            Padding="14"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border
-                                    Width="40"
-                                    Height="40"
-                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                    CornerRadius="8">
-                                    <FontIcon FontSize="20" Glyph="&#xE977;" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" Text="System.Management" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Opacity="0.64"
-                                        Text="WMI 硬件信息查询" />
-                                    <HyperlinkButton
-                                        Padding="0"
-                                        FontSize="12"
-                                        NavigateUri="https://learn.microsoft.com/dotnet/api/system.management"
-                                        Content="Docs" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border
-                            Padding="14"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border
-                                    Width="40"
-                                    Height="40"
-                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                    CornerRadius="8">
-                                    <FontIcon FontSize="20" Glyph="&#xEBE8;" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" Text="System.Diagnostics.EventLog" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Opacity="0.64"
-                                        Text="系统事件日志读取 — 蓝屏分析" />
-                                    <HyperlinkButton
-                                        Padding="0"
-                                        FontSize="12"
-                                        NavigateUri="https://learn.microsoft.com/dotnet/api/system.diagnostics.eventlog"
-                                        Content="Docs" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-
-                        <Border
-                            Padding="14"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1"
-                            CornerRadius="8">
-                            <Grid ColumnSpacing="12">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="Auto" />
-                                    <ColumnDefinition Width="*" />
-                                </Grid.ColumnDefinitions>
-                                <Border
-                                    Width="40"
-                                    Height="40"
-                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
-                                    CornerRadius="8">
-                                    <FontIcon FontSize="20" Glyph="&#xE946;" />
-                                </Border>
-                                <StackPanel Grid.Column="1" Spacing="2">
-                                    <TextBlock FontWeight="SemiBold" Text="Microsoft.Windows.SDK.BuildTools" />
-                                    <TextBlock
-                                        FontSize="12"
-                                        Opacity="0.64"
-                                        Text="WinApp 运行时支持" />
-                                    <HyperlinkButton
-                                        Padding="0"
-                                        FontSize="12"
-                                        NavigateUri="https://www.nuget.org/packages/Microsoft.Windows.SDK.BuildTools"
-                                        Content="NuGet" />
-                                </StackPanel>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </ScrollViewer>
-            </Grid>
-        </Border>
-    </Grid>
+                </StackPanel>
+            </RelativePanel>
+        </ScrollViewer>
     </Grid>
 </Page>

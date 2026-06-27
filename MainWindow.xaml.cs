@@ -1,7 +1,9 @@
+using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using Microsoft.UI.Xaml.Navigation;
 using TubaWinUi3.Models;
 using TubaWinUi3.Pages;
 using TubaWinUi3.Services;
@@ -34,11 +36,75 @@ public sealed partial class MainWindow : Window
 
         Closed += MainWindow_Closed;
         AppWindow.Changed += AppWindow_Changed;
+        NavFrame.Navigated += NavFrame_Navigated;
 
         PopulateCategories();
         NavigateToDefaultPage();
 
         DispatcherQueue.TryEnqueue(() => PopulateSearchSuggestions());
+    }
+
+    private void NavFrame_Navigated(object sender, NavigationEventArgs e)
+    {
+        SyncNavSelectionFromPage(e.SourcePageType);
+    }
+
+    private void SyncNavSelectionFromPage(Type pageType)
+    {
+        _syncingNavSelection = true;
+
+        if (pageType == typeof(SettingsPage))
+        {
+            NavView.SelectedItem = NavView.SettingsItem;
+        }
+        else
+        {
+            string? targetTag = pageType switch
+            {
+                var t when t == typeof(HomePage) => "all",
+                var t when t == typeof(FavoritesPage) => "favorites",
+                var t when t == typeof(HardwarePage) => "hardware",
+                var t when t == typeof(BuiltinToolsPage) => "builtin",
+                var t when t == typeof(CommunityToolsPage) => "community",
+                _ => null
+            };
+
+            if (targetTag is not null)
+            {
+                foreach (var item in NavView.MenuItems)
+                {
+                    if (item is NavigationViewItem navItem && navItem.Tag is string t && t == targetTag)
+                    {
+                        NavView.SelectedItem = navItem;
+                        break;
+                    }
+                }
+            }
+        }
+
+        _syncingNavSelection = false;
+    }
+    
+    private void RootGrid_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        PointerPointProperties props = e.GetCurrentPoint(null).Properties;
+
+        if (props.IsXButton1Pressed)
+        {
+            if (NavFrame.CanGoBack)
+            {
+                NavFrame.GoBack();
+                e.Handled = true;
+            }
+        }
+        else if (props.IsXButton2Pressed)
+        {
+            if (NavFrame.CanGoForward)
+            {
+                NavFrame.GoForward();
+                e.Handled = true;
+            }
+        }
     }
 
     private void MainWindow_Closed(object sender, WindowEventArgs args)

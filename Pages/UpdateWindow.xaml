@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="TubaWinUi3.Pages.UpdateWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" RowSpacing="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid Padding="28,24,28,20" ColumnSpacing="16"
+              Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Width="52" Height="52"
+                    Background="{ThemeResource AccentFillColorDefaultBrush}"
+                    CornerRadius="14">
+                <FontIcon FontSize="26"
+                          Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                          Glyph="&#xE895;" />
+            </Border>
+
+            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                <TextBlock FontSize="22" FontWeight="SemiBold" Text="发现新版本" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock FontSize="13" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="v" />
+                    <TextBlock x:Name="NewVersionText"
+                               FontSize="13"
+                               FontWeight="SemiBold"
+                               Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                    <TextBlock x:Name="PublishDateText"
+                               FontSize="12"
+                               Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                </StackPanel>
+            </StackPanel>
+        </Grid>
+
+        <ScrollViewer Grid.Row="1" HorizontalScrollMode="Disabled"
+                      VerticalScrollBarVisibility="Auto" Padding="28,20,28,8">
+            <StackPanel Spacing="14" MaxWidth="860">
+
+                <Grid x:Name="ActionButtonsPanel"
+                      ColumnSpacing="10" RowSpacing="10">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Border x:Name="GitCodeCard"
+                            Padding="16,14"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Tapped="OnGitCodeDownloadClick">
+                        <Grid ColumnSpacing="14" RowSpacing="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="40" Height="40"
+                                    Background="#1A7F37"
+                                    CornerRadius="10">
+                                <FontIcon FontSize="20" Foreground="White" Glyph="&#xE896;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="GitCode 下载" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="国内加速，无需代理" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="GitHubCard"
+                            Grid.Column="1"
+                            Padding="16,14"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Tapped="OnGitHubDownloadClick">
+                        <Grid ColumnSpacing="14" RowSpacing="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="40" Height="40"
+                                    Background="#6E40C9"
+                                    CornerRadius="10">
+                                <FontIcon FontSize="20" Foreground="White" Glyph="&#xE943;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="GitHub 下载" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="官方源，全球加速" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="SkipCard"
+                            Grid.Row="1"
+                            Padding="16,14"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Tapped="OnSkipVersionClick">
+                        <Grid ColumnSpacing="14" RowSpacing="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="40" Height="40"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="10">
+                                <FontIcon FontSize="20"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          Glyph="&#xE894;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="跳过更新" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="本次跳过，下次仍提醒" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <Border x:Name="IgnoreCard"
+                            Grid.Column="1" Grid.Row="1"
+                            Padding="16,14"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10"
+                            Tapped="OnIgnoreVersionClick">
+                        <Grid ColumnSpacing="14" RowSpacing="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+
+                            <Border Width="40" Height="40"
+                                    Background="{ThemeResource SubtleFillColorSecondaryBrush}"
+                                    CornerRadius="10">
+                                <FontIcon FontSize="20"
+                                          Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                          Glyph="&#xE711;" />
+                            </Border>
+
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                <TextBlock FontSize="14" FontWeight="SemiBold" Text="忽略版本" />
+                                <TextBlock FontSize="11"
+                                           Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                           Text="不再提醒此版本" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <Border Padding="16"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        CornerRadius="10"
+                        MaxHeight="200">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <RichTextBlock x:Name="ChangelogText"
+                                       FontSize="13"
+                                       TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       IsTextSelectionEnabled="True" />
+                    </ScrollViewer>
+                </Border>
+
+                <StackPanel x:Name="DownloadSection"
+                            Spacing="12"
+                            Visibility="Collapsed">
+
+                    <Border Padding="20,16"
+                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="1"
+                            CornerRadius="10">
+                        <StackPanel Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <ProgressRing x:Name="DownloadRing"
+                                              Width="20" Height="20"
+                                              IsActive="True" />
+                                <TextBlock x:Name="DownloadTitleText"
+                                           FontSize="14"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center"
+                                           Text="正在下载更新" />
+                            </StackPanel>
+
+                            <ProgressBar x:Name="DownloadProgressBar"
+                                         IsIndeterminate="False"
+                                         ShowError="False"
+                                         ShowPaused="False" />
+
+                            <Grid ColumnSpacing="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Orientation="Horizontal" Spacing="16">
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <FontIcon FontSize="11" Glyph="&#xE921;"
+                                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock x:Name="DownloadSpeedText"
+                                                   FontSize="12"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                   Text="--" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <FontIcon FontSize="11" Glyph="&#xE8B7;"
+                                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock x:Name="DownloadSizeText"
+                                                   FontSize="12"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                   Text="--" />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="4">
+                                        <FontIcon FontSize="11" Glyph="&#xE917;"
+                                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                        <TextBlock x:Name="DownloadTimeText"
+                                                   FontSize="12"
+                                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                   Text="--" />
+                                    </StackPanel>
+                                </StackPanel>
+
+                                <TextBlock x:Name="DownloadPercentText"
+                                           Grid.Column="1"
+                                           FontSize="13"
+                                           FontWeight="SemiBold"
+                                           Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                           Text="0%" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <InfoBar x:Name="ErrorInfoBar"
+                         IsOpen="False"
+                         IsClosable="True"
+                         Severity="Error"
+                         Title="更新失败" />
+
+                <Border x:Name="DownloadCompleteSection"
+                        Visibility="Collapsed"
+                        Padding="20,16"
+                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                        BorderThickness="1"
+                        CornerRadius="10">
+                    <Grid ColumnSpacing="20">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Border x:Name="SuccessIconBorder"
+                                Width="52" Height="52"
+                                Background="#3322C55E"
+                                CornerRadius="14">
+                            <FontIcon x:Name="SuccessIcon"
+                                      Glyph="&#xE73E;"
+                                      FontSize="26"
+                                      Foreground="#22C55E" />
+                        </Border>
+
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="4">
+                            <TextBlock x:Name="CompleteTitleText"
+                                       FontSize="18"
+                                       FontWeight="Bold"
+                                       Text="更新已下载完成" />
+                            <TextBlock x:Name="CompleteFileText"
+                                       FontSize="12"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock x:Name="CompleteArchText"
+                                       FontSize="12"
+                                       Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                            <TextBlock x:Name="CompleteTipText"
+                                       FontSize="12"
+                                       Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                       TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <Border Grid.Row="2" Padding="28,16,28,20"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <FontIcon x:Name="StatusIcon" FontSize="14" Glyph="&#xE946;" Opacity="0.5" />
+                    <TextBlock x:Name="StatusText" FontSize="12" Opacity="0.6"
+                               Text="请选择下载源或跳过此版本" />
+                </StackPanel>
+
+                <Button x:Name="ActionButton"
+                        Grid.Column="1"
+                        Padding="20,10"
+                        Click="OnActionButtonClick"
+                        CornerRadius="8"
+                        Visibility="Collapsed"
+                        Style="{ThemeResource AccentButtonStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <FontIcon x:Name="ActionButtonIcon" FontSize="14" Glyph="&#xE896;" />
+                        <TextBlock x:Name="ActionButtonText" Text="立即安装" />
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="CloseButton"
+                        Grid.Column="2"
+                        Padding="20,10"
+                        Click="OnCloseButtonClick"
+                        CornerRadius="8">
+                    <TextBlock Text="关闭" />
+                </Button>
+            </Grid>
+        </Border>
+
+    </Grid>
+</Window>

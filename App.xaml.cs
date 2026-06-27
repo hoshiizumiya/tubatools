@@ -173,13 +173,10 @@ public partial class App : Application
 
             if (MainWindow?.DispatcherQueue is null) return;
 
-            MainWindow.DispatcherQueue.TryEnqueue(async () =>
+            MainWindow.DispatcherQueue.TryEnqueue(() =>
             {
-                var dialog = new UpdateDialog();
-                await dialog.ShowUpdateAsync(update);
-
-                if (dialog.SkipThisVersion)
-                    UpdateService.SetSkippedVersion(update.Version);
+                var window = new UpdateWindow(update);
+                window.Activate();
             });
         }
         catch (Exception ex)
